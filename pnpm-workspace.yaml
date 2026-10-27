@@ -1,0 +1,5 @@
+# Current replacement for pnpm 10's removed onlyBuiltDependencies setting.
+allowBuilds:
+  electron: true
+  esbuild: true
+  '@tailwindcss/oxide': true
