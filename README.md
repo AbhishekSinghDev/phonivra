@@ -1,34 +1,93 @@
 # Phonivra
 
-UI-first Electron text-to-speech desktop app. Speech generation is not implemented: `src/main/mock-studio.ts` simulates jobs, voices, models and outputs so the UI can be built before a backend exists. The mock is a replaceable adapter behind the typed contract in `src/shared/`. Playback and generation parameter controls use audiocn components. Waveforms are illustrative; audio and recording behavior remains simulated. Action confirmations and errors appear as temporary notifications, while contextual guidance stays near the relevant controls.
+A desktop text-to-speech studio that runs entirely on your machine.
 
-## Setup
+Write or import a script, pick a voice model, tune how it sounds, and export clean audio. Models are downloaded from Hugging Face and run on your own hardware. There are no accounts, no cloud, and no uploads. Your scripts and voices stay with you.
 
-Use Node 24 (see `.nvmrc`) and the pinned pnpm release from `packageManager`.
+> The desktop interface is under active development. See the [roadmap](#roadmap) for what's in progress.
 
-```sh
-pnpm install
-pnpm dev          # Electron window + dev server
-pnpm typecheck    # tsc --noEmit for node + web configs
-pnpm lint         # oxlint --deny-warnings
-pnpm build        # typecheck + electron-vite build
-pnpm format       # oxfmt --write .
+## How it works
+
+Phonivra is two pieces that ship together:
+
+- **Desktop app**: an Electron app with a React interface.
+- **Local engine**: a Python server that starts on your computer when the app opens, downloads the models you choose, and generates audio using your CPU or GPU. It listens on localhost only and is never deployed anywhere.
+
+```
+┌────────────────────┐   localhost    ┌─────────────────────┐
+│   Desktop app      │ ─────────────▶ │   Local TTS engine  │
+│ Electron + React   │ ◀───────────── │   Python server     │
+└────────────────────┘                └──────────┬──────────┘
+                                                 │
+                                       Hugging Face models
+                                       (cached on your disk)
 ```
 
-Oxlint runs all six `@shadcn/lint` rules. The generated UI component directory is exempt
-from `no-restyle`, `no-arbitrary-values`, and `require-static-classes`, following the
-plugin’s component-directory guidance. Configure the rules in `.oxlintrc.json`.
+## Features
 
-## Structure
+- **Many languages**: multilingual narration, with automatic language detection.
+- **Voice cloning**: clone a voice from a short reference recording, and save voices as presets.
+- **Fine control**: speed, expressiveness, sampling settings, seeds for repeatable results.
+- **Script tools**: import `.txt`, `.md`, `.srt`, and `.vtt` files, clean up text before synthesis, and define your own pronunciation rules.
+- **Pauses and reactions**: insert timed pauses and expressive tags in the script.
+- **Mastering and export**: silence trimming, fades, loudness normalization, and WAV, MP3, FLAC, OGG, and M4A output.
+- **Subtitles and transcripts**: SRT and VTT files generated alongside the audio.
+- **Batch and chapters**: turn several scripts, or a script split by headings, into separate audio files.
+- **Library and projects**: browse past generations, and save or reopen project files.
+- **Local models**: models download automatically on first use and are cached on your disk.
 
-- `src/main`: secure window lifecycle, validated external navigation, theme persistence and native appearance synchronization, plus the mock studio adapter.
-- `src/preload`: a sandbox-compatible CommonJS context bridge exposing the typed API from `src/shared/api.ts`.
-- `src/renderer/src/features`: Narrate, Voices, Models, Batch, Library and Settings screens, lazy loaded.
-- `src/renderer/src/components`: title bar, sidebar, and shared `components/studio/*` composites.
-- `src/renderer/src/stores`: Zustand shell and studio state.
-- `src/shared`: the typed studio contract (`studio.ts`, `api.ts`, `validation.ts`) and the voice/model catalog and fixtures used by the mock.
+## Development
 
-The desktop window uses the Phonivra icon as its native icon on Windows and Linux.
-New sessions start with empty narration, pronunciation dictionary, and voice preset text fields.
+### Requirements
 
-See `AGENTS.md` for rules that apply to future changes.
+- Node.js 24 (24.22 or newer, below 25)
+- [pnpm](https://pnpm.io) 12
+
+### Run it
+
+```bash
+pnpm install
+pnpm dev
+```
+
+### Scripts
+
+| Command          | What it does                      |
+| ---------------- | --------------------------------- |
+| `pnpm dev`       | Start the app with hot reload     |
+| `pnpm build`     | Type-check, then production build |
+| `pnpm typecheck` | Type-check the whole project      |
+| `pnpm lint`      | Lint with oxlint                  |
+| `pnpm format`    | Format with oxfmt                 |
+| `pnpm preview`   | Preview the production build      |
+
+## Tech stack
+
+- [Electron](https://www.electronjs.org) with [electron-vite](https://electron-vite.org)
+- React 19 and TypeScript (strict)
+- Tailwind CSS v4 and [shadcn/ui](https://ui.shadcn.com), built on Base UI and Radix primitives
+- Hugeicons for icons, Sonner for toasts, Motion for animation, cmdk for the command palette
+- Zustand for state, React Router for routing
+- [oxlint](https://oxc.rs) and oxfmt for linting and formatting
+- Fonts bundled locally, no CDN
+
+## Project principles
+
+- **The renderer never touches Node.** All OS access goes through a typed `window.api` exposed by the preload script, with context isolation on, Node integration off, and the sandbox enabled.
+- **Actions go through one layer.** The interface talks to the engine through a single typed layer, so the UI doesn't change when the implementation behind it does.
+- **Consistent UI.** Only shadcn/ui components and semantic design tokens. Light and dark mode everywhere.
+
+## Roadmap
+
+- [x] App foundation: window, title bar, sidebar, theming, toasts
+- [ ] New interface covering every feature above
+- [ ] Engine started, monitored, and shut down by the desktop app
+- [ ] Packaging, signing, and auto-update
+
+## Contributing
+
+The project is moving quickly and the structure is still settling. If you'd like to help, please open an issue to discuss it before sending a pull request.
+
+## License
+
+To be decided. Note that each model you download has its own license, which may restrict commercial use. Check a model's license before using its output commercially.
