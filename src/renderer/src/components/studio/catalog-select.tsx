@@ -1,5 +1,6 @@
 import { useId, useState } from 'react'
-import { Check, ChevronsUpDown } from 'lucide-react'
+import { HugeiconsIcon } from '@hugeicons/react'
+import { CheckIcon, UnfoldMoreIcon } from '@hugeicons/core-free-icons'
 import { Button } from '@/components/ui/button'
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
 import {
@@ -46,13 +47,13 @@ export function CatalogSelect({
             role="combobox"
             aria-expanded={open}
             disabled={disabled}
-            className="w-full justify-between"
+            className="h-10 w-full justify-between rounded-xl"
             aria-describedby={description ? `${id}-hint` : undefined}
           >
             <span className="truncate">
               {options.find((option) => option.value === value)?.label ?? 'Choose an option'}
             </span>
-            <ChevronsUpDown data-icon="inline-end" aria-hidden="true" />
+            <HugeiconsIcon icon={UnfoldMoreIcon} data-icon="inline-end" aria-hidden="true" />
           </Button>
         </PopoverTrigger>
         <PopoverContent className="w-80 p-0" align="start">
@@ -80,7 +81,9 @@ export function CatalogSelect({
                         <span className="text-xs text-muted-foreground">{option.description}</span>
                       )}
                     </span>
-                    {value === option.value && <Check aria-hidden="true" />}
+                    {value === option.value && (
+                      <HugeiconsIcon icon={CheckIcon} aria-hidden="true" />
+                    )}
                   </CommandItem>
                 ))}
               </CommandGroup>

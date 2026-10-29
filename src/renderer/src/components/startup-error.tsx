@@ -1,5 +1,5 @@
-import { AudioLines, CircleAlert } from 'lucide-react'
-import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
+import { HugeiconsIcon } from '@hugeicons/react'
+import { AudioLinesIcon, AlertCircleIcon } from '@hugeicons/core-free-icons'
 
 export function StartupError({
   message,
@@ -12,16 +12,16 @@ export function StartupError({
     <main className="flex h-dvh items-center justify-center bg-background p-8 text-foreground">
       <div className="flex w-full max-w-lg flex-col gap-6">
         <div className="flex items-center gap-2 text-sm font-semibold">
-          <AudioLines className="size-5" aria-hidden="true" />
+          <HugeiconsIcon icon={AudioLinesIcon} className="size-5" aria-hidden="true" />
           Phonivra
         </div>
-        <Alert variant="destructive">
-          <CircleAlert aria-hidden="true" />
-          <AlertTitle>
+        <div role="alert" className="flex flex-col gap-1 text-sm text-destructive">
+          <HugeiconsIcon icon={AlertCircleIcon} aria-hidden="true" />
+          <p className="font-medium">
             {browser ? 'Open Phonivra in its desktop window' : 'Desktop connection unavailable'}
-          </AlertTitle>
-          <AlertDescription>{message}</AlertDescription>
-        </Alert>
+          </p>
+          <div className="leading-relaxed">{message}</div>
+        </div>
         <p className="text-sm leading-relaxed text-muted-foreground">
           {browser
             ? 'The development URL serves the interface. Device access and app settings are supplied by Electron when the desktop window opens.'

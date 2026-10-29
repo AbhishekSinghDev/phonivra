@@ -1,5 +1,5 @@
 import { defaultSettings, languages, resolvedModel } from '../shared/data/catalog'
-import { fixtures, makeSnapshot, sampleOutput, sampleScript } from '../shared/data/fixtures'
+import { makeSnapshot, sampleOutput, sampleScript } from '../shared/data/fixtures'
 import type {
   BatchUnit,
   GenerationSettings,
@@ -62,34 +62,6 @@ export class MockStudio {
     this.timer = setInterval(() => {
       if (!this.state.job.paused) this.advance()
     }, 1000)
-  }
-  selectScenario(id: string): StudioSnapshot {
-    if (!fixtures.some((f) => f.id === id)) throw new Error('Unknown review scenario')
-    this.stopTimer()
-    const revision = this.state.revision
-    const documentRevision = this.state.documentRevision + 1
-    this.state = makeSnapshot(id)
-    this.state.documentRevision = documentRevision
-    this.jobSettings = { ...this.state.settings }
-    this.jobScript = this.state.script
-    this.jobVoice =
-      this.state.reference.status === 'ready'
-        ? this.state.reference.name
-        : (this.state.voices.find((voice) => voice.id === this.state.settings.voice)?.label ??
-          'Original narrator')
-    this.state.revision = revision
-    return this.emit()
-  }
-  setPaused(paused: boolean): StudioSnapshot {
-    this.state.job.paused = paused
-    if (this.state.job.kind === 'download')
-      this.state.models.forEach((model) => {
-        if (model.status === 'paused' || model.status === 'downloading')
-          model.status = paused ? 'paused' : 'downloading'
-      })
-    if (!paused) this.runTimer()
-    else this.stopTimer()
-    return this.emit()
   }
   private createOutput(
     title: string,
@@ -180,7 +152,7 @@ export class MockStudio {
     }
     batch.reviewed = true
   }
-  advance(): StudioSnapshot {
+  private advance(): StudioSnapshot {
     const job = this.state.job
     const settings = this.jobSettings ?? this.state.settings
     if (!activePhases.includes(job.phase)) {
@@ -718,32 +690,18 @@ export class MockStudio {
       case 'output.watermark': {
         if (!this.state.outputs.some((output) => output.id === command.id))
           return fail('That file was not found.')
-        const fixture = fixtures.find((item) => item.id === this.state.scenario)?.description ?? ''
-        const unavailable =
-          !this.state.dependencies.perth || /package missing|needs the Perth/i.test(fixture)
-        const notDetected = /not detected|not-detected/i.test(fixture)
-        const failed = /check failed|could not check/i.test(fixture)
+        const unavailable = !this.state.dependencies.perth
         const message = unavailable
-          ? 'Watermark check needs the Perth package: unavailable in this scenario.'
-          : failed
-            ? 'Could not check the watermark: simulated detector failure.'
-            : notDetected
-              ? 'Watermark not detected: 0.24. The file may have been re-encoded or edited heavily.'
-              : 'Watermark detected: 0.94.'
+          ? 'Watermark check needs the Perth package.'
+          : 'Watermark detected: 0.94.'
         this.state.watermark = {
           outputId: command.id,
-          state: unavailable
-            ? 'unavailable'
-            : failed
-              ? 'error'
-              : notDetected
-                ? 'not-detected'
-                : 'detected',
-          score: unavailable || failed ? null : notDetected ? 0.24 : 0.94,
+          state: unavailable ? 'unavailable' : 'detected',
+          score: unavailable ? null : 0.94,
           message
         }
         this.state.status = message
-        this.state.statusIsError = unavailable || failed
+        this.state.statusIsError = unavailable
         break
       }
       case 'output.export':

@@ -1,11 +1,18 @@
-import { useState } from 'react'
-import { Pause, Play, RotateCcw } from 'lucide-react'
+import { HugeiconsIcon } from '@hugeicons/react'
+import { PauseIcon, PlayIcon, RotateCcwIcon } from '@hugeicons/core-free-icons'
 import { Button } from '@/components/ui/button'
-import { Slider } from '@/components/ui/slider'
+import { AudioPlayer, AudioPlayerPlay, AudioPlayerTime } from '@/components/ui/audio-player'
+import { Waveform } from '@/components/ui/waveform'
+import { useAudioPlayer } from '@/hooks/use-audio-player'
+import { useStudioStore } from '@/stores/studio-store'
 import { Badge } from '@/components/ui/badge'
 import { Skeleton } from '@/components/ui/skeleton'
 import { act } from '@/lib/actions'
-import { formatTime } from './job-status'
+
+const illustrativePeaks = Array.from({ length: 160 }, (_, index) => {
+  const phrase = Math.abs(Math.sin(index * 0.12))
+  return 0.08 + phrase * (0.18 + 0.6 * Math.abs(Math.sin(index * 0.83)))
+})
 
 export function AudioTransport({
   id,
@@ -22,8 +29,28 @@ export function AudioTransport({
   playing?: boolean
   state?: 'loading' | 'ready' | 'unavailable' | 'provisional'
 }): React.JSX.Element {
-  const [seeking, setSeeking] = useState<{ id: string; position: number } | null>(null)
-  const shownPosition = seeking?.id === id ? seeking.position : position
+  const basePlayer = useAudioPlayer()
+  const player = {
+    ...basePlayer,
+    status: state === 'unavailable' ? 'idle' : playing ? 'playing' : 'ready',
+    playing,
+    duration,
+    currentTime: position,
+    toggle: () => act(playing ? 'Pause audio' : 'Play audio', { type: 'playback.toggle', id }),
+    seek: (seconds: number) => {
+      // Action errors are reported by the studio store.
+      void act('Seek audio', { type: 'playback.seek', seconds, id })
+    },
+    time: {
+      subscribe: (listener: (time: number) => void) => {
+        listener(position)
+        return useStudioStore.subscribe((store) => {
+          const playback = store.snapshot?.playback
+          listener(playback?.outputId === id ? playback.position : 0)
+        })
+      }
+    }
+  } satisfies Parameters<typeof AudioPlayer>[0]['player']
   if (state === 'loading')
     return (
       <div aria-label="Loading audio" className="flex items-center gap-4">
@@ -33,22 +60,27 @@ export function AudioTransport({
     )
   const disabled = state === 'unavailable'
   return (
-    <section aria-label={`${title} playback`} className="flex flex-col gap-4">
+    <section
+      aria-label={`${title} playback`}
+      className="flex flex-col gap-4 rounded-xl bg-muted/50 p-4"
+    >
       <div className="flex items-center justify-between gap-4">
         <p className="text-sm font-medium">{title}</p>
         {state === 'provisional' && <Badge variant="outline">Provisional</Badge>}
       </div>
-      <div className="flex items-center gap-3">
-        <Button
-          size="icon"
-          aria-label={playing ? 'Pause audio' : 'Play audio'}
-          disabled={disabled}
-          onClick={() =>
-            act(playing ? 'Pause audio' : 'Play audio', { type: 'playback.toggle', id })
-          }
-        >
-          {playing ? <Pause aria-hidden="true" /> : <Play aria-hidden="true" />}
-        </Button>
+      <AudioPlayer
+        player={player}
+        shortcuts={false}
+        className="flex-nowrap"
+        aria-label={`${title} controls`}
+      >
+        <AudioPlayerPlay disabled={disabled}>
+          {playing ? (
+            <HugeiconsIcon icon={PauseIcon} aria-hidden="true" />
+          ) : (
+            <HugeiconsIcon icon={PlayIcon} aria-hidden="true" />
+          )}
+        </AudioPlayerPlay>
         <Button
           size="icon"
           variant="ghost"
@@ -56,29 +88,25 @@ export function AudioTransport({
           disabled={disabled}
           onClick={() => act('Restart audio', { type: 'playback.seek', seconds: 0, id })}
         >
-          <RotateCcw aria-hidden="true" />
+          <HugeiconsIcon icon={RotateCcwIcon} aria-hidden="true" />
         </Button>
-        <div className="flex min-w-0 flex-1 flex-col gap-2">
-          <Slider
-            aria-label="Playback position"
-            value={[shownPosition]}
-            min={0}
-            max={Math.max(1, duration)}
-            step={0.1}
-            disabled={disabled}
-            onValueChange={(values) => setSeeking({ id, position: values[0] })}
-            onValueCommit={(values) => {
-              void act('Seek audio', { type: 'playback.seek', seconds: values[0], id }).then(() =>
-                setSeeking(null)
-              )
-            }}
-          />
-          <div className="flex justify-between text-xs tabular-nums text-muted-foreground">
-            <span>{formatTime(shownPosition)}</span>
-            <span>{formatTime(duration)}</span>
-          </div>
-        </div>
-      </div>
+        <AudioPlayerTime className="ml-auto" />
+        <span className="text-xs text-muted-foreground">/</span>
+        <AudioPlayerTime type="duration" />
+      </AudioPlayer>
+      <Waveform
+        aria-label={`${title} illustrative waveform, seek playback`}
+        className="h-16"
+        peaks={illustrativePeaks}
+        duration={duration}
+        currentTime={position}
+        disabled={disabled}
+        onSeekCommitted={(seconds) => {
+          // Action errors are reported by the studio store.
+          void act('Seek audio', { type: 'playback.seek', seconds, id })
+        }}
+      />
+      <p className="text-xs text-muted-foreground">Illustrative waveform</p>
       {disabled && (
         <p className="text-sm text-muted-foreground">
           Audio will be available when generation finishes.

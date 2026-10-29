@@ -1,14 +1,19 @@
-import { notify } from '@/lib/notify'
+import { notify, notifyError } from '@/lib/notify'
 import { useStudioStore } from '@/stores/studio-store'
 import type { GenerationSettings, StudioCommand, StudioSnapshot } from '../../../shared/studio'
 
-async function receive(request: Promise<StudioSnapshot>): Promise<void> {
+async function receive(request: Promise<StudioSnapshot>, reportStatus = false): Promise<void> {
   try {
-    useStudioStore.getState().accept(await request)
+    const snapshot = await request
+    useStudioStore.getState().accept(snapshot)
+    if (reportStatus && snapshot.status) {
+      if (snapshot.statusIsError) notifyError(snapshot.status)
+      else notify(snapshot.status)
+    }
   } catch (error) {
-    useStudioStore
-      .getState()
-      .setError(error instanceof Error ? error.message : 'The action could not be completed.')
+    const message = error instanceof Error ? error.message : 'The action could not be completed.'
+    useStudioStore.getState().setError(message)
+    notifyError(message)
   }
 }
 let pendingScript: string | null = null
@@ -44,7 +49,7 @@ export function editBatchText(text: string): void {
 }
 export function act(label: string, command: StudioCommand): Promise<void> {
   notify(`${label} clicked`)
-  return flushScriptDraft().then(() => receive(window.api.studio.dispatch(command)))
+  return flushScriptDraft().then(() => receive(window.api.studio.dispatch(command), true))
 }
 // Keep typing synchronous locally, and coalesce IPC snapshots. Actions flush the
 // latest draft before generating, inspecting, importing or saving a project.
@@ -66,28 +71,16 @@ export function updateSettings<K extends keyof GenerationSettings>(
       settings: { ...state.settings, [key]: value }
     })
 }
-export const reviewActions = {
-  scenario: (id: string): void => {
-    notify('Review scenario clicked')
-    void flushScriptDraft().then(() => receive(window.api.review.selectScenario(id)))
-  },
-  advance: (): void => {
-    notify('Advance progress clicked')
-    void receive(window.api.review.advance())
-  },
-  pause: (paused: boolean): void => {
-    notify('Pause simulation clicked')
-    void receive(window.api.review.setPaused(paused))
-  },
-  reset: (): void => {
-    notify('Reset simulation clicked')
-    void flushScriptDraft().then(() => receive(window.api.review.reset()))
-  }
-}
 export function connectStudio(): () => void {
-  const unsubscribe = window.api.studio.onChange((snapshot) =>
+  const unsubscribe = window.api.studio.onChange((snapshot) => {
+    const previous = useStudioStore.getState().snapshot
+    if (previous && previous.revision >= snapshot.revision) return
     useStudioStore.getState().accept(snapshot)
-  )
+    if (snapshot.statusIsError && snapshot.status && snapshot.status !== previous?.status)
+      notifyError(snapshot.status)
+    if (snapshot.job.phase === 'error' && previous?.job.phase !== 'error')
+      notifyError(snapshot.job.message)
+  })
   void receive(window.api.studio.getSnapshot())
   return unsubscribe
 }

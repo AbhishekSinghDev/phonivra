@@ -148,7 +148,10 @@ vite.config.ts.timestamp-*
 # Turbo Repo
 .turbo
 
-# agents
+# Agents
 .agents
 .claude
 .codex
+
+# Docs
+docs

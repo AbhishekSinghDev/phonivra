@@ -1,4 +1,5 @@
-import { RefreshCw } from 'lucide-react'
+import { HugeiconsIcon } from '@hugeicons/react'
+import { RefreshCwIcon } from '@hugeicons/core-free-icons'
 import { Button } from '@/components/ui/button'
 import {
   Dialog,
@@ -8,7 +9,6 @@ import {
   DialogTitle
 } from '@/components/ui/dialog'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
-import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { Skeleton } from '@/components/ui/skeleton'
 import { WindowedList } from '@/components/studio/windowed-list'
@@ -35,10 +35,10 @@ export default function TextInspection({
         </DialogHeader>
         {!inspection ? (
           status ? (
-            <Alert variant="destructive">
-              <AlertTitle>Text could not be prepared</AlertTitle>
-              <AlertDescription>{status}</AlertDescription>
-            </Alert>
+            <div role="alert" className="flex flex-col gap-1 text-sm text-destructive">
+              <p className="font-medium">Text could not be prepared</p>
+              <div className="leading-relaxed">{status}</div>
+            </div>
           ) : (
             <div className="flex flex-col gap-3" aria-label="Preparing text">
               <Skeleton className="h-4 w-full" />
@@ -47,10 +47,10 @@ export default function TextInspection({
             </div>
           )
         ) : inspection.status === 'error' ? (
-          <Alert variant="destructive">
-            <AlertTitle>Text could not be prepared</AlertTitle>
-            <AlertDescription>{inspection.error}</AlertDescription>
-          </Alert>
+          <div role="alert" className="flex flex-col gap-1 text-sm text-destructive">
+            <p className="font-medium">Text could not be prepared</p>
+            <div className="leading-relaxed">{inspection.error}</div>
+          </div>
         ) : (
           <Tabs defaultValue="text">
             <TabsList>
@@ -104,7 +104,7 @@ export default function TextInspection({
             className="self-start"
             onClick={() => act('Refresh prepared text', { type: 'script.inspect' })}
           >
-            <RefreshCw data-icon="inline-start" aria-hidden="true" />
+            <HugeiconsIcon icon={RefreshCwIcon} data-icon="inline-start" aria-hidden="true" />
             Refresh inspection
           </Button>
         </div>

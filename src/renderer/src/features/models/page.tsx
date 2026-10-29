@@ -1,12 +1,20 @@
 import { useState } from 'react'
-import { Boxes, Download, FolderOpen, Pause, Play, RefreshCw, Square } from 'lucide-react'
+import { HugeiconsIcon } from '@hugeicons/react'
+import {
+  BoxesIcon,
+  DownloadIcon,
+  FolderOpenIcon,
+  PauseIcon,
+  PlayIcon,
+  RefreshCwIcon,
+  SquareIcon
+} from '@hugeicons/core-free-icons'
 import { Link } from 'react-router'
 import { ScreenFrame, ScreenLoading, DetailValue } from '@/components/studio/screen-frame'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Progress } from '@/components/ui/progress'
 import { Separator } from '@/components/ui/separator'
-import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
 import {
   Table,
   TableBody,
@@ -48,46 +56,44 @@ export default function ModelsPage(): React.JSX.Element {
   ).length
   return (
     <ScreenFrame
-      title="Models"
-      description="Download and manage the speech models stored on this device."
-      actions={
-        <Button variant="outline" size="sm" asChild>
-          <Link to="/settings" onClick={() => notify('Model storage settings clicked')}>
-            <FolderOpen data-icon="inline-start" aria-hidden="true" />
-            Storage settings
-          </Link>
-        </Button>
+      title="Speech models"
+      description={
+        <>
+          Find the <span className="highlight">Right fit for your voice.</span> Choose a model for
+          your language and device.
+        </>
       }
     >
       {!snapshot.dependencies.online && (
-        <Alert>
-          <AlertTitle>You are offline</AlertTitle>
-          <AlertDescription>
-            Installed models remain usable. Connect to download another model.
-          </AlertDescription>
-        </Alert>
+        <p role="status" className="text-sm text-muted-foreground">
+          You are offline. Installed models remain usable; connect to download another model.
+        </p>
       )}
       <div className="flex flex-wrap items-center justify-between gap-4">
         <p className="text-sm text-muted-foreground">
           {installedCount} installed · one model loaded at a time
         </p>
-        <Button
-          variant={snapshot.settings.model === 'auto' ? 'secondary' : 'outline'}
-          size="sm"
-          onClick={() => updateSettings('model', 'auto')}
-        >
-          Use Auto routing
-        </Button>
+        <div className="flex flex-wrap items-center gap-2">
+          <Button variant="outline" size="sm" asChild>
+            <Link to="/settings" onClick={() => notify('Model storage settings clicked')}>
+              <HugeiconsIcon icon={FolderOpenIcon} data-icon="inline-start" aria-hidden="true" />
+              Storage settings
+            </Link>
+          </Button>
+          <Button
+            variant={snapshot.settings.model === 'auto' ? 'secondary' : 'outline'}
+            size="sm"
+            onClick={() => updateSettings('model', 'auto')}
+          >
+            Use Auto routing
+          </Button>
+        </div>
       </div>
-      <Alert>
-        <Boxes aria-hidden="true" />
-        <AlertTitle>Auto chooses a model for the language</AlertTitle>
-        <AlertDescription>
-          English uses Turbo. Other supported languages use Multilingual V3. Auto is a routing
-          choice and has no files to download.
-        </AlertDescription>
-      </Alert>
-      <ItemGroup>
+      <p className="text-sm leading-relaxed text-muted-foreground">
+        Auto uses Turbo for English and Multilingual V3 for other supported languages. It has no
+        files to download.
+      </p>
+      <ItemGroup className="grid gap-4 lg:grid-cols-2">
         {models
           .filter((item) => item.downloadable)
           .map((item) => {
@@ -98,19 +104,28 @@ export default function ModelsPage(): React.JSX.Element {
             const available =
               installation?.status === 'installed' || installation?.status === 'active'
             return (
-              <Item key={id} className="py-5">
+              <Item
+                key={id}
+                variant="outline"
+                className="relative flex-col items-stretch gap-5 card-chai p-6"
+              >
+                <Button
+                  variant="link"
+                  className="absolute inset-0 z-10 h-full w-full rounded-xl"
+                  aria-label={`Show ${item.label} details`}
+                  aria-pressed={selected === id}
+                  onClick={() => {
+                    setSelected(id)
+                    notify('Model details clicked')
+                  }}
+                />
+                <div className="flex size-10 items-center justify-center rounded-xl bg-secondary text-secondary-foreground">
+                  <HugeiconsIcon icon={BoxesIcon} className="size-5" aria-hidden="true" />
+                </div>
                 <ItemContent>
                   <ItemTitle>
-                    <Button
-                      size="sm"
-                      variant="link"
-                      onClick={() => {
-                        setSelected(id)
-                        notify('Model details clicked')
-                      }}
-                    >
-                      {item.label}
-                    </Button>
+                    {item.label}
+                    {selected === id && <Badge variant="secondary">Details shown</Badge>}
                     {snapshot.settings.model === id && <Badge variant="secondary">Selected</Badge>}
                     <Badge variant={installation?.status === 'error' ? 'destructive' : 'outline'}>
                       {installation?.status ?? 'not-installed'}
@@ -142,7 +157,7 @@ export default function ModelsPage(): React.JSX.Element {
                     <p className="text-sm text-destructive">{installation.message}</p>
                   )}
                 </ItemContent>
-                <ItemActions className="flex-wrap">
+                <ItemActions className="relative z-20 mt-auto flex-wrap">
                   {downloading ? (
                     <>
                       <Button
@@ -159,9 +174,17 @@ export default function ModelsPage(): React.JSX.Element {
                         }
                       >
                         {installation.status === 'paused' ? (
-                          <Play data-icon="inline-start" aria-hidden="true" />
+                          <HugeiconsIcon
+                            icon={PlayIcon}
+                            data-icon="inline-start"
+                            aria-hidden="true"
+                          />
                         ) : (
-                          <Pause data-icon="inline-start" aria-hidden="true" />
+                          <HugeiconsIcon
+                            icon={PauseIcon}
+                            data-icon="inline-start"
+                            aria-hidden="true"
+                          />
                         )}
                         {installation.status === 'paused' ? 'Resume' : 'Pause'}
                       </Button>
@@ -170,7 +193,11 @@ export default function ModelsPage(): React.JSX.Element {
                         size="sm"
                         onClick={() => act('Cancel model download', { type: 'job.cancel' })}
                       >
-                        <Square data-icon="inline-start" aria-hidden="true" />
+                        <HugeiconsIcon
+                          icon={SquareIcon}
+                          data-icon="inline-start"
+                          aria-hidden="true"
+                        />
                         Cancel
                       </Button>
                     </>
@@ -208,9 +235,17 @@ export default function ModelsPage(): React.JSX.Element {
                       }
                     >
                       {installation?.status === 'error' ? (
-                        <RefreshCw data-icon="inline-start" aria-hidden="true" />
+                        <HugeiconsIcon
+                          icon={RefreshCwIcon}
+                          data-icon="inline-start"
+                          aria-hidden="true"
+                        />
                       ) : (
-                        <Download data-icon="inline-start" aria-hidden="true" />
+                        <HugeiconsIcon
+                          icon={DownloadIcon}
+                          data-icon="inline-start"
+                          aria-hidden="true"
+                        />
                       )}
                       {installation?.status === 'error' ? 'Retry download' : 'Download'}
                     </Button>
@@ -227,7 +262,10 @@ export default function ModelsPage(): React.JSX.Element {
         </>
       )}
       <Separator />
-      <section aria-labelledby="model-details-heading" className="flex flex-col gap-6">
+      <section
+        aria-labelledby="model-details-heading"
+        className="flex flex-col gap-6 card-chai p-6"
+      >
         <div className="flex flex-wrap items-center justify-between gap-4">
           <h2 id="model-details-heading" className="text-lg font-semibold">
             {model.label}

@@ -13,12 +13,6 @@ const api: DesktopAPI = {
       return () => ipcRenderer.removeListener('studio:changed', listener)
     }
   },
-  review: {
-    selectScenario: (id) => ipcRenderer.invoke('review:scenario', id),
-    advance: () => ipcRenderer.invoke('review:advance'),
-    setPaused: (paused) => ipcRenderer.invoke('review:pause', paused),
-    reset: () => ipcRenderer.invoke('review:scenario', 'ready')
-  },
   platform:
     process.platform === 'darwin' ? 'darwin' : process.platform === 'win32' ? 'win32' : 'linux',
   window: { control: (action) => ipcRenderer.invoke('window:control', action) },

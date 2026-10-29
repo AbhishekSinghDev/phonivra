@@ -1,5 +1,6 @@
 import { useRef } from 'react'
-import { FileUp, FolderOpen, Save } from 'lucide-react'
+import { HugeiconsIcon } from '@hugeicons/react'
+import { FileUpIcon, FolderOpenIcon, SaveIcon } from '@hugeicons/core-free-icons'
 import { Button } from '@/components/ui/button'
 import { Field, FieldDescription, FieldGroup, FieldLabel } from '@/components/ui/field'
 import { Input } from '@/components/ui/input'
@@ -48,7 +49,7 @@ export function ScriptEditor(): React.JSX.Element | null {
           size="sm"
           onClick={() => act('Import script', { type: 'script.import' })}
         >
-          <FileUp data-icon="inline-start" aria-hidden="true" />
+          <HugeiconsIcon icon={FileUpIcon} data-icon="inline-start" aria-hidden="true" />
           Import script
         </Button>
         <Button
@@ -71,7 +72,7 @@ export function ScriptEditor(): React.JSX.Element | null {
           size="sm"
           onClick={() => act('Save project', { type: 'project.save' })}
         >
-          <Save data-icon="inline-start" aria-hidden="true" />
+          <HugeiconsIcon icon={SaveIcon} data-icon="inline-start" aria-hidden="true" />
           Save project
         </Button>
         <Button
@@ -79,7 +80,7 @@ export function ScriptEditor(): React.JSX.Element | null {
           size="sm"
           onClick={() => act('Open project', { type: 'project.open' })}
         >
-          <FolderOpen data-icon="inline-start" aria-hidden="true" />
+          <HugeiconsIcon icon={FolderOpenIcon} data-icon="inline-start" aria-hidden="true" />
           Open project
         </Button>
       </div>

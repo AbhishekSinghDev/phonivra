@@ -1,4 +1,5 @@
-import { AudioLines, Play } from 'lucide-react'
+import { HugeiconsIcon } from '@hugeicons/react'
+import { AudioLinesIcon, PlayIcon } from '@hugeicons/core-free-icons'
 import { Button } from '@/components/ui/button'
 import {
   Sheet,
@@ -25,7 +26,7 @@ export function VoiceTools(): React.JSX.Element | null {
     <Sheet>
       <SheetTrigger asChild>
         <Button variant="outline" size="sm" onClick={() => notify('Voice tools clicked')}>
-          <AudioLines data-icon="inline-start" aria-hidden="true" />
+          <HugeiconsIcon icon={AudioLinesIcon} data-icon="inline-start" aria-hidden="true" />
           Voice reference
         </Button>
       </SheetTrigger>
@@ -62,7 +63,7 @@ export function VoiceTools(): React.JSX.Element | null {
                   act('Generate voice preview', { type: 'job.start', kind: 'preview' })
                 }
               >
-                <Play data-icon="inline-start" aria-hidden="true" />
+                <HugeiconsIcon icon={PlayIcon} data-icon="inline-start" aria-hidden="true" />
                 Generate voice preview
               </Button>
               {snapshot.preview && (

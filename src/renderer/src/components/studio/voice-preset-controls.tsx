@@ -10,7 +10,7 @@ export function VoicePresetControls({
   showDelete = true
 }: { showDelete?: boolean } = {}): React.JSX.Element | null {
   const snapshot = useStudioStore((s) => s.snapshot)
-  const [label, setLabel] = useState('My voice')
+  const [label, setLabel] = useState('')
   const id = useId()
   if (!snapshot) return null
   const selected = snapshot.voices.find((voice) => voice.id === snapshot.settings.voice)
@@ -21,6 +21,7 @@ export function VoicePresetControls({
         <Input
           id={id}
           value={label}
+          placeholder="My voice"
           maxLength={60}
           onChange={(event) => setLabel(event.target.value)}
         />

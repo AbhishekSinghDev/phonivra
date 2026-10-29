@@ -1,8 +1,13 @@
-import { Download, FileAudio, FileText, FolderOpen, ShieldCheck } from 'lucide-react'
+import { HugeiconsIcon } from '@hugeicons/react'
+import {
+  DownloadIcon,
+  FileTextIcon,
+  FolderOpenIcon,
+  ShieldCheckIcon
+} from '@hugeicons/core-free-icons'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Separator } from '@/components/ui/separator'
-import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
 import {
   Accordion,
   AccordionContent,
@@ -56,7 +61,7 @@ export function OutputDetails({
             act('Save audio', { type: 'output.export', id: output.id, format: 'audio' })
           }
         >
-          <Download data-icon="inline-start" aria-hidden="true" />
+          <HugeiconsIcon icon={DownloadIcon} data-icon="inline-start" aria-hidden="true" />
           Save audio
         </Button>
         {output.companions.map((format) => (
@@ -68,20 +73,17 @@ export function OutputDetails({
               act(`Save ${format.toUpperCase()}`, { type: 'output.export', id: output.id, format })
             }
           >
-            <FileText data-icon="inline-start" aria-hidden="true" />
+            <HugeiconsIcon icon={FileTextIcon} data-icon="inline-start" aria-hidden="true" />
             {format.toUpperCase()}
           </Button>
         ))}
       </div>
       <Separator />
       {!output.metadataAvailable && (
-        <Alert>
-          <FileAudio aria-hidden="true" />
-          <AlertTitle>Generation metadata unavailable</AlertTitle>
-          <AlertDescription>
-            The audio can still be played and exported. Details are not inferred from its filename.
-          </AlertDescription>
-        </Alert>
+        <p className="text-sm leading-relaxed text-muted-foreground">
+          Generation metadata is unavailable. The audio can still be played and exported; details
+          are not inferred from its filename.
+        </p>
       )}
       <Accordion type="multiple">
         <AccordionItem value="details">
@@ -209,7 +211,7 @@ export function OutputDetails({
             variant="outline"
             onClick={() => act('Verify watermark', { type: 'output.watermark', id: output.id })}
           >
-            <ShieldCheck data-icon="inline-start" aria-hidden="true" />
+            <HugeiconsIcon icon={ShieldCheckIcon} data-icon="inline-start" aria-hidden="true" />
             Verify watermark
           </Button>
           <Button
@@ -217,7 +219,7 @@ export function OutputDetails({
             variant="ghost"
             onClick={() => act('Open output folder', { type: 'folder.open' })}
           >
-            <FolderOpen data-icon="inline-start" aria-hidden="true" />
+            <HugeiconsIcon icon={FolderOpenIcon} data-icon="inline-start" aria-hidden="true" />
             Open folder
           </Button>
           <ConfirmDelete

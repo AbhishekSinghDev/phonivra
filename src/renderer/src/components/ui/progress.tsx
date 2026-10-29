@@ -4,11 +4,16 @@ import * as React from 'react'
 import { cn } from 'cn'
 import { Progress as ProgressPrimitive } from 'radix-ui'
 
+interface ProgressStyle extends React.CSSProperties {
+  '--progress-offset': string
+}
+
 function Progress({
   className,
   value,
   ...props
 }: React.ComponentProps<typeof ProgressPrimitive.Root>) {
+  const indicatorStyle: ProgressStyle = { '--progress-offset': `-${100 - (value || 0)}%` }
   return (
     <ProgressPrimitive.Root
       data-slot="progress"
@@ -18,8 +23,8 @@ function Progress({
     >
       <ProgressPrimitive.Indicator
         data-slot="progress-indicator"
-        className="h-full w-full flex-1 bg-primary transition-all"
-        style={{ transform: `translateX(-${100 - (value || 0)}%)` }}
+        className="progress-indicator h-full w-full flex-1 bg-primary transition-all"
+        style={indicatorStyle}
       />
     </ProgressPrimitive.Root>
   )

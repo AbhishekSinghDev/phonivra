@@ -1,9 +1,24 @@
-import { AudioLines, ArrowUpRight, Check } from 'lucide-react'
+import { HugeiconsIcon } from '@hugeicons/react'
+import {
+  AudioLinesIcon,
+  ArrowUpRightIcon,
+  CheckIcon,
+  DownloadIcon
+} from '@hugeicons/core-free-icons'
 import { Link } from 'react-router'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Empty, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle } from '@/components/ui/empty'
-import { Separator } from '@/components/ui/separator'
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger
+} from '@/components/ui/dialog'
+import { ScrollArea } from '@/components/ui/scroll-area'
+import { act } from '@/lib/actions'
 import { AudioTransport } from '@/components/studio/audio-transport'
 import { OutputDetails } from '@/components/studio/output-details'
 import { JobStatus, activePhases } from '@/components/studio/job-status'
@@ -19,16 +34,19 @@ export function NarrationResult(): React.JSX.Element | null {
   const active = activePhases.has(job.phase)
   const output = outputs[0]
   return (
-    <section aria-labelledby="narration-result-heading" className="flex min-w-0 flex-col gap-6">
+    <section
+      aria-labelledby="narration-result-heading"
+      className="flex min-w-0 flex-col gap-5 card-chai p-6"
+    >
       <div className="flex items-center justify-between gap-4">
         <h2 id="narration-result-heading" className="text-base font-semibold">
-          {active ? 'Generation' : 'Your narration'}
+          {active ? 'Generation' : 'Latest audio'}
         </h2>
         {!active && output && (
           <Button variant="ghost" size="sm" asChild>
             <Link to="/library" onClick={() => notify('Open library clicked')}>
               View library
-              <ArrowUpRight data-icon="inline-end" aria-hidden="true" />
+              <HugeiconsIcon icon={ArrowUpRightIcon} data-icon="inline-end" aria-hidden="true" />
             </Link>
           </Button>
         )}
@@ -67,22 +85,63 @@ export function NarrationResult(): React.JSX.Element | null {
                 : 'Latest take'}
             </p>
             <Badge variant="outline">
-              <Check aria-hidden="true" />
+              <HugeiconsIcon icon={CheckIcon} aria-hidden="true" />
               Saved in Library
             </Badge>
           </div>
-          <OutputDetails
-            output={output}
-            playback={playback}
-            showManagement={false}
-            exportVariant="outline"
+          <AudioTransport
+            id={output.id}
+            title={output.title}
+            duration={output.duration}
+            playing={playback.outputId === output.id && playback.playing}
+            position={playback.outputId === output.id ? playback.position : 0}
           />
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <span className="text-xs text-muted-foreground">
+              {output.format.toUpperCase()} audio · {output.sampleRate / 1000} kHz
+            </span>
+            <div className="flex items-center gap-2">
+              <Dialog>
+                <DialogTrigger asChild>
+                  <Button variant="ghost" size="sm" onClick={() => notify('Take details clicked')}>
+                    Details & exports
+                  </Button>
+                </DialogTrigger>
+                <DialogContent className="max-h-5/6 sm:max-w-3xl">
+                  <DialogHeader>
+                    <DialogTitle>Take details</DialogTitle>
+                    <DialogDescription>
+                      Export audio and companion files, or review the settings used.
+                    </DialogDescription>
+                  </DialogHeader>
+                  <ScrollArea className="min-h-0 flex-1 pr-4">
+                    <OutputDetails
+                      output={output}
+                      playback={playback}
+                      showManagement={false}
+                      exportVariant="outline"
+                    />
+                  </ScrollArea>
+                </DialogContent>
+              </Dialog>
+              <Button
+                variant="secondary"
+                size="sm"
+                onClick={() =>
+                  act('Save audio', { type: 'output.export', id: output.id, format: 'audio' })
+                }
+              >
+                <HugeiconsIcon icon={DownloadIcon} data-icon="inline-start" aria-hidden="true" />
+                Save audio
+              </Button>
+            </div>
+          </div>
         </>
       ) : (
         <Empty>
           <EmptyHeader>
             <EmptyMedia variant="icon">
-              <AudioLines aria-hidden="true" />
+              <HugeiconsIcon icon={AudioLinesIcon} aria-hidden="true" />
             </EmptyMedia>
             <EmptyTitle>
               {active ? 'Your narration is taking shape' : 'Ready for your first take'}
@@ -95,7 +154,6 @@ export function NarrationResult(): React.JSX.Element | null {
           </EmptyHeader>
         </Empty>
       )}
-      {active && output && <Separator />}
     </section>
   )
 }

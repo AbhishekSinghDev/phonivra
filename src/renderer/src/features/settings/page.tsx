@@ -1,5 +1,14 @@
 import { useState } from 'react'
-import { Copy, FolderOpen, HardDrive, KeyRound, RefreshCw, RotateCcw, Save } from 'lucide-react'
+import { HugeiconsIcon } from '@hugeicons/react'
+import {
+  CopyIcon,
+  FolderOpenIcon,
+  HardDriveIcon,
+  KeyRoundIcon,
+  RefreshCwIcon,
+  RotateCcwIcon,
+  SaveIcon
+} from '@hugeicons/core-free-icons'
 import { Link } from 'react-router'
 import { ScreenFrame, ScreenLoading, DetailValue } from '@/components/studio/screen-frame'
 import { Button } from '@/components/ui/button'
@@ -9,7 +18,6 @@ import { Field, FieldDescription, FieldGroup, FieldLabel } from '@/components/ui
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group'
 import { Separator } from '@/components/ui/separator'
-import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { CatalogSelect } from '@/components/studio/catalog-select'
 import { EssentialSettings, AdvancedSettings } from '@/components/studio/settings-fields'
@@ -40,28 +48,22 @@ export function SettingsPage(): React.JSX.Element {
   return (
     <ScreenFrame
       title="Settings"
-      description="Configure appearance, generation defaults and local resources."
-      actions={
-        <Button
-          variant="outline"
-          size="sm"
-          disabled={!dirty}
-          onClick={() => act('Save generation defaults', { type: 'preferences.save' })}
-        >
-          <Save data-icon="inline-start" aria-hidden="true" />
-          Save defaults
-        </Button>
+      description={
+        <>
+          Make this studio <span className="highlight">Feel like yours.</span> Set your defaults,
+          appearance and local resources.
+        </>
       }
     >
       <Tabs defaultValue="general" onValueChange={() => notify('Settings tab clicked')}>
-        <TabsList className="mb-6 flex h-auto flex-wrap justify-start">
+        <TabsList variant="line" className="mb-6 flex h-auto flex-wrap justify-start gap-5">
           <TabsTrigger value="general">General</TabsTrigger>
           <TabsTrigger value="generation">Generation</TabsTrigger>
           <TabsTrigger value="storage">Storage and downloads</TabsTrigger>
           <TabsTrigger value="diagnostics">Diagnostics</TabsTrigger>
         </TabsList>
         <TabsContent value="general">
-          <div className="flex max-w-3xl flex-col gap-8">
+          <div className="flex max-w-4xl flex-col gap-8 card-chai p-6 lg:p-8">
             <section className="flex flex-col gap-4" aria-labelledby="appearance-heading">
               <h2 id="appearance-heading" className="text-base font-semibold">
                 Appearance
@@ -153,7 +155,7 @@ export function SettingsPage(): React.JSX.Element {
           </div>
         </TabsContent>
         <TabsContent value="generation">
-          <div className="flex max-w-3xl flex-col gap-6">
+          <div className="flex max-w-4xl flex-col gap-6 card-chai p-6 lg:p-8">
             <div className="flex flex-wrap items-center justify-between gap-3">
               <div className="flex flex-col gap-1">
                 <h2 className="text-base font-semibold">Generation defaults</h2>
@@ -175,14 +177,14 @@ export function SettingsPage(): React.JSX.Element {
                 disabled={!dirty}
                 onClick={() => act('Save generation defaults', { type: 'preferences.save' })}
               >
-                <Save data-icon="inline-start" aria-hidden="true" />
+                <HugeiconsIcon icon={SaveIcon} data-icon="inline-start" aria-hidden="true" />
                 Save defaults
               </Button>
               <Button
                 variant="outline"
                 onClick={() => act('Restore generation defaults', { type: 'settings.restore' })}
               >
-                <RotateCcw data-icon="inline-start" aria-hidden="true" />
+                <HugeiconsIcon icon={RotateCcwIcon} data-icon="inline-start" aria-hidden="true" />
                 Restore factory defaults
               </Button>
             </div>
@@ -198,10 +200,14 @@ export function SettingsPage(): React.JSX.Element {
           </div>
         </TabsContent>
         <TabsContent value="storage">
-          <div className="flex max-w-3xl flex-col gap-8">
+          <div className="flex max-w-4xl flex-col gap-8 card-chai p-6 lg:p-8">
             <section aria-labelledby="model-storage-heading" className="flex flex-col gap-4">
               <div className="flex items-center gap-2">
-                <HardDrive className="size-4 text-muted-foreground" aria-hidden="true" />
+                <HugeiconsIcon
+                  icon={HardDriveIcon}
+                  className="size-4 text-muted-foreground"
+                  aria-hidden="true"
+                />
                 <h2 id="model-storage-heading" className="text-base font-semibold">
                   Model storage
                 </h2>
@@ -229,7 +235,11 @@ export function SettingsPage(): React.JSX.Element {
                   variant="outline"
                   onClick={() => act('Open model cache folder', { type: 'storage.open' })}
                 >
-                  <FolderOpen data-icon="inline-start" aria-hidden="true" />
+                  <HugeiconsIcon
+                    icon={FolderOpenIcon}
+                    data-icon="inline-start"
+                    aria-hidden="true"
+                  />
                   Open folder
                 </Button>
                 <Button size="sm" variant="link" asChild>
@@ -242,7 +252,11 @@ export function SettingsPage(): React.JSX.Element {
             <Separator />
             <section aria-labelledby="credential-heading" className="flex flex-col gap-4">
               <div className="flex items-center gap-2">
-                <KeyRound className="size-4 text-muted-foreground" aria-hidden="true" />
+                <HugeiconsIcon
+                  icon={KeyRoundIcon}
+                  className="size-4 text-muted-foreground"
+                  aria-hidden="true"
+                />
                 <h2 id="credential-heading" className="text-base font-semibold">
                   Hugging Face access
                 </h2>
@@ -322,7 +336,7 @@ export function SettingsPage(): React.JSX.Element {
           </div>
         </TabsContent>
         <TabsContent value="diagnostics">
-          <div className="flex max-w-3xl flex-col gap-6">
+          <div className="flex max-w-4xl flex-col gap-6 card-chai p-6 lg:p-8">
             <div className="flex flex-wrap items-center justify-between gap-4">
               <h2 className="text-base font-semibold">Local diagnostics</h2>
               <div className="flex gap-2">
@@ -331,7 +345,7 @@ export function SettingsPage(): React.JSX.Element {
                   variant="outline"
                   onClick={() => act('Refresh diagnostics', { type: 'diagnostics.refresh' })}
                 >
-                  <RefreshCw data-icon="inline-start" aria-hidden="true" />
+                  <HugeiconsIcon icon={RefreshCwIcon} data-icon="inline-start" aria-hidden="true" />
                   Refresh
                 </Button>
                 <Button
@@ -339,7 +353,7 @@ export function SettingsPage(): React.JSX.Element {
                   variant="outline"
                   onClick={() => act('Copy diagnostics', { type: 'diagnostics.copy' })}
                 >
-                  <Copy data-icon="inline-start" aria-hidden="true" />
+                  <HugeiconsIcon icon={CopyIcon} data-icon="inline-start" aria-hidden="true" />
                   Copy
                 </Button>
               </div>
@@ -363,13 +377,13 @@ export function SettingsPage(): React.JSX.Element {
               <DetailValue label="CPU thread policy">Up to 6 threads</DetailValue>
             </dl>
             {!snapshot.dependencies.ffmpeg && (
-              <Alert variant="destructive">
-                <AlertTitle>FFmpeg unavailable</AlertTitle>
-                <AlertDescription>
+              <div role="alert" className="flex flex-col gap-1 text-sm text-destructive">
+                <p className="font-medium">FFmpeg unavailable</p>
+                <div className="leading-relaxed">
                   ffmpeg is required for this output format or sample rate. Native 24 kHz WAV at 1×
                   speed remains available.
-                </AlertDescription>
-              </Alert>
+                </div>
+              </div>
             )}
             <Separator />
             <h3 className="text-sm font-medium">Recent activity</h3>
@@ -388,7 +402,7 @@ export function SettingsPage(): React.JSX.Element {
               className="self-start"
               onClick={() => act('Open logs folder', { type: 'logs.open' })}
             >
-              <FolderOpen data-icon="inline-start" aria-hidden="true" />
+              <HugeiconsIcon icon={FolderOpenIcon} data-icon="inline-start" aria-hidden="true" />
               Open logs
             </Button>
             <p className="text-xs leading-relaxed text-muted-foreground">

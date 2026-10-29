@@ -1,6 +1,12 @@
 import { useRef, useState } from 'react'
 import { ScrollArea } from '@/components/ui/scroll-area'
 
+interface WindowedListStyle extends React.CSSProperties {
+  '--list-height'?: string
+  '--row-top'?: string
+  '--row-height'?: string
+}
+
 // Fixed-height windowing keeps long catalogs, output lists and part details inexpensive.
 // Heights are calculated layout values, not an additional styling system.
 export function WindowedList<T>({
@@ -23,6 +29,7 @@ export function WindowedList<T>({
     0,
     Math.min(Math.floor(scrollTop / rowHeight) - 2, Math.max(0, items.length - visibleCount))
   )
+  const listStyle: WindowedListStyle = { '--list-height': `${items.length * rowHeight}px` }
   return (
     <ScrollArea
       ref={root}
@@ -58,28 +65,25 @@ export function WindowedList<T>({
       }}
       onScrollCapture={(event) => setScrollTop((event.target as HTMLElement).scrollTop)}
     >
-      <div
-        role="list"
-        aria-label={label}
-        style={{ height: items.length * rowHeight, position: 'relative' }}
-      >
-        {items.slice(start, start + visibleCount).map((item, offset) => (
-          <div
-            key={itemKey(item)}
-            role="listitem"
-            aria-posinset={start + offset + 1}
-            aria-setsize={items.length}
-            style={{
-              position: 'absolute',
-              top: (start + offset) * rowHeight,
-              height: rowHeight,
-              left: 0,
-              right: 0
-            }}
-          >
-            {renderItem(item, start + offset)}
-          </div>
-        ))}
+      <div role="list" aria-label={label} className="windowed-list" style={listStyle}>
+        {items.slice(start, start + visibleCount).map((item, offset) => {
+          const rowStyle: WindowedListStyle = {
+            '--row-top': `${(start + offset) * rowHeight}px`,
+            '--row-height': `${rowHeight}px`
+          }
+          return (
+            <div
+              key={itemKey(item)}
+              role="listitem"
+              aria-posinset={start + offset + 1}
+              aria-setsize={items.length}
+              className="windowed-list-row"
+              style={rowStyle}
+            >
+              {renderItem(item, start + offset)}
+            </div>
+          )
+        })}
       </div>
     </ScrollArea>
   )

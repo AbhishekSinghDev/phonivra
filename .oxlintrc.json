@@ -1,0 +1,175 @@
+{
+  "$schema": "./node_modules/oxlint/configuration_schema.json",
+  "plugins": ["typescript", "react"],
+  "jsPlugins": ["@shadcn/lint"],
+  "ignorePatterns": ["out/**", "dist/**", ".agents/**"],
+  "rules": {
+    "typescript/no-explicit-any": "error",
+    "shadcn/no-raw-colors": "error",
+    "shadcn/no-restyle": [
+      "error",
+      {
+        "allow": ["layout"],
+        "contracts": [
+          {
+            "pattern": "^Button$",
+            "allow": ["layout", "gap-3", "px-4", "rounded-full", "rounded-xl", "studio-primary"]
+          },
+          {
+            "pattern": "^Field$",
+            "allow": ["layout", "gap-0", "pb-4", "pt-6", "px-6"]
+          },
+          {
+            "pattern": "^FieldGroup$",
+            "allow": ["layout", "gap-0", "gap-5"]
+          },
+          {
+            "pattern": "^FieldLabel$",
+            "allow": ["layout", "text-muted-foreground", "text-xs"]
+          },
+          {
+            "pattern": "^Input$",
+            "allow": ["layout", "bg-card", "px-0", "rounded-xl"]
+          },
+          {
+            "pattern": "^Item$",
+            "allow": ["layout", "card-chai", "gap-5", "p-6"]
+          },
+          {
+            "pattern": "^ItemGroup$",
+            "allow": ["layout", "gap-4"]
+          },
+          {
+            "pattern": "^PopoverContent$",
+            "allow": ["layout", "p-0"]
+          },
+          {
+            "pattern": "^ScrollArea$",
+            "allow": ["layout", "pb-6", "pr-4", "px-6"]
+          },
+          {
+            "pattern": "^SelectTrigger$",
+            "allow": ["layout", "rounded-xl"]
+          },
+          {
+            "pattern": "^Sidebar$",
+            "allow": ["layout", "border-0", "studio-sidebar"]
+          },
+          {
+            "pattern": "^SidebarContent$",
+            "allow": ["layout", "gap-5", "group-data-[collapsible=icon]:px-2", "px-3", "py-1"]
+          },
+          {
+            "pattern": "^SidebarFooter$",
+            "allow": ["layout", "gap-4", "group-data-[collapsible=icon]:p-2", "p-3"]
+          },
+          {
+            "pattern": "^SidebarGroup$",
+            "allow": ["layout", "p-0"]
+          },
+          {
+            "pattern": "^SidebarGroupLabel$",
+            "allow": ["layout", "px-3", "text-xs"]
+          },
+          {
+            "pattern": "^SidebarHeader$",
+            "allow": [
+              "layout",
+              "gap-5",
+              "group-data-[collapsible=icon]:pb-4",
+              "group-data-[collapsible=icon]:px-2",
+              "pb-6",
+              "pt-4",
+              "px-4"
+            ]
+          },
+          {
+            "pattern": "^SidebarMenu$",
+            "allow": ["layout", "gap-1"]
+          },
+          {
+            "pattern": "^SidebarMenuButton$",
+            "allow": [
+              "layout",
+              "bg-card-fill",
+              "border",
+              "border-card-edge",
+              "group-data-[collapsible=icon]:p-2",
+              "px-3",
+              "py-3",
+              "rounded-xl",
+              "studio-nav"
+            ]
+          },
+          {
+            "pattern": "^SidebarProvider$",
+            "allow": ["layout", "studio-shell"]
+          },
+          {
+            "pattern": "^SidebarTrigger$",
+            "allow": ["layout", "studio-logo-trigger", "text-foreground"]
+          },
+          {
+            "pattern": "^Spinner$",
+            "allow": ["layout", "text-muted-foreground"]
+          },
+          {
+            "pattern": "^TabsContent$",
+            "allow": ["layout", "pt-4"]
+          },
+          {
+            "pattern": "^TabsList$",
+            "allow": ["layout", "gap-5"]
+          },
+          {
+            "pattern": "^Textarea$",
+            "allow": ["layout", "px-6", "py-5"]
+          }
+        ]
+      }
+    ],
+    "shadcn/no-arbitrary-values": "error",
+    "shadcn/no-inline-styles": "error",
+    "shadcn/no-unknown-classes": "error",
+    "shadcn/require-static-classes": "error"
+  },
+  "overrides": [
+    {
+      "files": ["src/renderer/src/**/*.{ts,tsx}"],
+      "rules": {
+        "react/rules-of-hooks": "error",
+        "react/exhaustive-deps": "error",
+        "no-restricted-imports": [
+          "error",
+          {
+            "patterns": [
+              "node:*",
+              "electron",
+              "@electron-toolkit/*",
+              "fs",
+              "path",
+              "os",
+              "child_process",
+              "http",
+              "https",
+              "net",
+              "tls",
+              "crypto",
+              "stream",
+              "buffer",
+              "process"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "files": ["src/renderer/src/components/ui/**"],
+      "rules": {
+        "shadcn/no-restyle": "off",
+        "shadcn/no-arbitrary-values": "off",
+        "shadcn/require-static-classes": "off"
+      }
+    }
+  ]
+}

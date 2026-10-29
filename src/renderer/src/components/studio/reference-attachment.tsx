@@ -1,7 +1,7 @@
-import { AudioLines, Mic, Upload, X } from 'lucide-react'
+import { HugeiconsIcon } from '@hugeicons/react'
+import { AudioLinesIcon, MicIcon, UploadIcon, XIcon } from '@hugeicons/core-free-icons'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
-import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
 import { Spinner } from '@/components/ui/spinner'
 import { act } from '@/lib/actions'
 import type { ReferenceState } from '../../../../shared/studio'
@@ -27,7 +27,11 @@ export function ReferenceAttachment({
           {busy ? (
             <Spinner aria-label={reference.status} />
           ) : (
-            <AudioLines className="size-5 text-muted-foreground" aria-hidden="true" />
+            <HugeiconsIcon
+              icon={AudioLinesIcon}
+              className="size-5 text-muted-foreground"
+              aria-hidden="true"
+            />
           )}
           <div className="min-w-0 flex-1">
             <p className="break-words text-sm font-medium">{reference.name}</p>
@@ -45,15 +49,15 @@ export function ReferenceAttachment({
             aria-label="Clear reference recording"
             onClick={() => act('Clear reference', { type: 'reference.clear' })}
           >
-            <X aria-hidden="true" />
+            <HugeiconsIcon icon={XIcon} aria-hidden="true" />
           </Button>
         </div>
       )}
       {(reference.status === 'error' || reference.status === 'missing') && (
-        <Alert variant="destructive">
-          <AlertTitle>Reference needs attention</AlertTitle>
-          <AlertDescription>{reference.message}</AlertDescription>
-        </Alert>
+        <div role="alert" className="flex flex-col gap-1 text-sm text-destructive">
+          <p className="font-medium">Reference needs attention</p>
+          <div className="leading-relaxed">{reference.message}</div>
+        </div>
       )}
       <div className="flex flex-wrap gap-2">
         <Button
@@ -62,7 +66,7 @@ export function ReferenceAttachment({
           disabled={busy}
           onClick={() => act('Upload reference', { type: 'reference.attach', source: 'upload' })}
         >
-          <Upload data-icon="inline-start" aria-hidden="true" />
+          <HugeiconsIcon icon={UploadIcon} data-icon="inline-start" aria-hidden="true" />
           Upload audio
         </Button>
         <Button
@@ -76,7 +80,7 @@ export function ReferenceAttachment({
             })
           }
         >
-          <Mic data-icon="inline-start" aria-hidden="true" />
+          <HugeiconsIcon icon={MicIcon} data-icon="inline-start" aria-hidden="true" />
           {reference.status === 'recording' ? 'Finish recording' : 'Record'}
         </Button>
       </div>

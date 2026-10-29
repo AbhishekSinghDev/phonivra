@@ -1,24 +1,34 @@
 import { useState } from 'react'
-import { Download, FileText, Files, FolderOpen, Layers3, Square, Upload, X } from 'lucide-react'
-import { Link } from 'react-router'
-import { ScreenFrame, ScreenLoading, DetailValue } from '@/components/studio/screen-frame'
+import { HugeiconsIcon } from '@hugeicons/react'
+import {
+  ArrowUpRightIcon,
+  DownloadIcon,
+  FileTextIcon,
+  FilesIcon,
+  FolderOpenIcon,
+  Layers01Icon,
+  SquareIcon,
+  UploadIcon,
+  XIcon
+} from '@hugeicons/core-free-icons'
+import { ScreenFrame, ScreenLoading } from '@/components/studio/screen-frame'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Field, FieldDescription, FieldGroup, FieldLabel } from '@/components/ui/field'
 import { Textarea } from '@/components/ui/textarea'
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group'
-import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
 import { Empty, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle } from '@/components/ui/empty'
 import { Separator } from '@/components/ui/separator'
-import { BooleanField } from '@/components/studio/settings-fields'
+import { BooleanField, EssentialSettings } from '@/components/studio/settings-fields'
 import { SettingsInspector } from '@/components/studio/settings-inspector'
+import { VoiceTools } from '@/components/studio/voice-tools'
 import { WindowedList } from '@/components/studio/windowed-list'
 import { JobStatus, activePhases } from '@/components/studio/job-status'
 import { OutputDetails } from '@/components/studio/output-details'
 import { act, editBatchText } from '@/lib/actions'
 import { notify } from '@/lib/notify'
 import { useStudioStore } from '@/stores/studio-store'
-import { resolvedModel, languages } from '../../../../shared/data/catalog'
+import { languages } from '../../../../shared/data/catalog'
 
 function BatchText({
   initial,
@@ -60,36 +70,29 @@ export default function BatchPage(): React.JSX.Element {
   const snapshot = useStudioStore((state) => state.snapshot)
   const [inspectOutput, setInspectOutput] = useState<string | null>(null)
   if (!snapshot) return <ScreenLoading />
-  const { batch, units, settings, job } = snapshot
+  const { batch, units, job } = snapshot
   const active = activePhases.has(job.phase)
   const batchActive = active && job.kind === 'batch'
   const completed = units.filter((unit) => unit.status === 'complete')
   const failed = units.filter((unit) => unit.status === 'error')
-  const model = resolvedModel(settings)
   const selectedOutput = units.some((unit) => unit.outputId === inspectOutput)
     ? snapshot.outputs.find((output) => output.id === inspectOutput)
     : undefined
-  const effectiveVoice =
-    snapshot.reference.status === 'ready'
-      ? snapshot.reference.name
-      : (snapshot.voices.find((voice) => voice.id === settings.voice)?.label ?? 'Unavailable')
   return (
     <ScreenFrame
-      title="Batch"
-      description="Turn script files or a chaptered script into separate narrations."
-      actions={
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={() => act('Open output folder', { type: 'folder.open' })}
-        >
-          <FolderOpen data-icon="inline-start" aria-hidden="true" />
-          Output folder
-        </Button>
+      title="Batch studio"
+      description={
+        <>
+          <span className="highlight">One voice. Every chapter.</span> Turn your scripts into a
+          collection of audio files.
+        </>
       }
     >
-      <div className="flex min-w-0 flex-col gap-8 xl:flex-row">
-        <section aria-label="Batch sources" className="flex min-w-0 flex-1 flex-col gap-5">
+      <div className="flex min-w-0 flex-col gap-6 md:flex-row">
+        <section
+          aria-label="Batch sources"
+          className="flex min-w-0 flex-1 flex-col gap-5 card-chai p-6"
+        >
           <ToggleGroup
             type="single"
             variant="outline"
@@ -98,15 +101,18 @@ export default function BatchPage(): React.JSX.Element {
             aria-label="Batch source"
             onValueChange={(value) => {
               if (value === 'files' || value === 'text')
-                void act('Change batch source', { type: 'batch.source', source: value })
+                void act('Change batch source', {
+                  type: 'batch.source',
+                  source: value
+                })
             }}
           >
             <ToggleGroupItem value="files">
-              <Files aria-hidden="true" />
+              <HugeiconsIcon icon={FilesIcon} aria-hidden="true" />
               Script files
             </ToggleGroupItem>
             <ToggleGroupItem value="text">
-              <FileText aria-hidden="true" />
+              <HugeiconsIcon icon={FileTextIcon} aria-hidden="true" />
               Pasted text
             </ToggleGroupItem>
           </ToggleGroup>
@@ -120,7 +126,7 @@ export default function BatchPage(): React.JSX.Element {
                   disabled={active}
                   onClick={() => act('Add batch scripts', { type: 'batch.import' })}
                 >
-                  <Upload data-icon="inline-start" aria-hidden="true" />
+                  <HugeiconsIcon icon={UploadIcon} data-icon="inline-start" aria-hidden="true" />
                   Add scripts
                 </Button>
               </div>
@@ -132,7 +138,8 @@ export default function BatchPage(): React.JSX.Element {
                   rowHeight={72}
                   renderItem={(file) => (
                     <div className="flex h-full items-center gap-3">
-                      <FileText
+                      <HugeiconsIcon
+                        icon={FileTextIcon}
                         className="size-4 shrink-0 text-muted-foreground"
                         aria-hidden="true"
                       />
@@ -149,10 +156,13 @@ export default function BatchPage(): React.JSX.Element {
                         aria-label={`Remove ${file.name}`}
                         disabled={active}
                         onClick={() =>
-                          act('Remove batch script', { type: 'batch.remove-file', id: file.id })
+                          act('Remove batch script', {
+                            type: 'batch.remove-file',
+                            id: file.id
+                          })
                         }
                       >
-                        <X aria-hidden="true" />
+                        <HugeiconsIcon icon={XIcon} aria-hidden="true" />
                       </Button>
                     </div>
                   )}
@@ -161,7 +171,7 @@ export default function BatchPage(): React.JSX.Element {
                 <Empty>
                   <EmptyHeader>
                     <EmptyMedia variant="icon">
-                      <Files aria-hidden="true" />
+                      <HugeiconsIcon icon={FilesIcon} aria-hidden="true" />
                     </EmptyMedia>
                     <EmptyTitle>Add scripts to start a batch</EmptyTitle>
                     <EmptyDescription>
@@ -172,11 +182,7 @@ export default function BatchPage(): React.JSX.Element {
               )}
             </>
           ) : (
-            <BatchText
-              key={`${snapshot.scenario}:${snapshot.documentRevision}`}
-              initial={batch.text}
-              disabled={active}
-            />
+            <BatchText key={snapshot.documentRevision} initial={batch.text} disabled={active} />
           )}
           <BooleanField
             label="Split into chapters"
@@ -197,53 +203,44 @@ export default function BatchPage(): React.JSX.Element {
             disabled={active}
             onClick={() => act('Review batch items', { type: 'batch.prepare' })}
           >
-            <Layers3 data-icon="inline-start" aria-hidden="true" />
+            <HugeiconsIcon icon={Layers01Icon} data-icon="inline-start" aria-hidden="true" />
             Review items
           </Button>
         </section>
         <aside
-          className="flex min-w-0 flex-col gap-5 xl:w-80 xl:shrink-0"
+          className="card-chai flex min-w-0 flex-col gap-5 p-5 md:w-72 md:shrink-0 xl:w-80"
           aria-label="Shared batch settings"
         >
           <h2 className="text-base font-semibold">Shared narration settings</h2>
           <p className="text-sm text-muted-foreground">
             Every item uses the same voice, model, cleanup and export settings.
           </p>
-          <dl className="grid grid-cols-2 gap-5">
-            <DetailValue label="Voice">{effectiveVoice}</DetailValue>
-            <DetailValue label="Model">
-              {settings.model === 'auto' ? 'Auto' : model.label}
-            </DetailValue>
-            <DetailValue label="Language">
-              {settings.auto_detect
-                ? 'Detected per item'
-                : languages.find((language) => language.code === settings.language)?.label}
-            </DetailValue>
-            <DetailValue label="Output">
-              {settings.format.toUpperCase()} · {settings.speed}×
-            </DetailValue>
-          </dl>
+          <EssentialSettings />
+          <VoiceTools />
           <SettingsInspector />
-          <Button variant="link" size="sm" className="self-start" asChild>
-            <Link to="/narrate" onClick={() => notify('Change shared narration settings clicked')}>
-              Change voice, language and output
-            </Link>
-          </Button>
           <p className="text-xs text-muted-foreground">
             No per-chapter overrides. Auto-detection applies separately to each item.
           </p>
         </aside>
       </div>
       <Separator />
-      <section aria-labelledby="batch-plan-heading" className="flex flex-col gap-4">
+      <section aria-labelledby="batch-plan-heading" className="flex flex-col gap-4 card-chai p-6">
         <div className="flex flex-wrap items-center justify-between gap-4">
           <h2 id="batch-plan-heading" className="text-base font-semibold">
             {completed.length || failed.length ? 'Batch results' : 'Items to generate'}
           </h2>
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2">
             <Badge variant="secondary">{units.length} items</Badge>
             {completed.length > 0 && <Badge variant="outline">{completed.length} finished</Badge>}
             {failed.length > 0 && <Badge variant="destructive">{failed.length} failed</Badge>}
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => act('Open output folder', { type: 'folder.open' })}
+            >
+              <HugeiconsIcon icon={FolderOpenIcon} data-icon="inline-start" aria-hidden="true" />
+              Output folder
+            </Button>
           </div>
         </div>
         {units.length ? (
@@ -291,11 +288,11 @@ export default function BatchPage(): React.JSX.Element {
           </Empty>
         )}
         {failed.length > 0 && (
-          <Alert variant="destructive">
-            <AlertTitle>
+          <div role="alert" className="flex flex-col gap-1 text-sm text-destructive">
+            <p className="font-medium">
               {completed.length ? 'Some items need attention' : 'No batch items finished.'}
-            </AlertTitle>
-            <AlertDescription>
+            </p>
+            <div className="leading-relaxed">
               {failed.slice(0, 3).map((unit) => (
                 <p key={unit.id}>
                   {unit.title}: {unit.message}
@@ -304,8 +301,8 @@ export default function BatchPage(): React.JSX.Element {
               {failed.length > 3 && (
                 <p>{failed.length - 3} more errors are listed with their items.</p>
               )}
-            </AlertDescription>
-          </Alert>
+            </div>
+          </div>
         )}
         {batchActive || (job.kind === 'batch' && job.phase !== 'idle') ? (
           <JobStatus job={job} />
@@ -320,10 +317,14 @@ export default function BatchPage(): React.JSX.Element {
               variant="outline"
               disabled={!completed.length}
               onClick={() =>
-                act('Save completed batch', { type: 'output.export', id: 'batch', format: 'zip' })
+                act('Save completed batch', {
+                  type: 'output.export',
+                  id: 'batch',
+                  format: 'zip'
+                })
               }
             >
-              <Download data-icon="inline-start" aria-hidden="true" />
+              <HugeiconsIcon icon={DownloadIcon} data-icon="inline-start" aria-hidden="true" />
               Save completed items
             </Button>
             {batchActive ? (
@@ -332,16 +333,17 @@ export default function BatchPage(): React.JSX.Element {
                 disabled={job.phase === 'stopping'}
                 onClick={() => act('Stop batch', { type: 'job.cancel' })}
               >
-                <Square data-icon="inline-start" aria-hidden="true" />
+                <HugeiconsIcon icon={SquareIcon} data-icon="inline-start" aria-hidden="true" />
                 {job.phase === 'stopping' ? 'Stopping…' : 'Stop batch'}
               </Button>
             ) : (
               <Button
+                className="studio-primary"
                 disabled={active || !batch.reviewed || !units.length}
                 onClick={() => act('Generate batch', { type: 'batch.start' })}
               >
-                <Layers3 data-icon="inline-start" aria-hidden="true" />
                 Generate batch
+                <HugeiconsIcon icon={ArrowUpRightIcon} data-icon="inline-end" aria-hidden="true" />
               </Button>
             )}
           </div>

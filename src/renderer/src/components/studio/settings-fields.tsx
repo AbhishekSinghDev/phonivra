@@ -10,6 +10,14 @@ import {
   FieldSet
 } from '@/components/ui/field'
 import { Input } from '@/components/ui/input'
+import {
+  ParameterSlider,
+  ParameterSliderHeader,
+  ParameterSliderLabel,
+  ParameterSliderInput,
+  ParameterSliderControl,
+  ParameterSliderDescription
+} from '@/components/ui/parameter-slider'
 import { Switch } from '@/components/ui/switch'
 import {
   Accordion,
@@ -17,7 +25,6 @@ import {
   AccordionItem,
   AccordionTrigger
 } from '@/components/ui/accordion'
-import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
 import {
   Select,
   SelectContent,
@@ -30,12 +37,13 @@ import { Badge } from '@/components/ui/badge'
 import { CatalogSelect } from './catalog-select'
 import {
   cleanupSettings,
+  defaultSettings,
   languages,
   models,
   numericSettings,
   resolvedModel
 } from '../../../../shared/data/catalog'
-import type { GenerationSettings, NumericSetting, SamplingKey } from '../../../../shared/studio'
+import type { NumericSetting, SamplingKey } from '../../../../shared/studio'
 import { updateSettings } from '@/lib/actions'
 import { useStudioStore } from '@/stores/studio-store'
 
@@ -51,6 +59,28 @@ export function NumericField({
   onChange: (value: number) => void
 }): React.JSX.Element {
   const id = useId()
+  if (field.key !== 'seed') {
+    return (
+      <ParameterSlider
+        key={`${field.key}:${value}`}
+        defaultValue={value}
+        min={field.min}
+        max={field.max}
+        step={field.step}
+        resetValue={defaultSettings[field.key]}
+        unit={field.unit?.trim()}
+        disabled={disabled}
+        onValueCommitted={onChange}
+      >
+        <ParameterSliderHeader>
+          <ParameterSliderLabel>{field.label}</ParameterSliderLabel>
+          <ParameterSliderInput />
+        </ParameterSliderHeader>
+        <ParameterSliderControl />
+        <ParameterSliderDescription>{field.description}</ParameterSliderDescription>
+      </ParameterSlider>
+    )
+  }
   const invalid = !Number.isFinite(value) || value < field.min || value > field.max
   return (
     <Field data-disabled={disabled} data-invalid={invalid}>
@@ -113,26 +143,39 @@ export function BooleanField({
   )
 }
 export function EssentialSettings(): React.JSX.Element | null {
+  const id = useId()
   const settings = useStudioStore((s) => s.snapshot?.settings)
   const voices = useStudioStore((s) => s.snapshot?.voices)
+  const reference = useStudioStore((s) => s.snapshot?.reference)
   if (!settings || !voices) return null
   const effective = resolvedModel(settings)
   const language = languages.find((l) => l.code === settings.language)
   const compatible = effective.languages.includes(settings.language)
   return (
-    <FieldGroup>
-      <CatalogSelect
-        label="Voice"
-        value={settings.voice}
-        options={voices.map((v) => ({
-          value: v.id,
-          label: v.label,
-          description: v.kind,
-          disabled: !v.available
-        }))}
-        onChange={(value) => updateSettings('voice', value)}
-      />
-      <div className="grid gap-4 lg:grid-cols-2">
+    <FieldGroup className="gap-5">
+      <div className="grid gap-4 sm:grid-cols-2 md:grid-cols-1">
+        <CatalogSelect
+          label="Voice"
+          value={settings.voice}
+          options={voices.map((v) => ({
+            value: v.id,
+            label: v.label,
+            description:
+              v.kind === 'custom'
+                ? 'Saved voice'
+                : v.kind === 'external'
+                  ? 'Recording'
+                  : 'Built-in voice',
+            disabled: !v.available
+          }))}
+          description={
+            reference?.status === 'ready'
+              ? `Using recording: ${reference.name}. Clear it in Voice reference to use a preset.`
+              : undefined
+          }
+          disabled={reference?.status === 'ready'}
+          onChange={(value) => updateSettings('voice', value)}
+        />
         <CatalogSelect
           label="Language"
           value={settings.language}
@@ -141,44 +184,41 @@ export function EssentialSettings(): React.JSX.Element | null {
             label: l.label,
             description: l.nativeLabel
           }))}
-          onChange={(value) => updateSettings('language', value as GenerationSettings['language'])}
-        />
-        <CatalogSelect
-          label="Model"
-          value={settings.model}
-          options={models.map((m) => ({ value: m.id, label: m.label, description: m.parameters }))}
-          onChange={(value) => updateSettings('model', value as GenerationSettings['model'])}
+          description={
+            settings.auto_detect
+              ? 'Auto-detection is on. This language may change when you generate.'
+              : undefined
+          }
+          onChange={(value) => {
+            const language = languages.find((item) => item.code === value)
+            if (language) updateSettings('language', language.code)
+          }}
         />
       </div>
-      <BooleanField
-        label="Detect language"
-        description="Heuristic detection; one language per narration. Does not translate."
-        checked={settings.auto_detect}
-        onChange={(value) => updateSettings('auto_detect', value)}
-      />
       {!compatible && (
-        <Alert variant="destructive">
-          <AlertTitle>Choose a compatible model</AlertTitle>
-          <AlertDescription>
-            {effective.label} is English-only. Choose Multilingual V3 or Auto for {language?.label}.
-          </AlertDescription>
-        </Alert>
+        <div role="alert" className="flex flex-col gap-1 text-sm text-destructive">
+          <p className="font-medium">Choose a compatible model</p>
+          <div className="leading-relaxed">
+            {effective.label} is English-only. Choose Multilingual V3 or Auto in Advanced settings
+            for {language?.label}.
+          </div>
+        </div>
       )}
-      {settings.model === 'auto' && (
-        <p className="text-sm text-muted-foreground">
-          Uses {effective.label} for {language?.label}.
-        </p>
-      )}
-      <div className="grid gap-4 lg:grid-cols-2">
+      <div className="grid grid-cols-2 gap-4">
         <Field>
-          <FieldLabel htmlFor="output-format">Format</FieldLabel>
+          <FieldLabel htmlFor={`${id}-format`}>Format</FieldLabel>
           <Select
             value={settings.format}
             onValueChange={(value) =>
-              updateSettings('format', value as GenerationSettings['format'])
+              (value === 'wav' ||
+                value === 'mp3' ||
+                value === 'flac' ||
+                value === 'ogg' ||
+                value === 'm4a') &&
+              updateSettings('format', value)
             }
           >
-            <SelectTrigger id="output-format" className="w-full">
+            <SelectTrigger id={`${id}-format`} className="h-10 w-full rounded-xl">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
@@ -192,11 +232,25 @@ export function EssentialSettings(): React.JSX.Element | null {
             </SelectContent>
           </Select>
         </Field>
-        <NumericField
-          field={numericSettings[0]}
-          value={settings.speed}
-          onChange={(value) => updateSettings('speed', value)}
-        />
+        <ParameterSlider
+          key={settings.speed}
+          defaultValue={settings.speed}
+          min={0.5}
+          max={2}
+          step={0.05}
+          unit="×"
+          resetValue={1}
+          onValueCommitted={(value) => updateSettings('speed', value)}
+        >
+          <ParameterSliderHeader>
+            <ParameterSliderLabel>Speed</ParameterSliderLabel>
+            <ParameterSliderInput />
+          </ParameterSliderHeader>
+          <ParameterSliderControl />
+          <ParameterSliderDescription className="sr-only">
+            Changes pacing while preserving pitch. Choose 0.5 to 2 times speed.
+          </ParameterSliderDescription>
+        </ParameterSlider>
       </div>
     </FieldGroup>
   )
@@ -207,6 +261,33 @@ export function AdvancedSettings(): React.JSX.Element | null {
   const effective = resolvedModel(settings)
   return (
     <Accordion type="multiple" className="w-full">
+      <AccordionItem value="model">
+        <AccordionTrigger>Model and language detection</AccordionTrigger>
+        <AccordionContent>
+          <FieldGroup>
+            <CatalogSelect
+              label="Speech model"
+              value={settings.model}
+              options={models.map((model) => ({
+                value: model.id,
+                label: model.label,
+                description: model.description
+              }))}
+              onChange={(value) => {
+                const model = models.find((item) => item.id === value)
+                if (model) updateSettings('model', model.id)
+              }}
+              description={`Currently uses ${effective.label}. Auto chooses a model for your language.`}
+            />
+            <BooleanField
+              label="Detect language automatically"
+              description="Detect one language per narration, or separately for each batch item. Review short or mixed-language scripts; detection is approximate."
+              checked={settings.auto_detect}
+              onChange={(value) => updateSettings('auto_detect', value)}
+            />
+          </FieldGroup>
+        </AccordionContent>
+      </AccordionItem>
       <AccordionItem value="preparation">
         <AccordionTrigger>Text preparation</AccordionTrigger>
         <AccordionContent>

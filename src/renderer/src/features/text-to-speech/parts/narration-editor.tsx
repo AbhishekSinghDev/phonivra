@@ -1,5 +1,15 @@
 import { memo, useDeferredValue, useEffect, useMemo, useRef, useState } from 'react'
-import { FileUp, Plus, Timer } from 'lucide-react'
+import { HugeiconsIcon } from '@hugeicons/react'
+import {
+  ChevronDownIcon,
+  FileCodeIcon,
+  FileUpIcon,
+  FolderOpenIcon,
+  PlusIcon,
+  RotateCcwIcon,
+  SaveIcon,
+  TimerIcon
+} from '@hugeicons/core-free-icons'
 import { Button } from '@/components/ui/button'
 import { Field, FieldDescription, FieldGroup, FieldLabel } from '@/components/ui/field'
 import { Textarea } from '@/components/ui/textarea'
@@ -13,7 +23,6 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger
 } from '@/components/ui/dropdown-menu'
-import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
 import { act, editScript, flushScriptDraft, updateSettings } from '@/lib/actions'
 import { notify } from '@/lib/notify'
 import { reactionTags } from '../../../../../shared/data/catalog'
@@ -61,38 +70,84 @@ export const NarrationEditor = memo(function NarrationEditor({
     })
   }
   return (
-    <section aria-label="Narration script" className="flex min-w-0 flex-col gap-4">
-      <FieldGroup className="gap-4">
-        <Field>
-          <FieldLabel htmlFor="narrate-title">Title</FieldLabel>
-          <Input
-            id="narrate-title"
-            value={title}
-            maxLength={120}
-            placeholder="Untitled narration"
-            onChange={(event) => updateSettings('title', event.target.value)}
-          />
+    <section aria-label="Narration script" className="script-document flex min-w-0 flex-col">
+      <FieldGroup className="gap-0">
+        <Field className="px-6 pt-6 pb-4">
+          <FieldLabel className="sr-only" htmlFor="narrate-title">
+            Title
+          </FieldLabel>
+          <div className="flex min-w-0 items-center gap-3">
+            <Input
+              className="h-10 min-w-0 flex-1 px-0"
+              id="narrate-title"
+              value={title}
+              maxLength={120}
+              placeholder="Untitled narration"
+              onChange={(event) => updateSettings('title', event.target.value)}
+            />
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" size="sm" onClick={() => notify('Project menu clicked')}>
+                  <HugeiconsIcon icon={FileCodeIcon} data-icon="inline-start" aria-hidden="true" />
+                  Project
+                  <HugeiconsIcon icon={ChevronDownIcon} data-icon="inline-end" aria-hidden="true" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuGroup>
+                  <DropdownMenuItem onSelect={() => act('Save project', { type: 'project.save' })}>
+                    <HugeiconsIcon icon={SaveIcon} aria-hidden="true" />
+                    Save project
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onSelect={() => act('Open project', { type: 'project.open' })}>
+                    <HugeiconsIcon icon={FolderOpenIcon} aria-hidden="true" />
+                    Open project JSON
+                  </DropdownMenuItem>
+                </DropdownMenuGroup>
+                <DropdownMenuSeparator />
+                <DropdownMenuGroup>
+                  <DropdownMenuItem
+                    onSelect={() =>
+                      act('Restore generation defaults', { type: 'settings.restore' })
+                    }
+                  >
+                    <HugeiconsIcon icon={RotateCcwIcon} aria-hidden="true" />
+                    Restore generation defaults
+                  </DropdownMenuItem>
+                </DropdownMenuGroup>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </div>
         </Field>
-        <Field className="gap-3">
-          <div className="flex flex-wrap items-center justify-between gap-2">
-            <FieldLabel htmlFor="narrate-script">Script</FieldLabel>
+        <Field className="gap-0">
+          <div className="flex flex-wrap items-center justify-between gap-2 border-y border-border/60 px-6 py-2">
+            <FieldLabel className="text-xs text-muted-foreground" htmlFor="narrate-script">
+              Your script
+            </FieldLabel>
             <div className="flex items-center gap-1">
               <Button
                 size="sm"
                 variant="ghost"
                 onClick={() => act('Import script', { type: 'script.import' })}
               >
-                <FileUp data-icon="inline-start" aria-hidden="true" />
+                <HugeiconsIcon icon={FileUpIcon} data-icon="inline-start" aria-hidden="true" />
                 Import script
               </Button>
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <Button size="sm" variant="ghost" onClick={() => notify('Insert menu clicked')}>
-                    <Plus data-icon="inline-start" aria-hidden="true" />
-                    Insert
+                    <HugeiconsIcon icon={PlusIcon} data-icon="inline-start" aria-hidden="true" />
+                    Script tools
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end">
+                  <DropdownMenuGroup>
+                    <DropdownMenuItem onSelect={inspect}>
+                      <HugeiconsIcon icon={TimerIcon} aria-hidden="true" />
+                      Inspect text and parts
+                    </DropdownMenuItem>
+                  </DropdownMenuGroup>
+                  <DropdownMenuSeparator />
                   <DropdownMenuGroup>
                     <DropdownMenuLabel>Pauses</DropdownMenuLabel>
                     <DropdownMenuItem onSelect={() => insert('[pause]')}>
@@ -126,7 +181,7 @@ export const NarrationEditor = memo(function NarrationEditor({
             variant="script"
             id="narrate-script"
             value={draft}
-            className="h-96 resize-y"
+            className="h-72 min-h-64 resize-y px-6 py-5 xl:h-80"
             placeholder="Write or paste the words you want to bring to life…"
             aria-describedby="narrate-script-help"
             onChange={(event) => changeText(event.target.value)}
@@ -145,32 +200,20 @@ export const NarrationEditor = memo(function NarrationEditor({
               }
             }}
           />
-          <div className="flex flex-wrap items-center justify-between gap-3">
+          <div className="flex flex-wrap items-center justify-between gap-3 px-6 py-4">
             <p className="text-xs tabular-nums text-muted-foreground">
               {draft.length.toLocaleString()} characters <span aria-hidden="true">·</span>{' '}
               {words.toLocaleString()} words
             </p>
-            <Button variant="ghost" size="sm" onClick={inspect}>
-              <Timer data-icon="inline-start" aria-hidden="true" />
-              Inspect text and parts
-            </Button>
+            <span className="text-xs text-muted-foreground">
+              {window.api.platform === 'darwin' ? '⌘' : 'Ctrl'} + Enter to generate
+            </span>
           </div>
-          <FieldDescription id="narrate-script-help">
+          <FieldDescription className="sr-only" id="narrate-script-help">
             Cleanup applies to generation. Your original script stays here.
           </FieldDescription>
         </Field>
       </FieldGroup>
-      <div className="flex flex-wrap items-center gap-3 text-xs text-muted-foreground">
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <Button variant="link" size="sm" onClick={() => insert('[pause]')}>
-              Add a pause
-            </Button>
-          </TooltipTrigger>
-          <TooltipContent>Use [pause] or [pause=1.5]. SSML is not supported.</TooltipContent>
-        </Tooltip>
-        <span>Generate with {window.api.platform === 'darwin' ? '⌘' : 'Ctrl'} + Enter</span>
-      </div>
     </section>
   )
 })

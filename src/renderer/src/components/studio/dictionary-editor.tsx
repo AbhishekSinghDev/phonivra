@@ -1,5 +1,6 @@
 import { useId, useState } from 'react'
-import { BookOpenText } from 'lucide-react'
+import { HugeiconsIcon } from '@hugeicons/react'
+import { BookOpenTextIcon } from '@hugeicons/core-free-icons'
 import { Button } from '@/components/ui/button'
 import {
   Dialog,
@@ -33,7 +34,7 @@ export function DictionaryEditor(): React.JSX.Element | null {
           size="sm"
           onClick={() => notify('Pronunciation dictionary clicked')}
         >
-          <BookOpenText data-icon="inline-start" aria-hidden="true" />
+          <HugeiconsIcon icon={BookOpenTextIcon} data-icon="inline-start" aria-hidden="true" />
           Pronunciation dictionary
         </Button>
       </DialogTrigger>

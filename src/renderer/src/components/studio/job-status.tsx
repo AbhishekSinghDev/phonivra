@@ -1,11 +1,18 @@
-import { Check, CircleAlert, Clock3, Download, Square, Waves } from 'lucide-react'
-import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
+import { HugeiconsIcon } from '@hugeicons/react'
+import type { IconSvgElement } from '@hugeicons/react'
+import {
+  CheckIcon,
+  AlertCircleIcon,
+  TimeIcon,
+  DownloadIcon,
+  SquareIcon
+} from '@hugeicons/core-free-icons'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Progress } from '@/components/ui/progress'
 import { Spinner } from '@/components/ui/spinner'
 import { act } from '@/lib/actions'
-import type { JobState } from '../../../../shared/studio'
+import type { JobPhase, JobState } from '../../../../shared/studio'
 
 export const activePhases = new Set([
   'queued',
@@ -18,6 +25,15 @@ export const activePhases = new Set([
   'companions',
   'stopping'
 ])
+
+// Phases that render an icon rather than the inline spinner.
+const settledIcons: Partial<Record<JobPhase, IconSvgElement>> = {
+  idle: TimeIcon,
+  stopped: TimeIcon,
+  error: AlertCircleIcon,
+  complete: CheckIcon,
+  downloading: DownloadIcon
+}
 export function formatTime(seconds: number): string {
   return `${Math.floor(seconds / 60)}:${String(Math.floor(seconds % 60)).padStart(2, '0')}`
 }
@@ -29,20 +45,18 @@ export function JobStatus({
   compact?: boolean
 }): React.JSX.Element {
   const active = activePhases.has(job.phase)
-  const Icon =
-    job.phase === 'error'
-      ? CircleAlert
-      : job.phase === 'complete'
-        ? Check
-        : job.phase === 'downloading'
-          ? Download
-          : job.phase === 'idle' || job.phase === 'stopped'
-            ? Clock3
-            : Spinner
   return (
     <section aria-label="Current job" className="flex min-w-0 flex-col gap-4">
       <div className="flex items-start gap-3">
-        <Icon className="mt-1 size-4 shrink-0 text-muted-foreground" aria-hidden="true" />
+        {active ? (
+          <Spinner className="mt-1 size-4 shrink-0 text-muted-foreground" />
+        ) : (
+          <HugeiconsIcon
+            icon={settledIcons[job.phase] ?? TimeIcon}
+            className="mt-1 size-4 shrink-0 text-muted-foreground"
+            aria-hidden="true"
+          />
+        )}
         <div className="flex min-w-0 flex-1 flex-col gap-1">
           <p className="text-sm font-medium">
             {compact
@@ -78,13 +92,9 @@ export function JobStatus({
         </>
       )}
       {job.streaming === 'ready' && !compact && (
-        <Alert>
-          <Waves aria-hidden="true" />
-          <AlertTitle>Streaming preview available</AlertTitle>
-          <AlertDescription>
-            Provisional audio. Final mastering and export are still running.
-          </AlertDescription>
-        </Alert>
+        <p className="text-sm leading-relaxed text-muted-foreground">
+          Streaming preview available. Audio is provisional while mastering and export continue.
+        </p>
       )}
       {active && (
         <Button
@@ -94,7 +104,7 @@ export function JobStatus({
           disabled={job.phase === 'stopping'}
           onClick={() => act('Stop generation', { type: 'job.cancel' })}
         >
-          <Square data-icon="inline-start" aria-hidden="true" />
+          <HugeiconsIcon icon={SquareIcon} data-icon="inline-start" aria-hidden="true" />
           {job.phase === 'stopping' ? 'Stopping…' : 'Stop'}
         </Button>
       )}

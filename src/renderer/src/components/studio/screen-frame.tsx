@@ -1,43 +1,6 @@
-import { lazy, Suspense, type ReactNode } from 'react'
-import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
-import { Button } from '@/components/ui/button'
+import { type ReactNode } from 'react'
 import { Skeleton } from '@/components/ui/skeleton'
-import { act } from '@/lib/actions'
-import { useStudioStore } from '@/stores/studio-store'
-const ReviewTools = import.meta.env.DEV
-  ? lazy(() => import('@/features/interface-reference/review-tools'))
-  : null
 
-export function StatusFeedback(): React.JSX.Element | null {
-  const error = useStudioStore((state) => state.error)
-  const status = useStudioStore(
-    (state) =>
-      state.snapshot?.status ??
-      (state.snapshot?.job.phase === 'error' ? state.snapshot.job.message : null)
-  )
-  const failed = useStudioStore(
-    (state) => state.snapshot?.statusIsError || state.snapshot?.job.phase === 'error'
-  )
-  if (!status && !error) return null
-  return (
-    <Alert variant={error || failed ? 'destructive' : 'default'}>
-      <AlertTitle>{error || failed ? 'Action needs attention' : 'Status'}</AlertTitle>
-      <AlertDescription>
-        <span>{error ?? status}</span>
-        <Button
-          variant="link"
-          size="sm"
-          onClick={() => {
-            useStudioStore.getState().setError(null)
-            void act('Dismiss status', { type: 'status.dismiss' })
-          }}
-        >
-          Dismiss
-        </Button>
-      </AlertDescription>
-    </Alert>
-  )
-}
 export function ScreenFrame({
   title,
   description,
@@ -45,27 +8,19 @@ export function ScreenFrame({
   children
 }: {
   title: string
-  description: string
+  description: ReactNode
   actions?: ReactNode
   children: ReactNode
 }): React.JSX.Element {
   return (
-    <div className="mx-auto flex w-full max-w-7xl flex-col gap-6 pb-6">
-      <header className="flex flex-wrap items-center justify-between gap-4">
-        <div className="flex flex-col gap-2">
-          <h1 className="text-2xl font-semibold tracking-tight">{title}</h1>
-          <p className="max-w-2xl text-sm text-muted-foreground">{description}</p>
+    <div className="studio-page mx-auto flex w-full max-w-6xl flex-col gap-8 pb-6">
+      <header className="flex flex-col items-center gap-5 text-center">
+        <div className="flex flex-col items-center gap-3">
+          <h1 className="text-2xl font-medium tracking-tight sm:text-3xl">{title}</h1>
+          <p className="max-w-2xl text-base leading-relaxed text-muted-foreground">{description}</p>
         </div>
-        <div className="flex flex-wrap items-center gap-2">
-          {ReviewTools && (
-            <Suspense fallback={null}>
-              <ReviewTools screen={title} />
-            </Suspense>
-          )}
-          {actions}
-        </div>
+        {actions && <div className="flex flex-wrap items-center gap-2">{actions}</div>}
       </header>
-      <StatusFeedback />
       {children}
     </div>
   )

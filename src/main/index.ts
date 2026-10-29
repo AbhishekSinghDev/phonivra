@@ -1,4 +1,7 @@
+/// <reference types="electron-vite/node" />
+
 import { MockStudio } from './mock-studio'
+import appIcon from '../../public/logos/phonivra-icon.png?asset'
 import { validateCommand } from '../shared/validation'
 import { app, BrowserWindow, ipcMain, nativeTheme, shell } from 'electron'
 import { readFileSync, writeFileSync, mkdirSync } from 'node:fs'
@@ -51,6 +54,7 @@ function createWindow(): BrowserWindow {
   const colors = nativeColors[nativeTheme.shouldUseDarkColors ? 'dark' : 'light']
   const window = new BrowserWindow({
     title: 'Phonivra',
+    icon: appIcon,
     width: 1200,
     height: 800,
     minWidth: 960,
@@ -123,7 +127,7 @@ void app.whenReady().then(() => {
     const saved: unknown = JSON.parse(readFileSync(themePath(), 'utf8'))
     if (isTheme(saved)) nativeTheme.themeSource = saved
   } catch {
-    nativeTheme.themeSource = 'system'
+    nativeTheme.themeSource = 'dark'
   }
 
   function assertTrusted(event: Electron.IpcMainInvokeEvent): void {
@@ -146,25 +150,6 @@ void app.whenReady().then(() => {
     assertTrusted(event)
     if (!validateCommand(command)) throw new Error('Invalid studio request')
     return studio.dispatch(command)
-  })
-  function assertReview(event: Electron.IpcMainInvokeEvent): void {
-    assertTrusted(event)
-    if (app.isPackaged || !process.env.ELECTRON_RENDERER_URL)
-      throw new Error('Review tools are development-only')
-  }
-  ipcMain.handle('review:scenario', (event, id: unknown) => {
-    assertReview(event)
-    if (typeof id !== 'string') throw new Error('Invalid scenario')
-    return studio.selectScenario(id)
-  })
-  ipcMain.handle('review:advance', (event) => {
-    assertReview(event)
-    return studio.advance()
-  })
-  ipcMain.handle('review:pause', (event, paused: unknown) => {
-    assertReview(event)
-    if (typeof paused !== 'boolean') throw new Error('Invalid pause state')
-    return studio.setPaused(paused)
   })
 
   ipcMain.handle('theme:get', (event) => {

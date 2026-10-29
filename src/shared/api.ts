@@ -1,4 +1,4 @@
-import type { ReviewAPI, StudioAPI } from './studio'
+import type { StudioAPI } from './studio'
 
 export type Theme = 'light' | 'dark' | 'system'
 
@@ -11,7 +11,6 @@ export type WindowAction = 'minimize' | 'maximize' | 'close'
 
 export interface DesktopAPI {
   readonly studio: StudioAPI
-  readonly review: ReviewAPI
 
   readonly platform: 'darwin' | 'win32' | 'linux'
   readonly window: {

@@ -1,5 +1,6 @@
 import { useId, useState } from 'react'
-import { Trash2 } from 'lucide-react'
+import { HugeiconsIcon } from '@hugeicons/react'
+import { TrashIcon } from '@hugeicons/core-free-icons'
 import {
   AlertDialog,
   AlertDialogAction,
@@ -38,7 +39,7 @@ export function ConfirmDelete({
           disabled={disabled}
           onClick={() => notify('Review deletion clicked')}
         >
-          <Trash2 data-icon="inline-start" aria-hidden="true" />
+          <HugeiconsIcon icon={TrashIcon} data-icon="inline-start" aria-hidden="true" />
           Delete
         </Button>
       </AlertDialogTrigger>

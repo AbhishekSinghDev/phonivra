@@ -29,7 +29,13 @@ export type LanguageCode =
 export type OutputFormat = 'wav' | 'mp3' | 'flac' | 'ogg' | 'm4a'
 export type AudioFileFormat = OutputFormat | 'opus' | 'aiff' | 'aif'
 export type SamplingKey =
-  'temperature' | 'top_p' | 'top_k' | 'min_p' | 'repetition_penalty' | 'exaggeration' | 'cfg_weight'
+  | 'temperature'
+  | 'top_p'
+  | 'top_k'
+  | 'min_p'
+  | 'repetition_penalty'
+  | 'exaggeration'
+  | 'cfg_weight'
 export interface ModelDefinition {
   id: ModelId
   engine: EngineId
@@ -188,21 +194,6 @@ export interface BatchUnit {
   message?: string
   outputId?: string
 }
-export interface FixtureDefinition {
-  id: string
-  section: string
-  label: string
-  description: string
-  phase: JobPhase
-  reference?: ReferenceState['status']
-  backendWork?: boolean
-  legacy?: boolean
-}
-export interface MessageDefinition {
-  id: string
-  section: string
-  message: string
-}
 export interface ScriptInspection {
   status: 'ready' | 'loading' | 'error'
   preparedText: string
@@ -218,7 +209,6 @@ export interface PreviewResult {
 }
 export interface StudioSnapshot {
   revision: number
-  scenario: string
   settings: GenerationSettings
   script: string
   documentRevision: number
@@ -288,10 +278,4 @@ export interface StudioAPI {
   getSnapshot: () => Promise<StudioSnapshot>
   dispatch: (command: StudioCommand) => Promise<StudioSnapshot>
   onChange: (callback: (snapshot: StudioSnapshot) => void) => () => void
-}
-export interface ReviewAPI {
-  selectScenario: (id: string) => Promise<StudioSnapshot>
-  advance: () => Promise<StudioSnapshot>
-  setPaused: (paused: boolean) => Promise<StudioSnapshot>
-  reset: () => Promise<StudioSnapshot>
 }

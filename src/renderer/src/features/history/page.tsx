@@ -1,6 +1,15 @@
+import { useState } from 'react'
 import { Link } from 'react-router'
 import { notify } from '@/lib/notify'
-import { FileAudio, FolderOpen, RefreshCw, ShieldCheck } from 'lucide-react'
+import { HugeiconsIcon } from '@hugeicons/react'
+import {
+  FileAudioIcon,
+  FolderOpenIcon,
+  RefreshCwIcon,
+  ShieldCheckIcon
+} from '@hugeicons/core-free-icons'
+import { Input } from '@/components/ui/input'
+import { Field, FieldLabel } from '@/components/ui/field'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import {
@@ -11,7 +20,6 @@ import {
   EmptyMedia,
   EmptyTitle
 } from '@/components/ui/empty'
-import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
 import { Separator } from '@/components/ui/separator'
 import { ScreenFrame, ScreenLoading } from '@/components/studio/screen-frame'
 import { WindowedList } from '@/components/studio/windowed-list'
@@ -22,13 +30,22 @@ import { useStudioStore } from '@/stores/studio-store'
 
 export function HistoryPage(): React.JSX.Element {
   const snapshot = useStudioStore((state) => state.snapshot)
+  const [query, setQuery] = useState('')
   if (!snapshot) return <ScreenLoading />
+  const filtered = snapshot.outputs.filter((output) =>
+    output.title.toLowerCase().includes(query.toLowerCase())
+  )
   const selected = snapshot.outputs.find((output) => output.id === snapshot.selectedOutput)
   const watermark = snapshot.watermark?.outputId === selected?.id ? snapshot.watermark : null
   return (
     <ScreenFrame
-      title="Library"
-      description="Listen to saved narrations and export their audio and companion files."
+      title="Audio library"
+      description={
+        <>
+          Keep your <span className="highlight">Best takes close.</span> Listen, export and pick up
+          where you left off.
+        </>
+      }
       actions={
         <>
           <Button
@@ -36,7 +53,7 @@ export function HistoryPage(): React.JSX.Element {
             size="sm"
             onClick={() => act('Refresh library', { type: 'outputs.refresh' })}
           >
-            <RefreshCw data-icon="inline-start" aria-hidden="true" />
+            <HugeiconsIcon icon={RefreshCwIcon} data-icon="inline-start" aria-hidden="true" />
             Refresh
           </Button>
           <Button
@@ -44,7 +61,7 @@ export function HistoryPage(): React.JSX.Element {
             size="sm"
             onClick={() => act('Open output folder', { type: 'folder.open' })}
           >
-            <FolderOpen data-icon="inline-start" aria-hidden="true" />
+            <HugeiconsIcon icon={FolderOpenIcon} data-icon="inline-start" aria-hidden="true" />
             Open folder
           </Button>
         </>
@@ -54,7 +71,7 @@ export function HistoryPage(): React.JSX.Element {
         <Empty>
           <EmptyHeader>
             <EmptyMedia variant="icon">
-              <FileAudio aria-hidden="true" />
+              <HugeiconsIcon icon={FileAudioIcon} aria-hidden="true" />
             </EmptyMedia>
             <EmptyTitle>No saved narrations yet.</EmptyTitle>
             <EmptyDescription>
@@ -70,46 +87,71 @@ export function HistoryPage(): React.JSX.Element {
           </EmptyContent>
         </Empty>
       ) : (
-        <div className="flex min-w-0 flex-col gap-8 xl:flex-row">
+        <div className="flex min-w-0 flex-col gap-6 lg:flex-row">
           <section
             aria-label="Saved narrations"
-            className="flex min-w-0 flex-col gap-4 xl:w-80 xl:shrink-0"
+            className="flex min-w-0 flex-col gap-4 lg:w-72 lg:shrink-0"
           >
             <div className="flex items-center justify-between gap-4">
               <h2 className="text-sm font-semibold">Saved narrations</h2>
               <span className="text-xs text-muted-foreground">{snapshot.outputs.length} files</span>
             </div>
-            <p className="text-xs text-muted-foreground">
-              Newest first. Refresh after changes in the output folder.
-            </p>
-            <WindowedList
-              items={snapshot.outputs}
-              itemKey={(output) => output.id}
-              label="Saved narrations"
-              rowHeight={88}
-              renderItem={(output) => (
-                <Button
-                  variant={selected?.id === output.id ? 'secondary' : 'ghost'}
-                  className="h-full w-full justify-start"
-                  onClick={() => act('Select narration', { type: 'output.select', id: output.id })}
-                >
-                  <FileAudio data-icon="inline-start" aria-hidden="true" />
-                  <span className="flex min-w-0 flex-1 flex-col items-start gap-1">
-                    <span className="w-full truncate text-left">{output.title}</span>
-                    <span className="text-xs text-muted-foreground">
-                      {formatTime(output.duration)} · {output.format.toUpperCase()}
-                      {output.external ? ' · external audio' : ''}
+            <Field>
+              <FieldLabel className="sr-only" htmlFor="library-search">
+                Search narrations
+              </FieldLabel>
+              <Input
+                id="library-search"
+                className="h-11 rounded-xl bg-card"
+                placeholder="Search your audio…"
+                value={query}
+                onChange={(event) => setQuery(event.target.value)}
+              />
+            </Field>
+            {filtered.length ? (
+              <WindowedList
+                items={filtered}
+                itemKey={(output) => output.id}
+                label="Saved narrations"
+                rowHeight={64}
+                renderItem={(output) => (
+                  <Button
+                    variant={selected?.id === output.id ? 'secondary' : 'ghost'}
+                    className="h-full w-full justify-start gap-3 rounded-xl px-4"
+                    onClick={() =>
+                      act('Select narration', { type: 'output.select', id: output.id })
+                    }
+                  >
+                    <span className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-secondary text-secondary-foreground">
+                      <HugeiconsIcon icon={FileAudioIcon} className="size-5" aria-hidden="true" />
                     </span>
-                  </span>
-                </Button>
-              )}
-            />
+                    <span className="flex min-w-0 flex-1 flex-col items-start gap-1">
+                      <span className="w-full truncate text-left">{output.title}</span>
+                      <span className="text-xs text-muted-foreground">
+                        {formatTime(output.duration)} · {output.format.toUpperCase()}
+                        {output.external ? ' · external audio' : ''}
+                      </span>
+                    </span>
+                  </Button>
+                )}
+              />
+            ) : (
+              <Empty>
+                <EmptyHeader>
+                  <EmptyTitle>No matching audio</EmptyTitle>
+                  <EmptyDescription>Try another title.</EmptyDescription>
+                </EmptyHeader>
+              </Empty>
+            )}
             <p className="text-xs leading-relaxed text-muted-foreground">
               The audio and SRT, VTT, TXT and JSON companions are managed together when deleting a
               narration.
             </p>
           </section>
-          <section aria-label="Selected narration" className="flex min-w-0 flex-1 flex-col gap-6">
+          <section
+            aria-label="Selected narration"
+            className="flex min-w-0 flex-1 flex-col gap-6 card-chai p-6"
+          >
             {selected ? (
               <>
                 <div className="flex flex-wrap items-start justify-between gap-3">
@@ -120,26 +162,24 @@ export function HistoryPage(): React.JSX.Element {
                 <Separator />
                 <section aria-label="Watermark result" className="flex flex-col gap-3">
                   <div className="flex items-center gap-2">
-                    <ShieldCheck className="size-4 text-muted-foreground" aria-hidden="true" />
+                    <HugeiconsIcon
+                      icon={ShieldCheckIcon}
+                      className="size-4 text-muted-foreground"
+                      aria-hidden="true"
+                    />
                     <h3 className="text-sm font-medium">Perth watermark</h3>
                   </div>
                   {watermark ? (
-                    <Alert
-                      variant={
-                        watermark.state === 'error' || watermark.state === 'unavailable'
-                          ? 'destructive'
-                          : 'default'
-                      }
-                    >
-                      <AlertTitle>
+                    <div role="status" className="flex flex-col gap-1 text-sm">
+                      <p className="font-medium">
                         {watermark.state === 'detected'
                           ? 'Watermark detected'
                           : watermark.state === 'not-detected'
                             ? 'Watermark not detected'
                             : 'Watermark check unavailable'}
-                      </AlertTitle>
-                      <AlertDescription>{watermark.message}</AlertDescription>
-                    </Alert>
+                      </p>
+                      <p className="text-muted-foreground">{watermark.message}</p>
+                    </div>
                   ) : (
                     <p className="text-sm text-muted-foreground">
                       Use Verify watermark to check the selected file. A label in generation
@@ -156,7 +196,7 @@ export function HistoryPage(): React.JSX.Element {
               <Empty>
                 <EmptyHeader>
                   <EmptyMedia variant="icon">
-                    <FileAudio aria-hidden="true" />
+                    <HugeiconsIcon icon={FileAudioIcon} aria-hidden="true" />
                   </EmptyMedia>
                   <EmptyTitle>Select a saved narration.</EmptyTitle>
                   <EmptyDescription>

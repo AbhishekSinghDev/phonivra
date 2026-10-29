@@ -1,49 +1,34 @@
 import { lazy, Suspense, useCallback, useState } from 'react'
+import { HugeiconsIcon } from '@hugeicons/react'
 import {
-  AudioLines,
-  ChevronDown,
-  FileJson,
-  FolderOpen,
-  RotateCcw,
-  Save,
-  Square
-} from 'lucide-react'
+  AudioLinesIcon,
+  ArrowUpRightIcon,
+  HeadphonesIcon,
+  PlayIcon,
+  ShieldCheckIcon,
+  SquareIcon
+} from '@hugeicons/core-free-icons'
 import { Link } from 'react-router'
 import { Button } from '@/components/ui/button'
-import { Badge } from '@/components/ui/badge'
+import { Card } from '@/components/ui/card'
 import { Separator } from '@/components/ui/separator'
-import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
 import { Skeleton } from '@/components/ui/skeleton'
 import { Spinner } from '@/components/ui/spinner'
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuGroup,
-  DropdownMenuItem,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger
-} from '@/components/ui/dropdown-menu'
 import { SettingsInspector } from '@/components/studio/settings-inspector'
-import { DictionaryEditor } from '@/components/studio/dictionary-editor'
 import { activePhases } from '@/components/studio/job-status'
-import { BooleanField } from '@/components/studio/settings-fields'
+import { EssentialSettings } from '@/components/studio/settings-fields'
 import { NarrationEditor } from './parts/narration-editor'
-import { NarrationSetup } from './parts/narration-setup'
 import { NarrationNotices } from './parts/narration-notices'
 import { NarrationResult } from './parts/narration-result'
-import { VoiceTools } from './parts/voice-tools'
-import { act, updateSettings } from '@/lib/actions'
+import { VoiceTools } from '@/components/studio/voice-tools'
+import { act } from '@/lib/actions'
 import { notify } from '@/lib/notify'
 import { useStudioStore } from '@/stores/studio-store'
-import { languages, resolvedModel } from '../../../../shared/data/catalog'
+import { resolvedModel } from '../../../../shared/data/catalog'
 
 const TextInspection = lazy(() => import('./parts/text-inspection'))
-const NarrateReviewTools = import.meta.env.DEV
-  ? lazy(() => import('./parts/narrate-review-tools'))
-  : null
 export function TextToSpeechPage(): React.JSX.Element {
   const snapshot = useStudioStore((state) => state.snapshot)
-  const error = useStudioStore((state) => state.error)
   const [inspectionOpen, setInspectionOpen] = useState(false)
   const inspect = useCallback(() => {
     setInspectionOpen(true)
@@ -65,193 +50,130 @@ export function TextToSpeechPage(): React.JSX.Element {
         <Skeleton className="h-96 w-full" />
       </section>
     )
-  const { settings, reference, job, device, dependencies } = snapshot
+  const { settings, job, dependencies } = snapshot
   const active = activePhases.has(job.phase)
   const model = resolvedModel(settings)
-  const language = languages.find((item) => item.code === settings.language)
-  const selectedVoice = snapshot.voices.find((item) => item.id === settings.voice)
-  const voiceLabel =
-    reference.status === 'ready' ? reference.name : (selectedVoice?.label ?? 'Choose a voice')
+  const selectedVoice = snapshot.voices.find((voice) => voice.id === settings.voice)
+  const voiceName =
+    snapshot.reference.status === 'ready'
+      ? snapshot.reference.name
+      : (selectedVoice?.label ?? 'Choose a voice')
   const installation = snapshot.models.find((item) => item.id === model.id)
   return (
-    <div className="mx-auto flex w-full max-w-7xl flex-col gap-6 pb-4">
-      <header className="flex flex-wrap items-center justify-between gap-4">
-        <div className="flex items-center gap-3">
-          <h1 className="text-2xl font-semibold tracking-tight">Narrate</h1>
-          <Badge variant="outline">Local</Badge>
-        </div>
-        <div className="flex flex-wrap items-center gap-2">
-          {NarrateReviewTools && (
-            <Suspense fallback={null}>
-              <NarrateReviewTools />
-            </Suspense>
-          )}
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="outline" size="sm" onClick={() => notify('Project menu clicked')}>
-                <FileJson data-icon="inline-start" aria-hidden="true" />
-                Project
-                <ChevronDown data-icon="inline-end" aria-hidden="true" />
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
-              <DropdownMenuGroup>
-                <DropdownMenuItem onSelect={() => act('Save project', { type: 'project.save' })}>
-                  <Save aria-hidden="true" />
-                  Save project
-                </DropdownMenuItem>
-                <DropdownMenuItem onSelect={() => act('Open project', { type: 'project.open' })}>
-                  <FolderOpen aria-hidden="true" />
-                  Open project JSON
-                </DropdownMenuItem>
-              </DropdownMenuGroup>
-              <DropdownMenuSeparator />
-              <DropdownMenuGroup>
-                <DropdownMenuItem
-                  onSelect={() => act('Restore generation defaults', { type: 'settings.restore' })}
-                >
-                  <RotateCcw aria-hidden="true" />
-                  Restore generation defaults
-                </DropdownMenuItem>
-              </DropdownMenuGroup>
-            </DropdownMenuContent>
-          </DropdownMenu>
+    <div className="studio-page mx-auto flex w-full max-w-6xl flex-col gap-7 pb-6">
+      <header className="flex flex-col items-center gap-4 text-center">
+        <div className="flex flex-col items-center gap-3">
+          <div className="flex flex-col items-center gap-3">
+            <h1 className="text-2xl font-medium tracking-tight sm:text-3xl">Text to speech</h1>
+          </div>
+          <p className="text-base leading-relaxed text-muted-foreground">
+            Your words, <span className="highlight">Brought to life.</span> Write a script and make
+            it sound like you.
+          </p>
         </div>
       </header>
-      {(error || snapshot.status) && (
-        <Alert variant={error || snapshot.statusIsError ? 'destructive' : 'default'}>
-          <AlertTitle>{error ? 'Action could not finish' : 'Narration status'}</AlertTitle>
-          <AlertDescription>
-            <span>{error ?? snapshot.status}</span>
-            <Button
-              variant="link"
-              size="sm"
-              onClick={() => {
-                useStudioStore.getState().setError(null)
-                void act('Dismiss status', { type: 'status.dismiss' })
-              }}
-            >
-              Dismiss
-            </Button>
-          </AlertDescription>
-        </Alert>
-      )}
-      <div className="xl:hidden">
-        <NarrationSetup compact />
-      </div>
-      <div className="flex min-w-0 flex-col gap-8 xl:flex-row">
-        <div className="flex min-w-0 flex-1 flex-col gap-5">
-          <NarrationEditor
-            key={`${snapshot.scenario}:${snapshot.documentRevision}`}
-            initialText={snapshot.script}
-            title={settings.title}
-            reactions={model.reactions}
-            inspect={inspect}
-            onGenerate={generate}
-          />
-          <div className="flex flex-wrap items-center gap-2">
-            <SettingsInspector />
-            <VoiceTools />
-            <DictionaryEditor />
-          </div>
+      <div className="flex min-w-0 flex-col items-start gap-6 md:flex-row xl:gap-8">
+        <div className="flex min-w-0 flex-1 flex-col gap-4 self-stretch">
+          <Card className="min-w-0 flex-1 overflow-visible">
+            <NarrationEditor
+              key={snapshot.documentRevision}
+              initialText={snapshot.script}
+              title={settings.title}
+              reactions={model.reactions}
+              inspect={inspect}
+              onGenerate={generate}
+            />
+            <div className="sticky bottom-0 z-10 mt-auto flex flex-wrap items-center justify-between gap-3 rounded-b-2xl border-t border-border bg-card px-6 py-4">
+              <span className="flex items-center gap-2 text-xs text-muted-foreground">
+                <HugeiconsIcon icon={ShieldCheckIcon} className="size-4" aria-hidden="true" />
+                Generated on your device
+              </span>
+              {active ? (
+                <Button
+                  size="lg"
+                  variant="secondary"
+                  disabled={job.phase === 'stopping'}
+                  onClick={() => act('Stop generation', { type: 'job.cancel' })}
+                >
+                  {job.phase === 'stopping' ? (
+                    <Spinner data-icon="inline-start" aria-hidden="true" />
+                  ) : (
+                    <HugeiconsIcon icon={SquareIcon} data-icon="inline-start" aria-hidden="true" />
+                  )}
+                  {job.phase === 'stopping' ? 'Stopping…' : 'Stop'}
+                </Button>
+              ) : (
+                <Button className="studio-primary" size="lg" onClick={generate}>
+                  {installation?.status === 'not-installed' && dependencies.online
+                    ? 'Download and generate'
+                    : 'Generate narration'}
+                  <HugeiconsIcon
+                    icon={ArrowUpRightIcon}
+                    data-icon="inline-end"
+                    aria-hidden="true"
+                  />
+                </Button>
+              )}
+            </div>
+          </Card>
           <NarrationNotices />
+          {active && (
+            <p className="text-sm text-muted-foreground" role="status">
+              {job.message} Changes apply to your next take.
+            </p>
+          )}
         </div>
         <aside
-          aria-label="Narration settings"
-          className="hidden w-80 shrink-0 flex-col gap-5 xl:flex"
+          aria-labelledby="narration-voice-heading"
+          className="card-chai flex w-full min-w-0 flex-col gap-5 p-5 md:w-72 md:shrink-0 xl:w-80"
         >
-          <div className="flex items-center justify-between gap-2">
-            <h2 className="text-sm font-semibold">Narration settings</h2>
-            <Badge variant="secondary">
-              {model.id === 'multilingual' ? '23 languages' : 'English'}
-            </Badge>
+          <div className="flex items-center justify-between">
+            <h2 id="narration-voice-heading" className="text-sm font-semibold">
+              Voice settings
+            </h2>
+            <HugeiconsIcon
+              icon={HeadphonesIcon}
+              className="size-4 text-muted-foreground"
+              aria-hidden="true"
+            />
           </div>
-          <NarrationSetup />
-          <Separator />
-          <div className="flex flex-col gap-2">
-            <p className="text-xs font-medium">Effective voice</p>
-            <p className="break-words text-sm">{voiceLabel}</p>
-            {reference.status === 'ready' && (
-              <p className="text-xs text-muted-foreground">
-                Reference recording overrides your selected preset.
+          <div className="flex items-center gap-3 card-chai p-4">
+            <div className="flex size-11 shrink-0 items-center justify-center rounded-full border border-card-edge bg-card-fill text-highlight">
+              <HugeiconsIcon icon={AudioLinesIcon} className="size-5" aria-hidden="true" />
+            </div>
+            <div className="flex min-w-0 flex-1 flex-col gap-1">
+              <p className="truncate text-sm font-semibold" title={voiceName}>
+                {voiceName}
               </p>
-            )}
-            <p className="text-xs text-muted-foreground">
-              {model.label} · {language?.label}
-            </p>
+              <p className="text-xs text-muted-foreground">
+                {snapshot.reference.status === 'ready'
+                  ? 'Reference recording'
+                  : selectedVoice?.kind === 'custom'
+                    ? 'Your saved voice'
+                    : 'Built-in voice'}
+              </p>
+            </div>
+            <Button
+              variant="ghost"
+              size="icon"
+              aria-label="Preview voice"
+              disabled={active}
+              onClick={() => act('Generate voice preview', { type: 'job.start', kind: 'preview' })}
+            >
+              <HugeiconsIcon icon={PlayIcon} aria-hidden="true" />
+            </Button>
           </div>
+          <EssentialSettings />
+          <VoiceTools />
+          <Separator />
+          <SettingsInspector />
           {installation?.status === 'not-installed' && (
             <p className="text-xs leading-relaxed text-muted-foreground">
               This model downloads before first use. Installed models work offline.
             </p>
           )}
-          <p className="text-xs text-muted-foreground">
-            {device.label}
-            {device.vram && ` · ${device.vram}`}
-          </p>
         </aside>
       </div>
-      <div className="xl:hidden">
-        <BooleanField
-          label="Detect language"
-          description="One language per narration; detection is approximate."
-          checked={settings.auto_detect}
-          onChange={(value) => updateSettings('auto_detect', value)}
-        />
-        {reference.status === 'ready' && (
-          <p className="mt-3 text-xs text-muted-foreground">
-            Using reference: {reference.name}. Clear it in Voice reference to use the preset.
-          </p>
-        )}
-      </div>
-      <div className="sticky bottom-0 flex flex-wrap items-center justify-between gap-4 rounded-lg border border-border bg-background p-4 shadow-sm">
-        <div className="flex min-w-0 flex-1 flex-col gap-1">
-          <p className="truncate text-sm font-medium">
-            {active
-              ? job.message
-              : job.phase === 'complete'
-                ? 'Your take is ready'
-                : 'Ready to narrate'}
-          </p>
-          <p className="text-xs text-muted-foreground">
-            {active
-              ? `Current job uses its starting settings. Changes apply to the next take.`
-              : `${model.label} · ${settings.format.toUpperCase()} · ${settings.speed}× speed`}
-          </p>
-        </div>
-        <div className="flex items-center gap-2">
-          <Button
-            variant="ghost"
-            size="sm"
-            disabled={active}
-            onClick={() => act('Generate voice preview', { type: 'job.start', kind: 'preview' })}
-          >
-            Voice preview
-          </Button>
-          {active ? (
-            <Button
-              variant="outline"
-              disabled={job.phase === 'stopping'}
-              onClick={() => act('Stop generation', { type: 'job.cancel' })}
-            >
-              {job.phase === 'stopping' ? (
-                <Spinner data-icon="inline-start" aria-hidden="true" />
-              ) : (
-                <Square data-icon="inline-start" aria-hidden="true" />
-              )}
-              {job.phase === 'stopping' ? 'Stopping…' : 'Stop'}
-            </Button>
-          ) : (
-            <Button onClick={generate}>
-              <AudioLines data-icon="inline-start" aria-hidden="true" />
-              {installation?.status === 'not-installed' && dependencies.online
-                ? 'Download and generate'
-                : 'Generate narration'}
-            </Button>
-          )}
-        </div>
-      </div>
-      <Separator />
       <NarrationResult />
       <p className="text-xs leading-relaxed text-muted-foreground">
         Audio is generated on this device and includes the Resemble Perth watermark.{' '}
