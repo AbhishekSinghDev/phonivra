@@ -1,3 +1,151 @@
 @import '@phonivra/ui/globals.css';
 
 @source '../';
+
+html {
+  scroll-behavior: smooth;
+  scrollbar-color: var(--muted-foreground) var(--background);
+}
+
+section[id] {
+  scroll-margin-top: 7rem;
+}
+
+::selection {
+  color: var(--background);
+  background: var(--highlight);
+}
+
+[data-site-backdrop] {
+  mask-image: linear-gradient(to bottom, black 65%, transparent);
+}
+
+a:focus-visible {
+  outline: 2px solid var(--ring);
+  outline-offset: 5px;
+  border-radius: var(--radius-sm);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* The supplied screenshots include a 48px title bar at 1920px width. */
+[data-studio-capture] {
+  margin-top: -2.5%;
+}
+
+[data-desktop-scene] {
+  container-type: inline-size;
+  aspect-ratio: 16 / 11;
+}
+
+[data-desktop-menu] {
+  height: 3cqw;
+  padding-inline: 1.6cqw;
+  font-size: 1cqw;
+}
+
+[data-desktop-menu] > div {
+  gap: 1.4cqw;
+}
+
+[data-desktop-menu] svg {
+  width: 1.4cqw;
+  height: 1.4cqw;
+}
+
+[data-desktop-window] {
+  width: 86%;
+  margin: 3.5cqw auto 0;
+  border-radius: 1cqw;
+}
+
+[data-desktop-titlebar] {
+  height: 3.2cqw;
+  font-size: 1cqw;
+}
+
+[data-desktop-traffic] {
+  left: 1.15cqw;
+  gap: 0.6cqw;
+}
+
+[data-desktop-traffic] > span {
+  width: 0.95cqw;
+  height: 0.95cqw;
+}
+
+[data-desktop-dock] {
+  bottom: 1.3cqw;
+  gap: 1cqw;
+  padding: 0.7cqw 0.9cqw 1cqw;
+  border-radius: 1.6cqw;
+}
+
+[data-dock-app] {
+  width: 4.8cqw;
+  height: 4.8cqw;
+}
+
+[data-dock-app='Phonivra'] img {
+  border-radius: 1cqw;
+}
+
+[data-dock-app='Trash'] {
+  margin-left: 0.7cqw;
+}
+
+[data-dock-active] {
+  bottom: -0.6cqw;
+  width: 0.3cqw;
+  height: 0.3cqw;
+}
+
+[data-feature-visual] {
+  min-height: 27rem;
+}
+
+/* These offsets frame details in the owner's unmodified 1920 by 1080 captures. */
+[data-feature-crop='narration'] {
+  width: 100%;
+  aspect-ratio: 800 / 573;
+}
+
+[data-feature-crop='narration'] img {
+  position: absolute;
+  width: 240%;
+  max-width: none;
+  height: auto;
+  left: -63.5%;
+  top: -40.49%;
+}
+
+[data-feature-crop='voices'] {
+  width: 13rem;
+  aspect-ratio: 320 / 552;
+}
+
+[data-feature-crop='voices'] img {
+  position: absolute;
+  width: 600%;
+  max-width: none;
+  height: auto;
+  left: -418.75%;
+  top: -42.03%;
+}
+
+@media (min-width: 64rem) {
+  [data-feature-visual] {
+    height: 29rem;
+  }
+}

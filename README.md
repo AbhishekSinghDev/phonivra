@@ -64,7 +64,7 @@ are simulated; a running local speech engine is not implemented yet.
 ```text
 apps/
   desktop/       Electron + React application (package: phonivra)
-  website/       Next.js App Router scaffold (package: @phonivra/website)
+  website/       Next.js App Router marketing site (package: @phonivra/website)
 packages/
   ui/            Shared shadcn components, styles and support code (@phonivra/ui)
 ```
@@ -140,8 +140,9 @@ Both app CSS entry points import `@phonivra/ui/globals.css`. Tailwind v4 scannin
 the shared stylesheet scans `packages/ui/src`, and each app entry scans its own source tree.
 Keep appearance changes in `packages/ui/src/styles/globals.css`; the desktop entry adds only
 its document scrolling/selection constraints. Desktop theme persistence stays in Electron;
-the website uses shadcn's recommended, app-owned `next-themes` adapter to follow the browser
-system preference and apply the shared `.dark` class before hydration.
+the website uses an app-owned `next-themes` adapter, defaults to dark, and applies the
+shared `.dark` class before hydration. Its theme toggle supports light and dark. The website
+preloads the existing shared Manrope font with `next/font/local`; all fonts remain locally bundled.
 Shared components receive theme values through props rather than importing desktop APIs.
 All components are client boundaries so Next.js server pages can import them safely.
 
@@ -166,8 +167,81 @@ Then run `pnpm install`, `pnpm typecheck`, `pnpm lint`, `pnpm format:check`, and
 from the repository root. Turbo tracks UI source changes through dependency tasks, so app
 builds and checks cannot reuse stale cache entries after a UI change.
 
-The website remains a single minimal page and inherits the desktop's shared visual theme.
-Electron assets, preload, IPC contracts, and persisted app identity remain in `apps/desktop`.
+The website is a single marketing page with a tabbed feature showcase, planned model and
+language coverage, release availability, and an FAQ. The feature showcase uses shared Radix
+Tabs to explore Narration, Voices, Batch, Library and Models. Narration and Voices frame
+details from the owner-supplied screenshots using CSS; the other panels use workflow
+illustrations. Feature copy identifies simulated and planned behavior. All product claims come from `docs/FEATURES.md`.
+The route composes section components inside `SiteShell`; it contains no inline section markup.
+`HeroSection`, the desktop menu/window/Dock, individual feature visuals and the bento cards
+have focused components. `SiteLogo` shares header/footer branding, and `site-links.ts` owns
+the repository and author URLs. Navigation uses Next.js `Link`, including page anchors.
+GitHub and author links open a new tab with `noopener noreferrer`.
+The bento section highlights planned pronunciation preparation, on-device processing,
+chapter review and audio companion files. It uses the shared Card components, with
+informational diagrams rather than interactive app controls.
+The following three-step workflow section uses an editorial split layout inspired by
+Cofounder's how-it-works reference on Vibrant. Script, settings and export examples stay
+visible without additional interactions, and the copy identifies engine-dependent steps
+as planned.
+The technology foundation section adapts Mobbin's central integration composition from
+Vibrant into a static diagram of Chatterbox, Hugging Face and FFmpeg. These are planned
+engine dependencies, not third-party app connectors or partnership claims.
+The download area uses Tella's centered CTA composition from Vibrant, adapted to the shared
+Phonivra artwork and neutral theme. It directs visitors to the release FAQ and lists installer
+unavailability for each platform without inventing download links or dates.
+The FAQ adapts Foglamp's minimal split composition from Vibrant with the shared accordion.
+The release-status answer is open initially; the original factual answers remain intact.
+The footer follows Foglamp's quiet multi-column reference on Vibrant, with the existing
+Phonivra logo, page anchors and development status. It includes no assumed legal, social
+or contact links. The owner-provided GitHub repository and personal website are linked in
+the footer, with a "Built with love by Abhishek" credit. The registry block was inspected but not applied because its bundled
+theme would replace shared styles.
+Page order is hero, how it works, workspace features, feature details, technology foundations,
+models and languages, FAQ, availability, then footer. This introduces the workflow before
+its details and answers release questions before the closing availability section.
+The separate local-studio text strip has been removed to avoid repeating the newer sections.
+The model catalog retains all four model comparisons and 23 languages, with a compact
+comparison beside the language index on desktop, and a stacked layout on smaller screens.
+The page explicitly identifies the simulated engine and file flows; there are no download
+links until installers exist. Shared components and tokens come from `@phonivra/ui`. Product
+screenshots in `apps/website/public/images` are owner-supplied 1920×1080 captures in both
+themes. They are served as lossless PNGs inside a decorative macOS-style desktop scene,
+with an original generated wallpaper, menu bar, floating app window and Dock. The window
+visually clips the original 48px title bar without modifying the supplied image files.
+The surrounding OS controls and Dock are illustrative and non-interactive. Refresh
+both captures when the desktop interface changes. The background and
+favicon are copies of existing desktop artwork.
+
+Before release, replace the marked availability placeholders with verified installer links,
+distribution formats, architectures and minimum hardware requirements. Add release timing,
+app/model license details and a production canonical URL only when confirmed. Do not turn
+planned workflows into present-tense claims until the implementation is verified against
+`docs/FEATURES.md`. No production domain is assumed in the current metadata.
+<details>
+<summary>Desktop mockup wallpaper provenance</summary>
+
+Asset: `apps/website/public/images/desktop-wallpaper.png`. Generated with the built-in
+image generation tool. The app screenshots are supplied by the owner and remain unchanged.
+The Dock icons are local vector artwork.
+
+Generation prompt:
+
+> Use case: illustration-story. Asset type: original wallpaper for a macOS-inspired desktop
+> product mockup on a marketing website. Create only the wallpaper, absolutely no UI, no text,
+> no logos, no windows, no device, no dock, no icons. Wide landscape 16:10 composition, high
+> resolution. A premium abstract desktop wallpaper inspired by flowing silk and smooth folded
+> translucent glass: deep midnight navy and muted ocean blue across the left and top, luminous
+> ice blue arcs through the center, a restrained warm peach and pale sand sweep toward the
+> lower right. Elegant large sculptural curves, softly lit, flawless smooth gradients, subtle
+> depth, clean photorealistic rendered material. An open quiet central region will sit behind
+> a large app window, with the most beautiful flowing detail visible around the outer edges.
+> Calm refined Apple-like art direction, polished and understated. Full bleed edge to edge.
+> No grain, no noise, no grids, no hexagons, no fake Apple branding.
+
+</details>
+
+Electron preload, IPC contracts, and persisted app identity remain in `apps/desktop`.
 Next.js automatic agent-rule generation is disabled so development keeps the root `AGENTS.md`
 as the single source of project instructions.
 
