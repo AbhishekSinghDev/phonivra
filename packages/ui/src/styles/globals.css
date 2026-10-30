@@ -62,6 +62,10 @@
   --color-card-edge: var(--card-edge);
   --color-card-edge-hover: var(--card-edge-hover);
   --color-card-fill: var(--card-fill);
+  --color-window-close: #ff5f57;
+  --color-window-minimize: #febc2e;
+  --color-window-maximize: #28c840;
+  --color-window-shadow: rgb(0 0 0 / 0.4);
   --radius-3xl: calc(var(--radius) * 2.2);
   --radius-4xl: calc(var(--radius) * 2.6);
   @keyframes chai-spin {
