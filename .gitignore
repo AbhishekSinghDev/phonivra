@@ -155,3 +155,6 @@ vite.config.ts.timestamp-*
 
 # Docs
 docs
+
+# Next.js generated declarations
+next-env.d.ts

@@ -1,11 +1,11 @@
 {
   "$schema": "./node_modules/oxlint/configuration_schema.json",
   "plugins": ["typescript", "react"],
-  "jsPlugins": ["@shadcn/lint"],
-  "ignorePatterns": ["out/**", "dist/**", ".agents/**"],
+  "ignorePatterns": ["**/out/**", "**/dist/**", "**/.next/**", "**/next-env.d.ts", ".agents/**"],
   "rules": {
     "typescript/no-explicit-any": "error",
-    "shadcn/no-raw-colors": "error",
+    "react/rules-of-hooks": "error",
+    "react/exhaustive-deps": "error",
     "shadcn/no-restyle": [
       "error",
       {
@@ -128,48 +128,11 @@
         ]
       }
     ],
+    "shadcn/no-raw-colors": "error",
     "shadcn/no-arbitrary-values": "error",
     "shadcn/no-inline-styles": "error",
     "shadcn/no-unknown-classes": "error",
     "shadcn/require-static-classes": "error"
   },
-  "overrides": [
-    {
-      "files": ["src/renderer/src/**/*.{ts,tsx}"],
-      "rules": {
-        "react/rules-of-hooks": "error",
-        "react/exhaustive-deps": "error",
-        "no-restricted-imports": [
-          "error",
-          {
-            "patterns": [
-              "node:*",
-              "electron",
-              "@electron-toolkit/*",
-              "fs",
-              "path",
-              "os",
-              "child_process",
-              "http",
-              "https",
-              "net",
-              "tls",
-              "crypto",
-              "stream",
-              "buffer",
-              "process"
-            ]
-          }
-        ]
-      }
-    },
-    {
-      "files": ["src/renderer/src/components/ui/**"],
-      "rules": {
-        "shadcn/no-restyle": "off",
-        "shadcn/no-arbitrary-values": "off",
-        "shadcn/require-static-classes": "off"
-      }
-    }
-  ]
+  "jsPlugins": ["@shadcn/lint"]
 }

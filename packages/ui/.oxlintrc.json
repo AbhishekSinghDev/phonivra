@@ -1,0 +1,38 @@
+{
+  "$schema": "../../node_modules/oxlint/configuration_schema.json",
+  "extends": ["../../.oxlintrc.json"],
+  "overrides": [
+    {
+      "files": ["src/components/**"],
+      "rules": {
+        "shadcn/no-restyle": "off",
+        "shadcn/no-arbitrary-values": "off",
+        "shadcn/require-static-classes": "off"
+      }
+    }
+  ],
+  "rules": {
+    "no-restricted-imports": [
+      "error",
+      {
+        "patterns": [
+          "node:*",
+          "electron",
+          "@electron-toolkit/*",
+          "fs",
+          "path",
+          "os",
+          "child_process",
+          "http",
+          "https",
+          "net",
+          "tls",
+          "crypto",
+          "stream",
+          "buffer",
+          "process"
+        ]
+      }
+    ]
+  }
+}

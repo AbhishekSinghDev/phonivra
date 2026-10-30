@@ -1,3 +1,7 @@
+packages:
+  - apps/*
+  - packages/*
+
 # Current replacement for pnpm 10's removed onlyBuiltDependencies setting.
 allowBuilds:
   electron: true

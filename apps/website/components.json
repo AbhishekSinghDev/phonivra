@@ -1,0 +1,24 @@
+{
+  "$schema": "https://ui.shadcn.com/schema.json",
+  "style": "new-york",
+  "rsc": true,
+  "tsx": true,
+  "tailwind": {
+    "config": "",
+    "css": "../../packages/ui/src/styles/globals.css",
+    "baseColor": "neutral",
+    "cssVariables": true,
+    "prefix": ""
+  },
+  "iconLibrary": "hugeicons",
+  "registries": {
+    "@audiocn": "https://audiocn.dev/r/{name}.json"
+  },
+  "aliases": {
+    "components": "@/components",
+    "utils": "@phonivra/ui/lib/utils",
+    "ui": "@phonivra/ui/components",
+    "lib": "@/lib",
+    "hooks": "@phonivra/ui/hooks"
+  }
+}

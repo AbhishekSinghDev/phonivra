@@ -1,9 +1,7 @@
 {
-  "name": "phonivra",
-  "version": "0.1.0",
-  "description": "Phonivra desktop text-to-speech app",
+  "name": "phonivra-workspace",
   "private": true,
-  "main": "./out/main/index.js",
+  "version": "0.1.0",
   "type": "module",
   "packageManager": "pnpm@12.15.0",
   "engines": {
@@ -11,50 +9,21 @@
     "pnpm": ">=12.15.0 <13"
   },
   "scripts": {
-    "dev": "electron-vite dev",
-    "build": "pnpm typecheck && electron-vite build",
-    "preview": "electron-vite preview",
-    "typecheck": "tsc --noEmit -p tsconfig.node.json && tsc --noEmit -p tsconfig.web.json",
-    "lint": "oxlint --deny-warnings",
-    "format": "oxfmt --write ."
-  },
-  "dependencies": {
-    "@base-ui/react": "^1.9.0",
-    "@fontsource-variable/geist-mono": "^5.3.0",
-    "@fontsource-variable/inter": "latest",
-    "@fontsource-variable/manrope": "^5.3.0",
-    "@fontsource-variable/montserrat": "^5.3.0",
-    "@fontsource-variable/onest": "^5.3.1",
-    "@hugeicons/core-free-icons": "^4.3.5",
-    "@hugeicons/react": "^1.1.10",
-    "class-variance-authority": "^0.7.1",
-    "clsx": "^2.1.1",
-    "cmdk": "^1.1.1",
-    "cn": "^0.5.0",
-    "motion": "^14.7.1",
-    "radix-ui": "^1.8.1",
-    "react": "^19.3.0",
-    "react-dom": "^19.3.0",
-    "react-router": "latest",
-    "sonner": "latest",
-    "tailwind-merge": "^3.7.0",
-    "zustand": "latest"
+    "dev": "turbo run dev",
+    "dev:desktop": "turbo run dev --filter=phonivra",
+    "dev:website": "turbo run dev --filter=@phonivra/website",
+    "build": "turbo run build",
+    "typecheck": "turbo run typecheck",
+    "lint": "turbo run lint",
+    "format": "oxfmt --write .",
+    "format:check": "oxfmt --check .",
+    "ui:add": "pnpm --filter @phonivra/ui exec shadcn add",
+    "preview": "pnpm --filter phonivra preview"
   },
   "devDependencies": {
-    "@shadcn/lint": "^0.2.3",
-    "@tailwindcss/vite": "latest",
-    "@types/node": "^24.0.0",
-    "@types/react": "latest",
-    "@types/react-dom": "latest",
-    "@vitejs/plugin-react": "latest",
-    "electron": "latest",
-    "electron-vite": "latest",
-    "oxfmt": "^0.75.0",
     "oxlint": "^1.90.0",
-    "shadcn": "^4.22.1",
-    "tailwindcss": "^4.0.0",
-    "tw-animate-css": "^1.4.0",
-    "typescript": "^7.0.2",
-    "vite": "latest"
+    "oxfmt": "^0.75.0",
+    "@shadcn/lint": "^0.2.3",
+    "turbo": "^2.11.10"
   }
 }
