@@ -1,0 +1,46 @@
+{
+  "name": "phonivra",
+  "version": "0.1.0",
+  "description": "Phonivra desktop text-to-speech app",
+  "private": true,
+  "main": "./out/main/index.js",
+  "type": "module",
+  "packageManager": "pnpm@12.15.0",
+  "engines": {
+    "node": ">=24.22.0 <25",
+    "pnpm": ">=12.15.0 <13"
+  },
+  "scripts": {
+    "dev": "electron-vite dev",
+    "build": "pnpm typecheck && electron-vite build",
+    "preview": "electron-vite preview",
+    "typecheck": "tsc --noEmit -p tsconfig.node.json && tsc --noEmit -p tsconfig.web.json",
+    "lint": "oxlint --deny-warnings .",
+    "format": "oxfmt --config ../../.oxfmtrc.json --write .",
+    "format:check": "oxfmt --config ../../.oxfmtrc.json --check ."
+  },
+  "dependencies": {
+    "@fontsource-variable/inter": "latest",
+    "@hugeicons/core-free-icons": "^4.3.5",
+    "@hugeicons/react": "^1.1.10",
+    "motion": "^14.7.1",
+    "react": "^19.3.0",
+    "react-dom": "^19.3.0",
+    "react-router": "latest",
+    "sonner": "latest",
+    "zustand": "latest",
+    "@phonivra/ui": "workspace:*"
+  },
+  "devDependencies": {
+    "@tailwindcss/vite": "latest",
+    "@types/node": "^24.0.0",
+    "@types/react": "latest",
+    "@types/react-dom": "latest",
+    "@vitejs/plugin-react": "latest",
+    "electron": "latest",
+    "electron-vite": "latest",
+    "tailwindcss": "^4.0.0",
+    "typescript": "^7.0.2",
+    "vite": "latest"
+  }
+}

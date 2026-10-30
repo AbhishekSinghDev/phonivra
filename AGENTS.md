@@ -1,12 +1,39 @@
 # Phonivra
 
+## Monorepo scope
+
+The pnpm/Turborepo workspace contains `apps/desktop` (package `phonivra`) and
+`apps/website` (package `@phonivra/website`), plus `packages/ui` (`@phonivra/ui`). Root scripts run checks and builds across
+the apps and shared UI package; `pnpm dev:desktop` and `pnpm dev:website` select one app. Root `pnpm format`
+formats the entire repository. The root owns shared oxlint/oxfmt tooling and configuration;
+all workspaces extend the root lint baseline and explicitly reference the formatter config.
+Keep framework dependencies and TypeScript configs inside their app. Shared UI dependencies
+belong in `packages/ui`, with React/React DOM as peers. Do not introduce shared packages
+without actual reuse.
+
+Shared shadcn components, browser-only UI hooks/helpers, and visual styles live in
+`packages/ui/src`. Import them via `@phonivra/ui/components/*`, `@phonivra/ui/hooks/*`,
+`@phonivra/ui/lib/*`, and `@phonivra/ui/globals.css`. Both apps must use this package;
+do not add local component or theme copies. Add/update components with the official CLI
+from `packages/ui`, as documented in `README.md`. No Electron, IPC, app stores or app
+imports are permitted in the UI package. Pass app-owned theme values through props.
+
+The desktop rules below apply within `apps/desktop`; their `src/`, config and component
+paths are relative to that directory. Electron IPC, security, action/store and theme rules
+are desktop-specific. The website uses Next.js App Router with Tailwind v4, strict TypeScript,
+semantic tokens and the shared shadcn package. Keep its scaffold minimal and independent of
+the Electron implementation. General working, TypeScript and React rules apply to both apps,
+except Next.js requires default exports for its framework entry files.
+
 UI-first Electron text-to-speech desktop app. Speech generation is not implemented: `src/main/mock-studio.ts` simulates jobs, voices, models and outputs so the UI can be built before a backend exists. The mock is a replaceable adapter behind the typed contract in `src/shared/`.
 
 Stack: Electron + electron-vite, React 19, strict TypeScript, Tailwind CSS v4 (Vite plugin), shadcn/ui (new-york), Hugeicons (`@hugeicons/react` + `@hugeicons/core-free-icons`), Sonner, Zustand, react-router `HashRouter`, pnpm, ChaiUI typography (Manrope, Montserrat and Onest, bundled locally). Node 24 (see `.nvmrc` and `engines`).
 
-Rationale, folder map and details live in `CODE_PRACTICES.md`. Read it before structural changes. This file holds only binding rules. If the two ever conflict, this file wins and `CODE_PRACTICES.md` must be fixed.
+Workspace layout, commands and task caching are documented in `README.md`. This file holds binding rules; if the two conflict, fix `README.md`.
 
-## Commands
+## Desktop commands
+
+Run these inside `apps/desktop`. At the root, the corresponding commands cover both apps.
 
 ```sh
 pnpm dev          # Electron window + dev server
@@ -62,7 +89,7 @@ Report any check you could not run, and why. Never state or imply a check passed
 - Import Node or Electron modules in the renderer. All OS access goes through typed `window.api`.
 - Expose raw IPC channels, arbitrary events, or `ipcRenderer` from preload.
 - Loosen security (see Security).
-- Hand-write shadcn lookalikes or edit `components/ui/*` for styling. Add missing primitives with the official `shadcn` CLI only.
+- Hand-write shadcn lookalikes or edit shared primitives for styling. Add missing primitives with the official `shadcn` CLI only.
 - Use hardcoded colors, arbitrary Tailwind values, `style={{}}` for static styling, fonts outside the ChaiUI family, or CDN requests.
 - Use `localStorage` directly. Persisted UI state uses Zustand `persist`; theme is owned by the main process.
 - Hand-edit lockfiles or generated files.
@@ -96,7 +123,7 @@ Report any check you could not run, and why. Never state or imply a check passed
 
 | What                               | Where                                                         |
 | ---------------------------------- | ------------------------------------------------------------- |
-| shadcn primitives                  | `src/renderer/src/components/ui/` (CLI-generated only)        |
+| shadcn primitives                  | `packages/ui/src/components/` (repo-relative, CLI-maintained) |
 | Shared composites                  | `components/` and `components/studio/`                        |
 | Screens                            | `features/<name>/page.tsx` plus `features/<name>/parts/*.tsx` |
 | Stores                             | `stores/` (one per concern)                                   |
@@ -104,7 +131,8 @@ Report any check you could not run, and why. Never state or imply a check passed
 | Hooks                              | `hooks/`                                                      |
 | Cross-process types and validators | `src/shared/`                                                 |
 
-- Features import their own parts relatively (`./parts/x`). Everything else uses the `@/` alias. Shared code is imported by relative path.
+- Features import their own parts relatively (`./parts/x`). App-local code uses the `@/` alias; shared UI uses `@phonivra/ui` exports.
+  Cross-process desktop shared code is imported by relative path.
 - Features never import from another feature's folder. Move shared code to `components/`, `lib/`, or `hooks/`.
 - Mutable module state is allowed only in small, commented modules (currently `lib/actions.ts` draft buffers).
 - Every screen stays lazy-loaded with `React.lazy` and the `Suspense` Skeleton fallback.

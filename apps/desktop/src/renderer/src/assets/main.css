@@ -1,0 +1,15 @@
+@import '@phonivra/ui/globals.css';
+
+@source '../';
+
+@layer base {
+  html {
+    overscroll-behavior: none;
+    user-select: none;
+    -webkit-user-select: none;
+  }
+
+  body {
+    overflow: hidden;
+  }
+}
