@@ -50,43 +50,45 @@ export default function App(): React.JSX.Element {
             <TitleBar />
             <div className="flex min-h-0 flex-1">
               <AppSidebar />
-              <main
-                id="main-content"
-                className="content-area relative isolate min-w-0 flex-1 overflow-auto border-l border-card-edge bg-background p-6 sm:p-12"
-                tabIndex={-1}
-              >
+              <div className="relative isolate min-w-0 flex-1 overflow-hidden border-l border-card-edge bg-background">
                 <div
                   className="pointer-events-none absolute inset-0 -z-10 overflow-hidden"
                   aria-hidden="true"
                 >
                   <Backdrop src={background} />
                 </div>
-                <Suspense
-                  fallback={
-                    <div className="flex flex-col gap-4" aria-label="Loading screen">
-                      <Skeleton className="h-8 w-60" />
-                      <Skeleton className="h-80 w-full" />
-                    </div>
-                  }
+                <main
+                  id="main-content"
+                  className="content-area h-full overflow-auto p-6 sm:p-12"
+                  tabIndex={-1}
                 >
-                  <Routes>
-                    <Route path="/" element={<Navigate to="/narrate" replace />} />
-                    <Route path="/narrate" element={<TextToSpeechPage />} />
-                    <Route path="/batch" element={<BatchPage />} />
-                    <Route path="/voices" element={<VoicesModelsPage />} />
-                    <Route path="/models" element={<ModelsPage />} />
-                    <Route path="/library" element={<HistoryPage />} />
-                    <Route path="/settings" element={<SettingsPage />} />
-                    <Route path="/history" element={<Navigate to="/library" replace />} />
-                    <Route path="/voices-models" element={<Navigate to="/voices" replace />} />
-                    <Route path="*" element={<Navigate to="/" replace />} />
-                  </Routes>
-                </Suspense>
-              </main>
+                  <Suspense
+                    fallback={
+                      <div className="flex flex-col gap-4" aria-label="Loading screen">
+                        <Skeleton className="h-8 w-60" />
+                        <Skeleton className="h-80 w-full" />
+                      </div>
+                    }
+                  >
+                    <Routes>
+                      <Route path="/" element={<Navigate to="/narrate" replace />} />
+                      <Route path="/narrate" element={<TextToSpeechPage />} />
+                      <Route path="/batch" element={<BatchPage />} />
+                      <Route path="/voices" element={<VoicesModelsPage />} />
+                      <Route path="/models" element={<ModelsPage />} />
+                      <Route path="/library" element={<HistoryPage />} />
+                      <Route path="/settings" element={<SettingsPage />} />
+                      <Route path="/history" element={<Navigate to="/library" replace />} />
+                      <Route path="/voices-models" element={<Navigate to="/voices" replace />} />
+                      <Route path="*" element={<Navigate to="/" replace />} />
+                    </Routes>
+                  </Suspense>
+                </main>
+              </div>
             </div>
           </SidebarProvider>
         </div>
-        <Toaster theme={resolvedTheme} position="top-center" offset={64} />
+        <Toaster theme={resolvedTheme} position="top-center" offset={64} closeButton />
       </TooltipProvider>
     </HashRouter>
   )

@@ -1,5 +1,15 @@
 import { type ReactNode } from 'react'
 import { Skeleton } from '@/components/ui/skeleton'
+import { Button } from '@/components/ui/button'
+import {
+  Empty,
+  EmptyContent,
+  EmptyDescription,
+  EmptyHeader,
+  EmptyTitle
+} from '@/components/ui/empty'
+import { retryStudioConnection } from '@/lib/actions'
+import { useStudioStore } from '@/stores/studio-store'
 
 export function ScreenFrame({
   title,
@@ -26,6 +36,21 @@ export function ScreenFrame({
   )
 }
 export function ScreenLoading(): React.JSX.Element {
+  const error = useStudioStore((state) => state.error)
+  if (error)
+    return (
+      <Empty>
+        <EmptyHeader>
+          <EmptyTitle>Could not connect to the studio</EmptyTitle>
+          <EmptyDescription role="alert">{error}</EmptyDescription>
+        </EmptyHeader>
+        <EmptyContent>
+          <Button variant="outline" onClick={retryStudioConnection}>
+            Retry connection
+          </Button>
+        </EmptyContent>
+      </Empty>
+    )
   return (
     <section aria-label="Loading screen" className="flex flex-col gap-4">
       <Skeleton className="h-8 w-48" />

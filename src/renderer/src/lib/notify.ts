@@ -8,5 +8,5 @@ export function notify(message: string): void {
 }
 
 export function notifyError(message: string): void {
-  toast.error(message, { id: message, duration: 8000, closeButton: true })
+  toast.error(message, { id: message, duration: 8000, icon: null })
 }

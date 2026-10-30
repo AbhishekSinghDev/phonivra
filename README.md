@@ -36,6 +36,22 @@ Phonivra is two pieces that ship together:
 - **Library and projects**: browse past generations, and save or reopen project files.
 - **Local models**: models download automatically on first use and are cached on your disk.
 
+## Workspace behavior
+
+The current desktop app uses an in-memory studio adapter. Speech, file operations and playback
+are simulated; a running local speech engine is not implemented yet.
+
+- In the script editor, Ctrl+S (⌘+S on macOS) saves a project and Ctrl+O (⌘+O) opens one.
+  Ctrl+Enter (⌘+Enter) generates narration.
+- Importing over existing script text, opening a project, and restoring factory defaults ask for
+  confirmation before replacing work.
+- The sidebar job status opens the workspace handling the job. Narration controls wait while a
+  batch or standalone model download runs.
+- Library search keeps the detail pane within the matching results. Clear search restores the list.
+- Model storage links open Settings directly to Storage and downloads.
+- If the studio cannot connect, the loading screen offers Retry connection.
+- Voice previews share the voice, model and language settings used by Narrate and Batch.
+
 ## Development
 
 ### Requirements

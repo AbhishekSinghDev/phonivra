@@ -75,7 +75,10 @@ export default function ModelsPage(): React.JSX.Element {
         </p>
         <div className="flex flex-wrap items-center gap-2">
           <Button variant="outline" size="sm" asChild>
-            <Link to="/settings" onClick={() => notify('Model storage settings clicked')}>
+            <Link
+              to="/settings?tab=storage"
+              onClick={() => notify('Model storage settings clicked')}
+            >
               <HugeiconsIcon icon={FolderOpenIcon} data-icon="inline-start" aria-hidden="true" />
               Storage settings
             </Link>

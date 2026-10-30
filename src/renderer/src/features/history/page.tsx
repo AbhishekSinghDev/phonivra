@@ -33,9 +33,9 @@ export function HistoryPage(): React.JSX.Element {
   const [query, setQuery] = useState('')
   if (!snapshot) return <ScreenLoading />
   const filtered = snapshot.outputs.filter((output) =>
-    output.title.toLowerCase().includes(query.toLowerCase())
+    output.title.toLowerCase().includes(query.trim().toLowerCase())
   )
-  const selected = snapshot.outputs.find((output) => output.id === snapshot.selectedOutput)
+  const selected = filtered.find((output) => output.id === snapshot.selectedOutput) ?? filtered[0]
   const watermark = snapshot.watermark?.outputId === selected?.id ? snapshot.watermark : null
   return (
     <ScreenFrame
@@ -46,27 +46,25 @@ export function HistoryPage(): React.JSX.Element {
           where you left off.
         </>
       }
-      actions={
-        <>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => act('Refresh library', { type: 'outputs.refresh' })}
-          >
-            <HugeiconsIcon icon={RefreshCwIcon} data-icon="inline-start" aria-hidden="true" />
-            Refresh
-          </Button>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => act('Open output folder', { type: 'folder.open' })}
-          >
-            <HugeiconsIcon icon={FolderOpenIcon} data-icon="inline-start" aria-hidden="true" />
-            Open folder
-          </Button>
-        </>
-      }
     >
+      <div aria-label="Library actions" className="flex flex-wrap justify-end gap-2">
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={() => act('Refresh library', { type: 'outputs.refresh' })}
+        >
+          <HugeiconsIcon icon={RefreshCwIcon} data-icon="inline-start" aria-hidden="true" />
+          Refresh
+        </Button>
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={() => act('Open output folder', { type: 'folder.open' })}
+        >
+          <HugeiconsIcon icon={FolderOpenIcon} data-icon="inline-start" aria-hidden="true" />
+          Open folder
+        </Button>
+      </div>
       {!snapshot.outputs.length ? (
         <Empty>
           <EmptyHeader>
@@ -117,6 +115,7 @@ export function HistoryPage(): React.JSX.Element {
                 renderItem={(output) => (
                   <Button
                     variant={selected?.id === output.id ? 'secondary' : 'ghost'}
+                    aria-pressed={selected?.id === output.id}
                     className="h-full w-full justify-start gap-3 rounded-xl px-4"
                     onClick={() =>
                       act('Select narration', { type: 'output.select', id: output.id })
@@ -139,8 +138,13 @@ export function HistoryPage(): React.JSX.Element {
               <Empty>
                 <EmptyHeader>
                   <EmptyTitle>No matching audio</EmptyTitle>
-                  <EmptyDescription>Try another title.</EmptyDescription>
+                  <EmptyDescription>Try another title or clear your search.</EmptyDescription>
                 </EmptyHeader>
+                <EmptyContent>
+                  <Button variant="outline" size="sm" onClick={() => setQuery('')}>
+                    Clear search
+                  </Button>
+                </EmptyContent>
               </Empty>
             )}
             <p className="text-xs leading-relaxed text-muted-foreground">
@@ -198,9 +202,15 @@ export function HistoryPage(): React.JSX.Element {
                   <EmptyMedia variant="icon">
                     <HugeiconsIcon icon={FileAudioIcon} aria-hidden="true" />
                   </EmptyMedia>
-                  <EmptyTitle>Select a saved narration.</EmptyTitle>
+                  <EmptyTitle>
+                    {filtered.length
+                      ? 'Select a saved narration.'
+                      : 'No matching narration selected'}
+                  </EmptyTitle>
                   <EmptyDescription>
-                    Choose a file to load its audio, exports and details.
+                    {filtered.length
+                      ? 'Choose a file to load its audio, exports and details.'
+                      : 'Clear your search to browse your saved audio.'}
                   </EmptyDescription>
                 </EmptyHeader>
               </Empty>

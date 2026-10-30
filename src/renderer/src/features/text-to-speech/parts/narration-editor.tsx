@@ -24,6 +24,17 @@ import {
   DropdownMenuTrigger
 } from '@/components/ui/dropdown-menu'
 import { act, editScript, flushScriptDraft, updateSettings } from '@/lib/actions'
+import { RestoreDefaults } from '@/components/studio/restore-defaults'
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle
+} from '@/components/ui/alert-dialog'
 import { notify } from '@/lib/notify'
 import { reactionTags } from '../../../../../shared/data/catalog'
 
@@ -42,6 +53,12 @@ export const NarrationEditor = memo(function NarrationEditor({
   onGenerate
 }: EditorProps): React.JSX.Element {
   const [draft, setDraft] = useState(initialText)
+  const [replacement, setReplacement] = useState<'script.import' | 'project.open' | null>(null)
+  const modifier = window.api.platform === 'darwin' ? '⌘' : 'Ctrl'
+  function replaceDocument(type: 'script.import' | 'project.open'): void {
+    if (draft.trim() || type === 'project.open') setReplacement(type)
+    else void act('Import script', { type })
+  }
   const editor = useRef<HTMLTextAreaElement>(null)
   const selection = useRef({ start: initialText.length, end: initialText.length })
   const deferred = useDeferredValue(draft)
@@ -70,7 +87,28 @@ export const NarrationEditor = memo(function NarrationEditor({
     })
   }
   return (
-    <section aria-label="Narration script" className="script-document flex min-w-0 flex-col">
+    <section
+      aria-label="Narration script"
+      className="script-document flex min-w-0 flex-col"
+      onKeyDown={(event) => {
+        if (
+          !(event.metaKey || event.ctrlKey) ||
+          event.altKey ||
+          event.shiftKey ||
+          event.nativeEvent.isComposing
+        )
+          return
+        const key = event.key.toLowerCase()
+        if (key === 's') {
+          event.preventDefault()
+          void act('Save project', { type: 'project.save' })
+        }
+        if (key === 'o') {
+          event.preventDefault()
+          replaceDocument('project.open')
+        }
+      }}
+    >
       <FieldGroup className="gap-0">
         <Field className="px-6 pt-6 pb-4">
           <FieldLabel className="sr-only" htmlFor="narrate-title">
@@ -97,23 +135,22 @@ export const NarrationEditor = memo(function NarrationEditor({
                 <DropdownMenuGroup>
                   <DropdownMenuItem onSelect={() => act('Save project', { type: 'project.save' })}>
                     <HugeiconsIcon icon={SaveIcon} aria-hidden="true" />
-                    Save project
+                    Save project <span className="ml-auto text-muted-foreground">{modifier}+S</span>
                   </DropdownMenuItem>
-                  <DropdownMenuItem onSelect={() => act('Open project', { type: 'project.open' })}>
+                  <DropdownMenuItem onSelect={() => replaceDocument('project.open')}>
                     <HugeiconsIcon icon={FolderOpenIcon} aria-hidden="true" />
-                    Open project JSON
+                    Open project JSON{' '}
+                    <span className="ml-auto text-muted-foreground">{modifier}+O</span>
                   </DropdownMenuItem>
                 </DropdownMenuGroup>
                 <DropdownMenuSeparator />
                 <DropdownMenuGroup>
-                  <DropdownMenuItem
-                    onSelect={() =>
-                      act('Restore generation defaults', { type: 'settings.restore' })
-                    }
-                  >
-                    <HugeiconsIcon icon={RotateCcwIcon} aria-hidden="true" />
-                    Restore generation defaults
-                  </DropdownMenuItem>
+                  <RestoreDefaults>
+                    <DropdownMenuItem onSelect={(event) => event.preventDefault()}>
+                      <HugeiconsIcon icon={RotateCcwIcon} aria-hidden="true" />
+                      Restore generation defaults
+                    </DropdownMenuItem>
+                  </RestoreDefaults>
                 </DropdownMenuGroup>
               </DropdownMenuContent>
             </DropdownMenu>
@@ -125,11 +162,7 @@ export const NarrationEditor = memo(function NarrationEditor({
               Your script
             </FieldLabel>
             <div className="flex items-center gap-1">
-              <Button
-                size="sm"
-                variant="ghost"
-                onClick={() => act('Import script', { type: 'script.import' })}
-              >
+              <Button size="sm" variant="ghost" onClick={() => replaceDocument('script.import')}>
                 <HugeiconsIcon icon={FileUpIcon} data-icon="inline-start" aria-hidden="true" />
                 Import script
               </Button>
@@ -214,6 +247,43 @@ export const NarrationEditor = memo(function NarrationEditor({
           </FieldDescription>
         </Field>
       </FieldGroup>
+      <AlertDialog
+        open={replacement !== null}
+        onOpenChange={(open) => {
+          if (!open) setReplacement(null)
+        }}
+      >
+        <AlertDialogContent
+          onCloseAutoFocus={(event) => {
+            event.preventDefault()
+            editor.current?.focus()
+          }}
+        >
+          <AlertDialogHeader>
+            <AlertDialogTitle>
+              {replacement === 'project.open' ? 'Open another project?' : 'Replace your script?'}
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              {replacement === 'project.open'
+                ? 'Opening a project replaces your script, generation settings and dictionary. Save your current project first if you want to keep it.'
+                : 'Importing a script replaces the text currently in the editor. Save your project first if you want to keep it.'}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Keep current work</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => {
+                if (replacement)
+                  void act(replacement === 'project.open' ? 'Open project' : 'Import script', {
+                    type: replacement
+                  })
+              }}
+            >
+              {replacement === 'project.open' ? 'Open project' : 'Replace script'}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </section>
   )
 })

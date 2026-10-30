@@ -9,7 +9,7 @@ import {
   RotateCcwIcon,
   SaveIcon
 } from '@hugeicons/core-free-icons'
-import { Link } from 'react-router'
+import { Link, useSearchParams } from 'react-router'
 import { ScreenFrame, ScreenLoading, DetailValue } from '@/components/studio/screen-frame'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
@@ -22,6 +22,7 @@ import { ScrollArea } from '@/components/ui/scroll-area'
 import { CatalogSelect } from '@/components/studio/catalog-select'
 import { EssentialSettings, AdvancedSettings } from '@/components/studio/settings-fields'
 import { DictionaryEditor } from '@/components/studio/dictionary-editor'
+import { RestoreDefaults } from '@/components/studio/restore-defaults'
 import { ConfirmDelete } from '@/components/studio/confirm-delete'
 import { activePhases } from '@/components/studio/job-status'
 import { useTheme } from '@/hooks/use-theme'
@@ -35,6 +36,12 @@ export function SettingsPage(): React.JSX.Element {
   const snapshot = useStudioStore((state) => state.snapshot)
   const { theme, setTheme } = useTheme()
   const [token, setToken] = useState('')
+  const [searchParams, setSearchParams] = useSearchParams()
+  const requestedTab = searchParams.get('tab')
+  const tab =
+    requestedTab === 'generation' || requestedTab === 'storage' || requestedTab === 'diagnostics'
+      ? requestedTab
+      : 'general'
   if (!snapshot) return <ScreenLoading />
   const preferences = snapshot.configuration.preferences
   const dirty = Object.entries(snapshot.settings).some(
@@ -55,7 +62,20 @@ export function SettingsPage(): React.JSX.Element {
         </>
       }
     >
-      <Tabs defaultValue="general" onValueChange={() => notify('Settings tab clicked')}>
+      <Tabs
+        value={tab}
+        onValueChange={(value) => {
+          setSearchParams(
+            (current) => {
+              const next = new URLSearchParams(current)
+              next.set('tab', value)
+              return next
+            },
+            { replace: true }
+          )
+          notify('Settings tab clicked')
+        }}
+      >
         <TabsList variant="line" className="mb-6 flex h-auto flex-wrap justify-start gap-5">
           <TabsTrigger value="general">General</TabsTrigger>
           <TabsTrigger value="generation">Generation</TabsTrigger>
@@ -180,13 +200,12 @@ export function SettingsPage(): React.JSX.Element {
                 <HugeiconsIcon icon={SaveIcon} data-icon="inline-start" aria-hidden="true" />
                 Save defaults
               </Button>
-              <Button
-                variant="outline"
-                onClick={() => act('Restore generation defaults', { type: 'settings.restore' })}
-              >
-                <HugeiconsIcon icon={RotateCcwIcon} data-icon="inline-start" aria-hidden="true" />
-                Restore factory defaults
-              </Button>
+              <RestoreDefaults>
+                <Button variant="outline">
+                  <HugeiconsIcon icon={RotateCcwIcon} data-icon="inline-start" aria-hidden="true" />
+                  Restore factory defaults
+                </Button>
+              </RestoreDefaults>
             </div>
             <p className="text-xs leading-relaxed text-muted-foreground">
               Factory defaults reset all 28 generation settings, including title, voice, language

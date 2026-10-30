@@ -71,6 +71,11 @@ export function updateSettings<K extends keyof GenerationSettings>(
       settings: { ...state.settings, [key]: value }
     })
 }
+export async function retryStudioConnection(): Promise<void> {
+  useStudioStore.getState().setError(null)
+  await receive(window.api.studio.getSnapshot())
+}
+
 export function connectStudio(): () => void {
   const unsubscribe = window.api.studio.onChange((snapshot) => {
     const previous = useStudioStore.getState().snapshot

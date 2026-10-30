@@ -293,8 +293,9 @@ export function VoicesModelsPage(): React.JSX.Element {
                 />
               </FieldGroup>
               <p className="text-sm text-muted-foreground">
-                Uses a fixed sample in the selected language, with your voice, sampling, seed and
-                speed. Script, dictionary and publishing settings are not used.
+                Previewing selects this voice for Narrate and Batch. Model and language changes also
+                apply there. Uses a fixed sample with your sampling, seed and speed. Script,
+                dictionary and publishing settings are not used.
               </p>
               {snapshot.reference.status === 'ready' && (
                 <p className="text-sm leading-relaxed text-muted-foreground">

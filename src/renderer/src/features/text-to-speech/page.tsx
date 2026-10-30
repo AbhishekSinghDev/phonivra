@@ -12,7 +12,7 @@ import { Link } from 'react-router'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
 import { Separator } from '@/components/ui/separator'
-import { Skeleton } from '@/components/ui/skeleton'
+import { ScreenLoading } from '@/components/studio/screen-frame'
 import { Spinner } from '@/components/ui/spinner'
 import { SettingsInspector } from '@/components/studio/settings-inspector'
 import { activePhases } from '@/components/studio/job-status'
@@ -42,16 +42,10 @@ export function TextToSpeechPage(): React.JSX.Element {
         document.getElementById('narrate-script')?.focus()
     })
   }, [])
-  if (!snapshot)
-    return (
-      <section aria-label="Loading narration workspace" className="flex flex-col gap-6">
-        <Skeleton className="h-8 w-40" />
-        <Skeleton className="h-12 w-full" />
-        <Skeleton className="h-96 w-full" />
-      </section>
-    )
+  if (!snapshot) return <ScreenLoading />
   const { settings, job, dependencies } = snapshot
   const active = activePhases.has(job.phase)
+  const narrationActive = active && (job.kind === 'narration' || job.kind === 'preview')
   const model = resolvedModel(settings)
   const selectedVoice = snapshot.voices.find((voice) => voice.id === settings.voice)
   const voiceName =
@@ -88,7 +82,7 @@ export function TextToSpeechPage(): React.JSX.Element {
                 <HugeiconsIcon icon={ShieldCheckIcon} className="size-4" aria-hidden="true" />
                 Generated on your device
               </span>
-              {active ? (
+              {narrationActive ? (
                 <Button
                   size="lg"
                   variant="secondary"
@@ -103,7 +97,7 @@ export function TextToSpeechPage(): React.JSX.Element {
                   {job.phase === 'stopping' ? 'Stopping…' : 'Stop'}
                 </Button>
               ) : (
-                <Button className="studio-primary" size="lg" onClick={generate}>
+                <Button className="studio-primary" size="lg" disabled={active} onClick={generate}>
                   {installation?.status === 'not-installed' && dependencies.online
                     ? 'Download and generate'
                     : 'Generate narration'}
@@ -119,7 +113,15 @@ export function TextToSpeechPage(): React.JSX.Element {
           <NarrationNotices />
           {active && (
             <p className="text-sm text-muted-foreground" role="status">
-              {job.message} Changes apply to your next take.
+              {narrationActive ? (
+                `${job.message} Changes apply to your next take.`
+              ) : (
+                <>
+                  Another job is running.{' '}
+                  <Link to={job.kind === 'batch' ? '/batch' : '/models'}>View current job</Link> to
+                  check progress or stop it.
+                </>
+              )}
             </p>
           )}
         </div>

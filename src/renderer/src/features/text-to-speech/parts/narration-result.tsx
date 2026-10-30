@@ -31,7 +31,8 @@ export function NarrationResult(): React.JSX.Element | null {
   const playback = useStudioStore((state) => state.snapshot?.playback)
   const preview = useStudioStore((state) => state.snapshot?.preview)
   if (!job || !outputs || !playback) return null
-  const active = activePhases.has(job.phase)
+  const narrationJob = job.kind === 'narration' || job.kind === 'preview'
+  const active = narrationJob && activePhases.has(job.phase)
   const output = outputs[0]
   return (
     <section
@@ -51,7 +52,7 @@ export function NarrationResult(): React.JSX.Element | null {
           </Button>
         )}
       </div>
-      {job.phase !== 'idle' && <JobStatus job={job} />}
+      {narrationJob && job.phase !== 'idle' && <JobStatus job={job} />}
       {job.streaming !== 'unavailable' && active && (
         <AudioTransport
           id={`stream:${job.id}`}
