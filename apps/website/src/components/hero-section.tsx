@@ -19,13 +19,13 @@ export function HeroSection(): React.JSX.Element {
             <br />A voice of <span className="highlight">their own.</span>
           </h1>
           <p className="max-w-xl text-base leading-relaxed text-muted-foreground sm:text-lg">
-            Meet Phonivra, a desktop text-to-speech studio being built for your machine. A
-            considered space for narration, custom voices and chaptered scripts.
+            Turn scripts into narration on your computer. Create voices from recordings, generate
+            chapters in batches, and export audio with subtitles.
           </p>
           <div className="flex flex-wrap items-center gap-3">
             <Button asChild size="lg" className="studio-primary">
               <Link href="#download">
-                Check availability
+                Get started
                 <svg
                   viewBox="0 0 24 24"
                   fill="none"
@@ -44,10 +44,10 @@ export function HeroSection(): React.JSX.Element {
           </div>
         </div>
         <div className="flex max-w-sm flex-col items-start gap-4 border-t border-card-edge pt-5 lg:mb-1">
-          <Badge variant="outline">In development</Badge>
+          <Badge variant="outline">Open source</Badge>
           <p className="text-sm leading-relaxed text-muted-foreground">
-            Interface built; speech engine still to come. No installers or real audio generation
-            yet.
+            Scripts, reference recordings, and generated audio stay on your device. Download a
+            speech model once to generate offline.
           </p>
         </div>
       </div>

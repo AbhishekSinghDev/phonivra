@@ -10,9 +10,10 @@ import {
 
 const questions = [
   {
-    question: 'Can I generate speech with Phonivra today?',
+    question: 'How do I get started?',
     answer:
-      'Yes. You can run Phonivra from source with the local engine to download a model, generate a narration, and export audio. See release status for installer availability.'
+      'Follow the source setup guide to launch the desktop app and its local engine. Open Text to speech, enter a script, and download the model when prompted.',
+    learnMore: { label: 'Read the source setup guide', href: siteLinks.setup }
   },
   {
     question: 'Will it work offline?',
@@ -27,12 +28,12 @@ const questions = [
   {
     question: 'Which formats can I export?',
     answer:
-      'Export WAV, MP3, FLAC, OGG, or M4A, along with SRT or VTT subtitles, a transcript, and JSON metadata. Subtitle timings are approximate.'
+      'Choose WAV, MP3, FLAC, OGG, or M4A before generating. Export the finished audio on its own or with SRT and VTT subtitles, a TXT transcript, and JSON metadata. Subtitle timings are approximate.'
   },
   {
     question: 'What about privacy and saved work?',
     answer:
-      'Scripts, reference recordings, and generated audio stay on your device. Phonivra stores drafts, voice presets, and library outputs locally. You can also save and reopen project files.'
+      'Scripts, reference recordings, and generated audio stay on your device. Phonivra stores drafts, voice presets, and library outputs locally. You can also save and reopen project files. If you move a project to another computer, add its custom voice there too.'
   },
   {
     question: 'Is commercial use allowed?',
@@ -40,7 +41,7 @@ const questions = [
       'Phonivra’s code is MIT-licensed, and Resemble AI lists the Chatterbox model repositories used by the app as MIT. For commercial narration, make sure you have rights to the script and recordings, permission to use any cloned voice, and any disclosures your platform requires.',
     learnMore: {
       label: 'Read the generated audio guide',
-      href: `${siteLinks.repository}/blob/master/GENERATED_AUDIO.md`
+      href: siteLinks.generatedAudio
     }
   }
 ]
@@ -62,17 +63,17 @@ export function FaqSection(): React.JSX.Element {
           <span className="highlight">Before you begin.</span>
         </h2>
         <p className="max-w-sm text-base leading-relaxed text-muted-foreground">
-          What’s ready, what’s planned, and what to know about the studio taking shape.
+          Setup, offline use, voice presets, and audio exports.
         </p>
         <Button variant="outline" asChild>
-          <Link href="#download">View release status</Link>
+          <Link href="#download">Get started</Link>
         </Button>
       </header>
       <div className="min-w-0 border-t border-card-edge lg:col-span-3">
         <Accordion
           type="single"
           collapsible
-          defaultValue="Can I generate speech with Phonivra today?"
+          defaultValue="How do I get started?"
           aria-label="Questions about Phonivra"
         >
           {questions.map((item) => (

@@ -5,7 +5,7 @@ export function LocalEngineCard(): React.JSX.Element {
   return (
     <Card>
       <figure
-        aria-label="Planned on-device processing using a CPU or NVIDIA CUDA"
+        aria-label="On-device speech generation"
         className="flex flex-1 flex-col items-center justify-center gap-5 px-6 pt-8 pb-6"
       >
         <svg
@@ -24,13 +24,14 @@ export function LocalEngineCard(): React.JSX.Element {
         <div className="flex flex-wrap justify-center gap-2">
           <Badge variant="outline">CPU</Badge>
           <Badge variant="outline">NVIDIA CUDA</Badge>
+          <Badge variant="outline">Apple Metal (MPS)</Badge>
         </div>
       </figure>
       <div className="mx-2 mb-3 sm:mx-4">
         <CardBody>
           <CardTitle>At home on your machine.</CardTitle>
           <CardText>
-            Designed for local generation, with offline use after models are downloaded.
+            Auto uses compatible GPU acceleration when available and falls back to CPU.
           </CardText>
         </CardBody>
       </div>

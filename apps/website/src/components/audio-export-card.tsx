@@ -4,7 +4,7 @@ export function AudioExportCard(): React.JSX.Element {
   return (
     <Card className="lg:col-span-2">
       <figure
-        aria-label="Planned audio formats: WAV, MP3, FLAC, OGG and M4A, with SRT, VTT, TXT and JSON companions"
+        aria-label="Audio formats WAV, MP3, FLAC, OGG and M4A, with SRT, VTT, TXT and JSON companions"
         className="grid flex-1 items-center gap-6 px-6 pt-8 pb-6 sm:grid-cols-2 sm:gap-8 sm:px-8"
       >
         <div className="flex flex-col gap-4">
@@ -32,7 +32,10 @@ export function AudioExportCard(): React.JSX.Element {
       <div className="mx-2 mb-3 sm:mx-4">
         <CardBody>
           <CardTitle>Audio, with the context attached.</CardTitle>
-          <CardText>Planned audio and companion exports. Non-WAV formats require FFmpeg.</CardText>
+          <CardText>
+            Choose the audio format before generating. Export the finished take on its own or as a
+            ZIP with its companion files.
+          </CardText>
         </CardBody>
       </div>
     </Card>

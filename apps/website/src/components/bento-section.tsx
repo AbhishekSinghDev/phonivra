@@ -20,8 +20,8 @@ export function BentoSection(): React.JSX.Element {
           <span className="highlight">Every take.</span>
         </h2>
         <p className="max-w-sm text-sm leading-relaxed text-muted-foreground">
-          A closer look at what’s planned for the local engine. Thoughtful controls, from preparing
-          your words to carrying the finished work forward.
+          Set pronunciation for recurring terms, turn headings into batch items, and choose which
+          files to export with your audio.
         </p>
       </header>
 

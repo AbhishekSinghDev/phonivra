@@ -45,7 +45,7 @@ export function SiteHeader(): React.JSX.Element {
           className="text-muted-foreground transition-colors hover:text-foreground"
           href="#download"
         >
-          Availability
+          Get started
         </Link>
         <div className="flex items-center">
           <Button variant="ghost" size="icon" asChild>

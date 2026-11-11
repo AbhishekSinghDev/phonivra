@@ -24,10 +24,7 @@ export function DesktopPreview(): React.JSX.Element {
         <DesktopDock />
       </div>
       <figcaption className="mt-4 flex flex-col items-start justify-between gap-3 text-xs leading-relaxed text-muted-foreground sm:flex-row sm:items-center">
-        <span>
-          Your supplied desktop screenshots in a macOS-style mockup. Generation and audio controls
-          are simulated in this build.
-        </span>
+        <span>Phonivra’s narration workspace.</span>
         <Badge variant="outline">Interface preview</Badge>
       </figcaption>
     </figure>

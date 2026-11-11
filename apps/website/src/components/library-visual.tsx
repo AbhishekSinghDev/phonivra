@@ -24,7 +24,7 @@ export function LibraryVisual(): React.JSX.Element {
         <div>
           <p className="font-montserrat text-base font-medium">A place to begin</p>
           <p className="mt-1 text-xs text-muted-foreground">
-            An example take and its planned exports
+            An example take and its export options
           </p>
         </div>
       </div>

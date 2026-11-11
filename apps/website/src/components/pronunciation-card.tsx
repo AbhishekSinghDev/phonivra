@@ -28,7 +28,7 @@ export function PronunciationCard(): React.JSX.Element {
         <CardBody>
           <CardTitle>Your words. Your pronunciation.</CardTitle>
           <CardText>
-            Planned text preparation shapes speech and leaves your script untouched.
+            Use the dictionary to set how names, acronyms, and recurring terms are read aloud.
           </CardText>
         </CardBody>
       </div>

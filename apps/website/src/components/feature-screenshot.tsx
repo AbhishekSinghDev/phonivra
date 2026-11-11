@@ -16,7 +16,7 @@ export function FeatureScreenshot({ area }: { area: 'narration' | 'voices' }): R
           width={1920}
           height={1080}
           unoptimized
-          alt={`${detail} detail from the supplied Phonivra screenshot, in dark mode.`}
+          alt={`${detail} detail in Phonivra, in dark mode.`}
           className="hidden dark:block"
         />
         <Image
@@ -24,7 +24,7 @@ export function FeatureScreenshot({ area }: { area: 'narration' | 'voices' }): R
           width={1920}
           height={1080}
           unoptimized
-          alt={`${detail} detail from the supplied Phonivra screenshot, in light mode.`}
+          alt={`${detail} detail in Phonivra, in light mode.`}
           className="dark:hidden"
         />
       </div>

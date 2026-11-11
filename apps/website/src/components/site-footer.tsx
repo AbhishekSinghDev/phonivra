@@ -1,5 +1,4 @@
 import Link from 'next/link'
-import { Badge } from '@phonivra/ui/components/badge'
 import { SiteLogo } from '@/components/site-logo'
 import { siteLinks } from '@/components/site-links'
 
@@ -18,7 +17,7 @@ const linkGroups = [
     links: [
       { label: 'Technology', href: '#foundations' },
       { label: 'Questions', href: '#faq' },
-      { label: 'Release status', href: '#download' },
+      { label: 'Get started', href: '#download' },
       { label: 'GitHub repository', href: siteLinks.repository }
     ]
   }
@@ -32,10 +31,8 @@ export function SiteFooter(): React.JSX.Element {
           <div className="flex flex-col items-start gap-5">
             <SiteLogo size={40} />
             <p className="max-w-xs text-sm leading-relaxed text-muted-foreground">
-              A desktop text-to-speech studio being built for your machine. A space for your words
-              to find their voice.
+              An open-source desktop studio for generating and exporting narration on your computer.
             </p>
-            <Badge variant="outline">In development</Badge>
           </div>
 
           <div className="grid grid-cols-2 gap-6 sm:gap-10">

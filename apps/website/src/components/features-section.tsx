@@ -5,67 +5,62 @@ const workspaces = [
   {
     id: 'narration',
     label: 'Narration',
-    title: 'Make room for the right words.',
+    title: 'Write and prepare your script.',
     description:
-      'A focused editor for your script, with voice and pacing controls close at hand. Write or paste your text, give it a title, and shape the way you want it to sound.',
+      'Write, paste, or import a script. Set the pace, add pauses, and use the pronunciation dictionary for words that need a specific reading.',
     details: [
       'Live word and character counts',
-      'Pause markers and script tools',
-      'Planned pronunciation and text cleanup'
-    ],
-    note: 'The editor is ready. Real text preparation and speech generation are still in development.'
+      'Import text, Markdown, or subtitles',
+      'Automatic language detection'
+    ]
   },
   {
     id: 'voices',
     label: 'Voices',
     title: 'Find the voice for the story.',
     description:
-      'Bring the voice, language and pace together in one place. Voice collection also includes a flow for creating a preset from a reference recording, without training or a transcript.',
+      'Use the model’s default voice or create a preset from a recording. Audition the preset before generating a full script.',
     details: [
-      'Voice search and collection filters',
-      'Language and speed controls',
-      'Use recordings you have permission to clone'
-    ],
-    note: 'Recording, uploads, previews and cloning are simulated. Custom presets currently last only for the session.'
+      'Record from your microphone or import audio',
+      'Search and filter your voice collection',
+      'Save presets locally for future sessions'
+    ]
   },
   {
     id: 'batch',
     label: 'Batch',
     title: 'Give every chapter its place.',
     description:
-      'The Batch studio interface brings multiple scripts into one plan. Split pasted text at Markdown headings, review the items, and use one voice and set of settings throughout.',
+      'Import multiple scripts or paste chaptered text. Use Markdown headings to create separate batch items, then review the plan before generating.',
     details: [
-      'Script files or pasted chaptered text',
-      'Review the plan before generation',
-      'Planned ZIP export of completed items'
-    ],
-    note: 'File import, batch generation and ZIP export are simulated. The example shows the intended workflow.'
+      'Shared voice and generation settings',
+      'Progress and errors for each item',
+      'ZIP export of completed takes and their companion files'
+    ]
   },
   {
     id: 'library',
     label: 'Library',
-    title: 'A take is more than an audio file.',
+    title: 'Revisit and export your takes.',
     description:
-      'The Audio library interface brings takes and their generation details together. The planned engine will pair audio with subtitles, a transcript and metadata, so the context stays with the work.',
+      'Play back finished takes and find their generation details in the local Audio library. Completed takes are available when you reopen the app.',
     details: [
       'Searchable take list and detail view',
-      'Model, voice, seed and settings per take',
-      'Planned audio and companion-file exports'
-    ],
-    note: 'Playback and exports are simulated. Library data is currently held in memory and does not survive a restart.'
+      'Model, voice, seed, and settings for generated takes',
+      'Export audio, subtitles, transcripts, and metadata'
+    ]
   },
   {
     id: 'models',
     label: 'Models',
-    title: 'The model behind the voice.',
+    title: 'Choose the model behind the voice.',
     description:
-      'Four Chatterbox models are listed in the studio, alongside Auto routing. The planned engine will choose Turbo for English and Multilingual V3 for other supported languages.',
+      'Compare four Chatterbox models by language coverage and speech controls, then download the ones you want to use.',
     details: [
-      'Model capabilities and language notes',
-      'Download, pause and resume interface',
-      'Planned offline use of installed models'
-    ],
-    note: 'Model loading, downloads and device detection are simulated. The local engine is not integrated yet.'
+      'Auto routing by narration language',
+      'Pause and resume model downloads',
+      'Offline generation with downloaded models'
+    ]
   }
 ] as const
 
@@ -86,8 +81,8 @@ export function FeaturesSection(): React.JSX.Element {
           <span className="highlight">One studio.</span>
         </h2>
         <p className="max-w-xl text-base leading-relaxed text-muted-foreground">
-          A considered place for every part of the voice workflow. Explore the interface taking
-          shape, from a first line to a finished take.
+          Explore the tools for writing scripts, managing voices and models, and organizing finished
+          audio.
         </p>
       </header>
       <Tabs defaultValue="narration" className="mt-10">
@@ -131,9 +126,6 @@ export function FeaturesSection(): React.JSX.Element {
                     </li>
                   ))}
                 </ul>
-                <p className="mt-2 border-t border-card-edge pt-5 text-xs leading-relaxed text-muted-foreground">
-                  {workspace.note}
-                </p>
               </div>
               <div className="min-w-0 lg:col-span-3">
                 <FeatureVisual area={workspace.id} />

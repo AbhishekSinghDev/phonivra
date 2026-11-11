@@ -40,7 +40,7 @@ const models = [
     name: 'Chatterbox Nano',
     size: '110M',
     language: 'English',
-    detail: 'Smallest model in the catalog'
+    detail: 'Smallest model, with native reaction tags'
   },
   {
     name: 'Multilingual V3',
@@ -73,8 +73,8 @@ export function ModelsSection(): React.JSX.Element {
           <span className="highlight">A wider vocabulary.</span>
         </h2>
         <p className="max-w-xl text-sm leading-relaxed text-muted-foreground lg:col-span-3">
-          The planned engine brings Resemble AI’s Chatterbox models into one studio, with a choice
-          of controls and language coverage. Model loading and downloads are currently simulated.
+          Download Resemble AI’s Chatterbox models from the studio. Each model offers a different
+          set of speech controls and supported languages.
         </p>
       </header>
 
@@ -83,8 +83,7 @@ export function ModelsSection(): React.JSX.Element {
           <div className="overflow-x-auto">
             <Table>
               <TableCaption className="sr-only">
-                Four models in the interface catalog. Engine integration pending. M denotes millions
-                of parameters.
+                Chatterbox models available in Phonivra. M denotes millions of parameters.
               </TableCaption>
               <TableHeader>
                 <TableRow>
@@ -114,20 +113,17 @@ export function ModelsSection(): React.JSX.Element {
             </Table>
           </div>
           <p className="mt-4 text-xs leading-relaxed text-muted-foreground">
-            <span className="font-medium text-foreground">Auto routing:</span> planned to choose
-            Chatterbox Turbo for English and Multilingual V3 for other supported languages.
+            Auto routing uses Chatterbox Turbo for English and Multilingual V3 for other supported
+            languages.
           </p>
         </div>
 
         <div className="min-w-0 lg:col-span-2">
           <h3 className="font-montserrat text-lg font-medium tracking-tight">
-            23 languages in view.
+            Multilingual V3 languages
           </h3>
-          <p className="mt-2 text-xs leading-relaxed text-muted-foreground">
-            Listed for Multilingual V3. Language processing still needs work.
-          </p>
           <ul
-            aria-label="Languages listed in the Multilingual V3 catalog"
+            aria-label="Languages supported by Multilingual V3"
             className="mt-3 grid grid-cols-3 gap-x-4 sm:grid-cols-4 lg:grid-cols-3"
           >
             {languages.map((language) => (
@@ -139,9 +135,8 @@ export function ModelsSection(): React.JSX.Element {
         </div>
       </div>
       <p className="mt-6 border-t border-card-edge pt-4 text-xs leading-relaxed text-muted-foreground">
-        Japanese and Chinese part boundaries need further work. Hebrew diacritics and Russian stress
-        processors are not bundled. Number conversion is planned for English and Hindi; Hindi
-        ordinals are not supported.
+        Text preparation supports number conversion in English and cardinal number conversion in
+        Hindi. Hebrew diacritics and Russian stress processors are unavailable in the app.
       </p>
     </section>
   )
