@@ -146,7 +146,7 @@ export default function ModelsPage(): React.JSX.Element {
                         aria-label={`${item.label} download progress`}
                       />
                       <p className="text-xs tabular-nums text-muted-foreground">
-                        {installation.progress}% ·{' '}
+                        {installation.progress.toFixed(2)}% ·{' '}
                         {installation.status === 'paused' ? 'Paused' : 'Downloading'}
                       </p>
                     </div>
