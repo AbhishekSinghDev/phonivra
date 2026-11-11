@@ -41,7 +41,6 @@ import { ConfirmDelete } from '@/components/studio/confirm-delete'
 import { JobStatus, activePhases } from '@/components/studio/job-status'
 import { useStudioStore } from '@/stores/studio-store'
 import { act, updateSettings } from '@/lib/actions'
-import { notify } from '@/lib/notify'
 import { languages, models, numericSettings } from '../../../../shared/data/catalog'
 import type { ModelId, SamplingKey } from '../../../../shared/studio'
 
@@ -75,10 +74,7 @@ export default function ModelsPage(): React.JSX.Element {
         </p>
         <div className="flex flex-wrap items-center gap-2">
           <Button variant="outline" size="sm" asChild>
-            <Link
-              to="/settings?tab=storage"
-              onClick={() => notify('Model storage settings clicked')}
-            >
+            <Link to="/settings?tab=storage">
               <HugeiconsIcon icon={FolderOpenIcon} data-icon="inline-start" aria-hidden="true" />
               Storage settings
             </Link>
@@ -119,7 +115,6 @@ export default function ModelsPage(): React.JSX.Element {
                   aria-pressed={selected === id}
                   onClick={() => {
                     setSelected(id)
-                    notify('Model details clicked')
                   }}
                 />
                 <div className="flex size-10 items-center justify-center rounded-xl bg-secondary text-secondary-foreground">
@@ -360,13 +355,6 @@ export default function ModelsPage(): React.JSX.Element {
           </AccordionItem>
         </Accordion>
       </section>
-      {import.meta.env.DEV && (
-        <p className="text-xs text-muted-foreground">
-          New, needs backend work: download progress, pause/resume, installed-model management.
-          Sizes and lifecycle actions are mock data. License and gated-access requirements remain
-          open product decisions.
-        </p>
-      )}
     </ScreenFrame>
   )
 }

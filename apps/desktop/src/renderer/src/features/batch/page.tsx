@@ -32,7 +32,6 @@ import { WindowedList } from '@/components/studio/windowed-list'
 import { JobStatus, activePhases } from '@/components/studio/job-status'
 import { OutputDetails } from '@/components/studio/output-details'
 import { act, editBatchText } from '@/lib/actions'
-import { notify } from '@/lib/notify'
 import { useStudioStore } from '@/stores/studio-store'
 import { languages } from '../../../../shared/data/catalog'
 
@@ -61,7 +60,6 @@ function BatchText({
             setDraft(event.target.value)
             editBatchText(event.target.value)
           }}
-          onBlur={() => notify('Edit batch script clicked')}
           aria-describedby="batch-text-help"
         />
         <FieldDescription id="batch-text-help">
@@ -274,7 +272,6 @@ export default function BatchPage(): React.JSX.Element {
                     variant="ghost"
                     onClick={() => {
                       setInspectOutput(unit.outputId!)
-                      notify('Inspect batch output clicked')
                     }}
                   >
                     View output
@@ -373,13 +370,6 @@ export default function BatchPage(): React.JSX.Element {
             />
           </section>
         </>
-      )}
-      {import.meta.env.DEV && (
-        <p className="text-xs text-muted-foreground">
-          Mock source files and chapter plans. Real file import, heading-aware preparation and
-          completed-result ZIPs need backend work. Markdown splitting is intended to happen before
-          cleanup.
-        </p>
       )}
     </ScreenFrame>
   )

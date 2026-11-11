@@ -1,0 +1,55 @@
+{
+  "turbo": {
+    "repository": "ResembleAI/chatterbox-turbo",
+    "revision": "749d1c1a46eb10492095d68fbcf55691ccf137cd",
+    "digests": {
+      "ve.safetensors": "f0921cab452fa278bc25cd23ffd59d36f816d7dc5181dd1bef9751a7fb61f63c",
+      "t3_turbo_v1.safetensors": "fcf1f8c1d651bb7e3acd69ee5be269b4ac10c02980b7708213d598bc9f7cdf87",
+      "s3gen_meanflow.safetensors": "d65cb687a2ed581ee6cc297e919ffefa63386944f42364ae13b78a594945514f",
+      "conds.pt": "b1852099306fd6a7814eb9d0bd10186caba7249596cc23868f78a0eefbfa5033",
+      "tokenizer_config.json": "58bc759ea7dab3dd5442f0500e493f170eeba67f",
+      "special_tokens_map.json": "b2d2dbc845800c78fe98656af927d831ab4ff7b7",
+      "added_tokens.json": "fd85325cdfafc690469b6f0e8aeb5cf4649c1450",
+      "merges.txt": "226b0752cac7789c48f0cb3ec53eda48b7be36cc",
+      "vocab.json": "a15dd0028acd1dd2c1c2394c80e1de8f3f12a0e4"
+    }
+  },
+  "nano": {
+    "repository": "ResembleAI/chatterbox-nano",
+    "revision": "71ccd1d0081b430592cea481f4307e764e07bc64",
+    "digests": {
+      "ve.safetensors": "f0921cab452fa278bc25cd23ffd59d36f816d7dc5181dd1bef9751a7fb61f63c",
+      "t3_nano_v1.safetensors": "72b110185087d945dbdf54dee4e333848e1811bdd5fd6cb16ceb8da50006f0c9",
+      "s3gen_meanflow.safetensors": "d65cb687a2ed581ee6cc297e919ffefa63386944f42364ae13b78a594945514f",
+      "conds.pt": "b1852099306fd6a7814eb9d0bd10186caba7249596cc23868f78a0eefbfa5033",
+      "tokenizer_config.json": "58bc759ea7dab3dd5442f0500e493f170eeba67f",
+      "special_tokens_map.json": "b2d2dbc845800c78fe98656af927d831ab4ff7b7",
+      "added_tokens.json": "fd85325cdfafc690469b6f0e8aeb5cf4649c1450",
+      "merges.txt": "226b0752cac7789c48f0cb3ec53eda48b7be36cc",
+      "vocab.json": "a15dd0028acd1dd2c1c2394c80e1de8f3f12a0e4"
+    }
+  },
+  "multilingual": {
+    "repository": "ResembleAI/chatterbox",
+    "revision": "5bb1f6ee58e50c3b8d408bc82a6d3740c2db6e18",
+    "digests": {
+      "ve.pt": "4b16d836bc598509860f6fa068165a8bb5e9ac84f05582dfcf278a5a372879f1",
+      "t3_mtl23ls_v3.safetensors": "5abca8321ede76f8e61f1cc0d19aea6c946b28871017ce8726f8a69203f05953",
+      "s3gen.pt": "9b9ff07e60b20c136e2b1b3d7563a24604e8d2c4c267888d1ee929dd0151d2a3",
+      "grapheme_mtl_merged_expanded_v1.json": "d27fb3f2fd38ca39b7bbfbf83a13b3c617e551df",
+      "conds.pt": "6552d70568833628ba019c6b03459e77fe71ca197d5c560cef9411bee9d87f4e",
+      "Cangjie5_TC.json": "d77891f84ca1db0d6f7058a4ee081d4bb0bfe88e"
+    }
+  },
+  "original": {
+    "repository": "ResembleAI/chatterbox",
+    "revision": "5bb1f6ee58e50c3b8d408bc82a6d3740c2db6e18",
+    "digests": {
+      "ve.safetensors": "f0921cab452fa278bc25cd23ffd59d36f816d7dc5181dd1bef9751a7fb61f63c",
+      "t3_cfg.safetensors": "914cb1696f47527fe8852ca8f1fe1fa63cb34f76f9c715e84e067b744dd0da81",
+      "s3gen.safetensors": "2b78103c654207393955e4900aac14a12de8ef25f4b09424f1ef91941f161d4e",
+      "tokenizer.json": "abd07c710243ba89bf1b21780e7c37ddde92334e",
+      "conds.pt": "6552d70568833628ba019c6b03459e77fe71ca197d5c560cef9411bee9d87f4e"
+    }
+  }
+}

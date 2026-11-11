@@ -22,7 +22,6 @@ import { NarrationNotices } from './parts/narration-notices'
 import { NarrationResult } from './parts/narration-result'
 import { VoiceTools } from '@/components/studio/voice-tools'
 import { act } from '@/lib/actions'
-import { notify } from '@/lib/notify'
 import { useStudioStore } from '@/stores/studio-store'
 import { resolvedModel } from '../../../../shared/data/catalog'
 
@@ -180,9 +179,7 @@ export function TextToSpeechPage(): React.JSX.Element {
       <p className="text-xs leading-relaxed text-muted-foreground">
         Audio is generated on this device and includes the Resemble Perth watermark.{' '}
         <Button variant="link" size="sm" asChild>
-          <Link to="/models" onClick={() => notify('View models clicked')}>
-            Model details
-          </Link>
+          <Link to="/models">Model details</Link>
         </Button>
       </p>
       {inspectionOpen && (

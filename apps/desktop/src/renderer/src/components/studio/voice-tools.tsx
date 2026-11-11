@@ -16,7 +16,6 @@ import { VoicePresetControls } from '@/components/studio/voice-preset-controls'
 import { AudioTransport } from '@/components/studio/audio-transport'
 import { activePhases } from '@/components/studio/job-status'
 import { act } from '@/lib/actions'
-import { notify } from '@/lib/notify'
 import { useStudioStore } from '@/stores/studio-store'
 
 export function VoiceTools(): React.JSX.Element | null {
@@ -25,7 +24,7 @@ export function VoiceTools(): React.JSX.Element | null {
   return (
     <Sheet>
       <SheetTrigger asChild>
-        <Button variant="outline" size="sm" onClick={() => notify('Voice tools clicked')}>
+        <Button variant="outline" size="sm">
           <HugeiconsIcon icon={AudioLinesIcon} data-icon="inline-start" aria-hidden="true" />
           Voice reference
         </Button>

@@ -6,6 +6,8 @@ const api: DesktopAPI = {
   studio: {
     getSnapshot: () => ipcRenderer.invoke('studio:snapshot'),
     dispatch: (command) => ipcRenderer.invoke('studio:dispatch', command),
+    waveform: (id) => ipcRenderer.invoke('studio:waveform', id),
+    reportPlayback: (playback) => ipcRenderer.invoke('studio:playback', playback),
     onChange: (callback) => {
       const listener = (_event: Electron.IpcRendererEvent, state: StudioSnapshot): void =>
         callback(state)

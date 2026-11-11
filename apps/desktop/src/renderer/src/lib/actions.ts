@@ -1,5 +1,6 @@
 import { notify, notifyError } from '@/lib/notify'
 import { useStudioStore } from '@/stores/studio-store'
+import { controlPlayback, reconcilePlayback } from '@/lib/playback'
 import type { GenerationSettings, StudioCommand, StudioSnapshot } from '../../../shared/studio'
 
 async function receive(request: Promise<StudioSnapshot>, reportStatus = false): Promise<void> {
@@ -48,7 +49,11 @@ export function editBatchText(text: string): void {
   }, 200)
 }
 export function act(label: string, command: StudioCommand): Promise<void> {
-  notify(`${label} clicked`)
+  if (command.type === 'playback.toggle' || command.type === 'playback.seek') {
+    return controlPlayback(command).catch((error: unknown) => {
+      notifyError(error instanceof Error ? error.message : `${label} failed.`)
+    })
+  }
   return flushScriptDraft().then(() => receive(window.api.studio.dispatch(command), true))
 }
 // Keep typing synchronous locally, and coalesce IPC snapshots. Actions flush the
@@ -81,6 +86,7 @@ export function connectStudio(): () => void {
     const previous = useStudioStore.getState().snapshot
     if (previous && previous.revision >= snapshot.revision) return
     useStudioStore.getState().accept(snapshot)
+    reconcilePlayback()
     if (snapshot.statusIsError && snapshot.status && snapshot.status !== previous?.status)
       notifyError(snapshot.status)
     if (snapshot.job.phase === 'error' && previous?.job.phase !== 'error')

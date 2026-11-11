@@ -12,13 +12,12 @@ import {
 import { ScrollArea } from '@phonivra/ui/components/scroll-area'
 import { AdvancedSettings } from './settings-fields'
 import { DictionaryEditor } from './dictionary-editor'
-import { notify } from '@/lib/notify'
 
 export function SettingsInspector(): React.JSX.Element {
   return (
     <Sheet>
       <SheetTrigger asChild>
-        <Button variant="outline" size="sm" onClick={() => notify('Advanced settings clicked')}>
+        <Button variant="outline" size="sm">
           <HugeiconsIcon icon={SlidersHorizontalIcon} data-icon="inline-start" aria-hidden="true" />
           Advanced settings
         </Button>

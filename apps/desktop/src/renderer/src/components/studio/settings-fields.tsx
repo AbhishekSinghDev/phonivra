@@ -1,3 +1,4 @@
+import { sampleRates } from '../../../../shared/contract'
 import { useId } from 'react'
 import {
   Field,
@@ -386,7 +387,7 @@ export function AdvancedSettings(): React.JSX.Element | null {
                 </SelectTrigger>
                 <SelectContent>
                   <SelectGroup>
-                    {[24000, 44100, 48000].map((rate) => (
+                    {sampleRates.map((rate) => (
                       <SelectItem key={rate} value={String(rate)}>
                         {rate / 1000} kHz
                       </SelectItem>

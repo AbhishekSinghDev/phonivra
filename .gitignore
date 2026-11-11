@@ -153,8 +153,16 @@ vite.config.ts.timestamp-*
 .claude
 .codex
 
-# Docs
-docs
-
 # Next.js generated declarations
 next-env.d.ts
+
+# Local Python engine environment and bytecode
+.venv/
+__pycache__/
+*.py[cod]
+.ruff_cache/
+apps/engine/build/
+apps/engine/*.egg-info/
+
+# Desktop installer staging and artifacts
+apps/desktop/.release/

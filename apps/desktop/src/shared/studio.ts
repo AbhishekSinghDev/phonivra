@@ -225,8 +225,13 @@ export interface StudioSnapshot {
   configuration: SettingsWorkspace
   watermark: WatermarkResult | null
   statusIsError: boolean
-  device: { mode: 'auto' | 'cpu' | 'cuda'; label: string; vram: string | null; available: boolean }
-  dependencies: { ffmpeg: boolean; perth: boolean; online: boolean }
+  device: {
+    mode: 'auto' | 'cpu' | 'cuda' | 'mps'
+    label: string
+    vram: string | null
+    available: boolean
+  }
+  dependencies: { ffmpeg: boolean; recording: boolean; perth: boolean; online: boolean }
   status: string | null
   playback: { playing: boolean; position: number; outputId: string | null }
   selectedOutput: string | null
@@ -244,7 +249,7 @@ export type StudioCommand =
   | { type: 'batch.split'; enabled: boolean }
   | { type: 'batch.import' | 'batch.prepare' | 'batch.start' }
   | { type: 'batch.remove-file'; id: string }
-  | { type: 'device.set'; mode: 'auto' | 'cpu' | 'cuda' }
+  | { type: 'device.set'; mode: 'auto' | 'cpu' | 'cuda' | 'mps' }
   | {
       type:
         | 'preferences.save'
@@ -278,4 +283,6 @@ export interface StudioAPI {
   getSnapshot: () => Promise<StudioSnapshot>
   dispatch: (command: StudioCommand) => Promise<StudioSnapshot>
   onChange: (callback: (snapshot: StudioSnapshot) => void) => () => void
+  waveform: (id: string) => Promise<number[]>
+  reportPlayback: (playback: StudioSnapshot['playback']) => Promise<void>
 }

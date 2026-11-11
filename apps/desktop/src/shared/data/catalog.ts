@@ -1,9 +1,9 @@
+import { nativeSampleRate } from '../contract'
 import type {
   GenerationSettings,
   LanguageDefinition,
   ModelDefinition,
-  NumericSetting,
-  VoiceDefinition
+  NumericSetting
 } from '../studio'
 
 export const languages: readonly LanguageDefinition[] = [
@@ -30,14 +30,14 @@ export const languages: readonly LanguageDefinition[] = [
     code: 'hi',
     label: 'Hindi',
     nativeLabel: 'हिन्दी',
-    note: 'Number conversion supported; ordinal handling needs a product decision.'
+    note: 'Cardinal number conversion is supported.'
   },
   { code: 'it', label: 'Italian', nativeLabel: 'Italiano' },
   {
     code: 'ja',
     label: 'Japanese',
     nativeLabel: '日本語',
-    note: 'CJK part boundaries need backend improvements.'
+    note: 'Sentence boundaries include CJK punctuation.'
   },
   { code: 'ko', label: 'Korean', nativeLabel: '한국어' },
   { code: 'ms', label: 'Malay', nativeLabel: 'Bahasa Melayu' },
@@ -68,7 +68,7 @@ export const languages: readonly LanguageDefinition[] = [
     code: 'zh',
     label: 'Chinese',
     nativeLabel: '中文',
-    note: 'CJK part boundaries need backend improvements.'
+    note: 'Sentence boundaries include CJK punctuation.'
   }
 ]
 const english = ['en'] as const
@@ -77,7 +77,7 @@ const base = {
   engine: 'chatterbox',
   referenceMinimum: 5,
   maxSpeechTokens: 1000,
-  nativeSampleRate: 24000,
+  nativeSampleRate,
   decoderReferenceSeconds: 10,
   referenceLoudnessLufs: null
 } as const
@@ -189,7 +189,7 @@ export const defaultSettings: GenerationSettings = {
   seed: 0,
   speed: 1,
   format: 'wav',
-  sample_rate: 24000,
+  sample_rate: nativeSampleRate,
   loudness: true,
   loudness_target: -16,
   trim_silence: true,
@@ -272,7 +272,7 @@ export const numericSettings: readonly NumericSetting[] = [
     min: 0,
     max: 1,
     step: 0.05,
-    description: 'Guidance and pacing. Original at zero needs backend verification.',
+    description: 'Guidance and pacing for Multilingual and Original.',
     group: 'sampling'
   },
   {
@@ -292,7 +292,7 @@ export const numericSettings: readonly NumericSetting[] = [
     max: 3,
     step: 0.05,
     unit: 's',
-    description: 'Used by [pause]. Automatic part-boundary behavior is undecided.',
+    description: 'Pause between automatic parts and the default for [pause].',
     group: 'parts'
   },
   {
@@ -368,53 +368,6 @@ export const reactionTags = [
   'shush',
   'clear throat'
 ] as const
-export const voices: readonly VoiceDefinition[] = [
-  {
-    id: 'default',
-    label: 'Original narrator',
-    kind: 'built-in',
-    description: 'Uses the selected model’s built-in voice.',
-    duration: null,
-    previewAvailable: true,
-    available: true
-  },
-  ...(['Male 1', 'Male 2', 'Female 1', 'Female 2', 'Deep / dramatic'] as const).map(
-    (label, index): VoiceDefinition => ({
-      id: ['male_1', 'male_2', 'female_1', 'female_2', 'deep'][index],
-      label,
-      kind: 'built-in',
-      description: 'Reference recording from the official Chatterbox demo.',
-      duration: 12,
-      previewAvailable: true,
-      available: true
-    })
-  ),
-  ...[
-    'Dark gaming voice prompt',
-    'Ivr female 01 prompt',
-    'Ivr female 02 prompt',
-    'Ivr male 01 prompt',
-    'Ivr male 02 prompt'
-  ].map((label): VoiceDefinition => ({
-    id: `file:${label.toLowerCase().replaceAll(' ', '_')}`,
-    label: `Recording · ${label}`,
-    kind: 'external',
-    description: 'Discovered recording. Audition plays the reference.',
-    duration: 12,
-    previewAvailable: false,
-    available: true
-  })),
-  {
-    id: 'custom:calm-narrator-demo',
-    label: 'Calm narrator',
-    kind: 'custom',
-    description: 'Example saved voice. Mock data only.',
-    duration: 18.4,
-    previewAvailable: true,
-    available: true
-  }
-]
-
 export const settingLabels: Record<keyof GenerationSettings, string> = {
   title: 'Title',
   language: 'Language',

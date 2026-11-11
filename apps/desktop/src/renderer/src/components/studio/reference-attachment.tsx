@@ -3,6 +3,7 @@ import { AudioLinesIcon, MicIcon, UploadIcon, XIcon } from '@hugeicons/core-free
 import { Button } from '@phonivra/ui/components/button'
 import { Badge } from '@phonivra/ui/components/badge'
 import { Spinner } from '@phonivra/ui/components/spinner'
+import { useStudioStore } from '@/stores/studio-store'
 import { act } from '@/lib/actions'
 import type { ReferenceState } from '../../../../shared/studio'
 
@@ -11,6 +12,7 @@ export function ReferenceAttachment({
 }: {
   reference: ReferenceState
 }): React.JSX.Element {
+  const canRecord = useStudioStore((state) => state.snapshot?.dependencies.recording === true)
   const busy = reference.status === 'validating' || reference.status === 'recording'
   return (
     <section aria-label="Reference recording" className="flex flex-col gap-4">
@@ -38,7 +40,7 @@ export function ReferenceAttachment({
             <p className="text-xs text-muted-foreground">
               {busy
                 ? reference.status === 'recording'
-                  ? 'Recording simulated reference…'
+                  ? 'Recording microphone…'
                   : 'Checking audio…'
                 : `${reference.duration.toFixed(1)} seconds`}
             </p>
@@ -72,7 +74,8 @@ export function ReferenceAttachment({
         <Button
           variant="outline"
           size="sm"
-          disabled={reference.status === 'validating'}
+          disabled={!canRecord || reference.status === 'validating'}
+          title={canRecord ? undefined : 'Microphone capture is unavailable. Upload audio instead.'}
           onClick={() =>
             act(reference.status === 'recording' ? 'Finish recording' : 'Record reference', {
               type: 'reference.attach',

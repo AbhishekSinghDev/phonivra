@@ -40,7 +40,6 @@ import { JobStatus, activePhases } from '@/components/studio/job-status'
 import { CatalogSelect } from '@/components/studio/catalog-select'
 import { useStudioStore } from '@/stores/studio-store'
 import { act, updateSettings } from '@/lib/actions'
-import { notify } from '@/lib/notify'
 import { languages, models, resolvedModel } from '../../../../shared/data/catalog'
 import type { GenerationSettings } from '../../../../shared/studio'
 
@@ -101,7 +100,7 @@ export function VoicesModelsPage(): React.JSX.Element {
                 Refresh
               </Button>
               <SheetTrigger asChild>
-                <Button size="sm" onClick={() => notify('Create voice clicked')}>
+                <Button size="sm">
                   <HugeiconsIcon icon={MicIcon} data-icon="inline-start" aria-hidden="true" />
                   Create a voice
                 </Button>
@@ -128,7 +127,6 @@ export function VoicesModelsPage(): React.JSX.Element {
               onValueChange={(value) => {
                 if (value) {
                   setKind(value)
-                  notify('Filter voices clicked')
                 }
               }}
             >
@@ -151,7 +149,6 @@ export function VoicesModelsPage(): React.JSX.Element {
                     className="h-full w-full justify-start gap-3 rounded-xl px-4"
                     onClick={() => {
                       setInspected(item.id)
-                      notify('Inspect voice clicked')
                     }}
                   >
                     <span className="flex size-10 shrink-0 items-center justify-center rounded-full bg-secondary text-secondary-foreground">
@@ -218,7 +215,7 @@ export function VoicesModelsPage(): React.JSX.Element {
                       ? snapshot.playback.position
                       : 0
                   }
-                  state={voice.available ? 'ready' : 'unavailable'}
+                  state={voice.available && voice.duration !== null ? 'ready' : 'unavailable'}
                 />
                 <dl className="grid grid-cols-2 gap-4">
                   <DetailValue label="Reference duration">

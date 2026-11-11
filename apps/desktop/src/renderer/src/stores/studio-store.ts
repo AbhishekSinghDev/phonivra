@@ -36,7 +36,9 @@ export const useStudioStore = create<StudioStore>((set) => ({
         accepted.voices = previous.voices
       if (
         snapshot.outputs.length === previous.outputs.length &&
-        snapshot.outputs.every((output, index) => output.id === previous.outputs[index].id)
+        snapshot.outputs.every(
+          (output, index) => JSON.stringify(output) === JSON.stringify(previous.outputs[index])
+        )
       )
         accepted.outputs = previous.outputs
       if (

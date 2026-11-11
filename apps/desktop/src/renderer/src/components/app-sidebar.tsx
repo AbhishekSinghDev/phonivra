@@ -26,7 +26,6 @@ import {
   SidebarTrigger
 } from '@phonivra/ui/components/sidebar'
 import { useStudioStore } from '@/stores/studio-store'
-import { notify } from '@/lib/notify'
 
 const navigation = [
   {
@@ -95,7 +94,7 @@ export function AppSidebar(): React.JSX.Element {
                       isActive={pathname === to}
                       tooltip={title}
                     >
-                      <NavLink to={to} onClick={() => notify(`${title} clicked`)}>
+                      <NavLink to={to}>
                         <HugeiconsIcon icon={Icon} aria-hidden="true" />
                         <span>{title}</span>
                         {to === '/library' && outputs > 0 && (
@@ -121,7 +120,7 @@ export function AppSidebar(): React.JSX.Element {
               isActive={pathname === '/settings'}
               tooltip="Settings"
             >
-              <NavLink to="/settings" onClick={() => notify('Settings clicked')}>
+              <NavLink to="/settings">
                 <HugeiconsIcon icon={SettingsIcon} aria-hidden="true" />
                 <span>Settings</span>
               </NavLink>
@@ -137,7 +136,6 @@ export function AppSidebar(): React.JSX.Element {
                 to={
                   jobKind === 'batch' ? '/batch' : jobKind === 'download' ? '/models' : '/narrate'
                 }
-                onClick={() => notify('Job status clicked')}
               >
                 <HugeiconsIcon icon={CpuIcon} aria-hidden="true" />
                 <span className="flex min-w-0 flex-1 flex-col gap-1">

@@ -1,52 +1,23 @@
 # Phonivra
 
-Local text-to-speech studio: `apps/desktop` (`phonivra`, Electron),
-`apps/website` (`@phonivra/website`, Next.js marketing), and `packages/ui`
-(`@phonivra/ui`, shared UI source). Read the nested `AGENTS.md` before editing
-any workspace, including when starting an agent at the root.
+Phonivra is a local-first text-to-speech studio. This guide applies across the monorepo. Before editing a workspace, read its guide and any deeper `AGENTS.md` on the path to the files you will change. For cross-workspace changes, read each affected guide.
 
-## Commands
+| Workspace                          | Package             | Owns                                         |
+| ---------------------------------- | ------------------- | -------------------------------------------- |
+| [Desktop](apps/desktop/AGENTS.md)  | `phonivra`          | Electron app, native integration, installers |
+| [Engine](apps/engine/AGENTS.md)    | `@phonivra/engine`  | Local speech synthesis, jobs, storage, media |
+| [Website](apps/website/AGENTS.md)  | `@phonivra/website` | Public marketing site                        |
+| [Shared UI](packages/ui/AGENTS.md) | `@phonivra/ui`      | Browser-safe components, hooks, and theme    |
 
-Use Node **>=24.22.0 <25** and **pnpm 12.15.0** (pinned in `packageManager`);
-`.nvmrc` selects only the major version. Run commands below from the repo root.
+## Development
 
-| Command                          | Scope                                                  |
-| -------------------------------- | ------------------------------------------------------ |
-| `pnpm install --frozen-lockfile` | Install the existing lockfile across the workspace     |
-| `pnpm typecheck`                 | All workspaces; includes Next.js route type generation |
-| `pnpm lint`                      | All workspaces; warnings fail                          |
-| `pnpm format:check`              | Entire repo, including documentation                   |
-| `pnpm build`                     | Both apps and prerequisite shared UI checks            |
-
-Single-workspace commands are in the nested files. There is no automated test
-runner or test script. Before finishing code changes, run the relevant checks
-above and exercise the changed flows; check both themes for UI changes. Shared
-UI changes require checking both consumers. Report blocked checks rather than
-treating cached output as fresh verification. See `README.md` → Development for
-formatting writes, dependency updates and task caching; do not hand-edit the lockfile
-or generated output.
+- Run workspace commands from the repository root unless a guide specifies otherwise. Use the Node range and pnpm version declared in [package.json](package.json). Install existing dependencies with `pnpm install --frozen-lockfile`. Update lockfiles through their package managers.
+- Use the affected workspace's checks for scoped changes. For cross-workspace code or shared tooling changes, use the applicable CI checks: `pnpm typecheck`, `pnpm lint`, `pnpm build`, and `pnpm format:check`. See [CI](.github/workflows/checks.yml) and the [development guide](README.md#development) for prerequisites and caching. Report any relevant checks or smoke tests you could not run.
+- For current library, framework, SDK, API, CLI, or cloud-service guidance, use Context7. Resolve the library ID first unless an exact ID is supplied, then query each distinct topic with the full question. Use official documentation if Context7 is unavailable. Ordinary refactoring and business-logic debugging follow the local code.
 
 ## Shared boundaries
 
-- Both apps use `@phonivra/ui/components/*`, `@phonivra/ui/hooks/*`,
-  `@phonivra/ui/lib/*` and `@phonivra/ui/globals.css`; do not create app-local
-  copies of shared primitives or theme tokens. App-specific composites stay in apps.
-- Keep Electron/IPC contracts and app stores out of the shared UI package.
-  Its dependencies belong in `packages/ui`; app/framework dependencies stay in apps.
-- Preview additions from the root with
-  `pnpm ui:add @shadcn/aspect-ratio --dry-run` (substitute the desired component).
-  Review before applying; the complete add/update workflow is in
-  `README.md` → Shared UI and adding components. Use the CLI, not lookalikes.
-- Use semantic tokens and existing variants. Consumer styling is constrained by
-  `.oxlintrc.json`'s shadcn rules; do not relax lint rules to bypass a styling error.
-- For current library/tool APIs, use Context7 when available: resolve the library
-  ID first, then query the specific question; otherwise consult official docs.
-
-## Targeted references
-
-Read skills only when relevant: `.agents/skills/shadcn/SKILL.md` for component
-work; `.agents/skills/impeccable/SKILL.md` for UI design;
-`.agents/skills/chaiui/SKILL.md` and `.agents/skills/chaiui-review/SKILL.md`
-for ChaiUI work. Preserve the existing shared theme rather than reinstalling a
-registry theme. Product behavior and app-specific documentation pointers live in
-the nested instructions.
+- Both apps consume `@phonivra/ui` through its public exports. Keep reusable primitives and theme tokens there and app-specific composition in the owning app. Use existing variants and semantic tokens.
+- For changes to commands, settings, media formats, or the desktop–engine protocol, check both sides for affected types and runtime validation. The [shared contract](apps/engine/src/contract.json) owns the shared constants.
+- Keep scripts, reference recordings, and generated audio on-device. Keep model-download credentials out of source, logs, and persisted studio data.
+- Update the nearest guide when a change invalidates its commands or boundaries. Put shared guidance here and link to existing setup or release documentation for details.

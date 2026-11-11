@@ -17,19 +17,20 @@
     "typecheck": "tsc --noEmit -p tsconfig.node.json && tsc --noEmit -p tsconfig.web.json",
     "lint": "oxlint --deny-warnings .",
     "format": "oxfmt --config ../../.oxfmtrc.json --write .",
-    "format:check": "oxfmt --config ../../.oxfmtrc.json --check ."
+    "format:check": "oxfmt --config ../../.oxfmtrc.json --check .",
+    "package": "electron-builder --config electron-builder.cjs --publish never"
   },
   "dependencies": {
     "@fontsource-variable/inter": "latest",
     "@hugeicons/core-free-icons": "^4.3.5",
     "@hugeicons/react": "^1.1.10",
+    "@phonivra/ui": "workspace:*",
     "motion": "^14.7.1",
     "react": "^19.3.0",
     "react-dom": "^19.3.0",
     "react-router": "latest",
     "sonner": "latest",
-    "zustand": "latest",
-    "@phonivra/ui": "workspace:*"
+    "zustand": "latest"
   },
   "devDependencies": {
     "@tailwindcss/vite": "latest",
@@ -38,6 +39,7 @@
     "@types/react-dom": "latest",
     "@vitejs/plugin-react": "latest",
     "electron": "latest",
+    "electron-builder": "26.18.1",
     "electron-vite": "latest",
     "tailwindcss": "^4.0.0",
     "typescript": "^7.0.2",

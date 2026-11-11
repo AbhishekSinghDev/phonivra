@@ -1,3 +1,4 @@
+import { devRendererPort, loopbackHost, mediaOrigin } from './src/shared/contract'
 import { fileURLToPath } from 'node:url'
 import { randomBytes } from 'node:crypto'
 import { defineConfig } from 'electron-vite'
@@ -22,11 +23,15 @@ export default defineConfig(({ command }) => {
           name: 'phonivra-csp',
           transformIndexHtml: {
             order: 'post',
-            handler: (html) => html.replace('__DEV_SCRIPT_NONCE__', nonce ? `'nonce-${nonce}'` : '')
+            handler: (html) =>
+              html
+                .replace('__DEV_SCRIPT_NONCE__', nonce ? `'nonce-${nonce}'` : '')
+                .replace('__MEDIA_ORIGIN__', mediaOrigin)
+                .replace('__DEV_SOCKET__', nonce ? `ws://${loopbackHost}:${devRendererPort}` : '')
           }
         }
       ],
-      server: { host: '127.0.0.1', port: 5173, strictPort: true }
+      server: { host: loopbackHost, port: devRendererPort, strictPort: true }
     }
   }
 })

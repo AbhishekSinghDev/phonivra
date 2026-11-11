@@ -28,7 +28,6 @@ import { activePhases } from '@/components/studio/job-status'
 import { useTheme } from '@/hooks/use-theme'
 import { useStudioStore } from '@/stores/studio-store'
 import { act } from '@/lib/actions'
-import { notify } from '@/lib/notify'
 import type { Theme } from '../../../../shared/api'
 import type { GenerationSettings } from '../../../../shared/studio'
 
@@ -73,7 +72,6 @@ export function SettingsPage(): React.JSX.Element {
             },
             { replace: true }
           )
-          notify('Settings tab clicked')
         }}
       >
         <TabsList variant="line" className="mb-6 flex h-auto flex-wrap justify-start gap-5">
@@ -98,7 +96,6 @@ export function SettingsPage(): React.JSX.Element {
                     aria-labelledby="appearance-label"
                     onValueChange={(value) => {
                       if (value) {
-                        notify('Theme selection clicked')
                         void setTheme(value as Theme)
                       }
                     }}
@@ -128,19 +125,24 @@ export function SettingsPage(): React.JSX.Element {
                     {
                       value: 'auto',
                       label: 'Auto',
-                      description: 'CUDA when available; otherwise CPU'
+                      description: 'Uses an available GPU or falls back to CPU'
                     },
                     { value: 'cpu', label: 'CPU', description: 'Available without an NVIDIA GPU' },
                     {
                       value: 'cuda',
                       label: 'NVIDIA CUDA',
                       description: 'Requires a compatible GPU and driver'
+                    },
+                    {
+                      value: 'mps',
+                      label: 'Apple Metal',
+                      description: 'Requires macOS with MPS support'
                     }
                   ]}
                   onChange={(mode) =>
                     act('Change generation device', {
                       type: 'device.set',
-                      mode: mode as 'auto' | 'cpu' | 'cuda'
+                      mode: mode as 'auto' | 'cpu' | 'cuda' | 'mps'
                     })
                   }
                 />
@@ -148,7 +150,7 @@ export function SettingsPage(): React.JSX.Element {
               <dl className="grid grid-cols-2 gap-4">
                 <DetailValue label="Active device">{snapshot.device.label}</DetailValue>
                 <DetailValue label="GPU memory">
-                  {snapshot.device.vram ?? 'Not available on CPU'}
+                  {snapshot.device.vram ?? 'Not reported for this device'}
                 </DetailValue>
               </dl>
               {active && (
@@ -262,9 +264,7 @@ export function SettingsPage(): React.JSX.Element {
                   Open folder
                 </Button>
                 <Button size="sm" variant="link" asChild>
-                  <Link to="/models" onClick={() => notify('Manage downloaded models clicked')}>
-                    Manage installed models
-                  </Link>
+                  <Link to="/models">Manage installed models</Link>
                 </Button>
               </div>
             </section>
@@ -326,12 +326,6 @@ export function SettingsPage(): React.JSX.Element {
                   Remove token
                 </Button>
               </div>
-              {import.meta.env.DEV && (
-                <p className="text-xs text-muted-foreground">
-                  Mock credential setup: submitted text is discarded. Secure credential storage
-                  needs backend work.
-                </p>
-              )}
             </section>
             <Separator />
             <section aria-labelledby="preview-storage-heading" className="flex flex-col gap-4">
@@ -431,12 +425,6 @@ export function SettingsPage(): React.JSX.Element {
           </div>
         </TabsContent>
       </Tabs>
-      {import.meta.env.DEV && (
-        <p className="text-xs text-muted-foreground">
-          Device, storage, credentials and diagnostics use the mock API. Appearance is persisted by
-          the existing desktop theme service.
-        </p>
-      )}
     </ScreenFrame>
   )
 }

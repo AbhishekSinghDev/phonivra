@@ -1,3 +1,4 @@
+import { deviceModes, maxTextLength, sampleRates } from './contract'
 import { languages, models, numericSettings } from './data/catalog'
 import type { GenerationSettings, StudioCommand } from './studio'
 
@@ -23,7 +24,7 @@ export function validateSettings(raw: unknown): raw is GenerationSettings {
     languages.some((l) => l.code === s.language) &&
     models.some((m) => m.id === s.model) &&
     ['wav', 'mp3', 'flac', 'ogg', 'm4a'].includes(s.format) &&
-    [24000, 44100, 48000].includes(s.sample_rate) &&
+    sampleRates.includes(s.sample_rate) &&
     booleanKeys.every((key) => typeof s[key] === 'boolean') &&
     numericSettings.every(
       (field) =>
@@ -45,7 +46,7 @@ export function validateCommand(raw: unknown): raw is StudioCommand {
     case 'batch.text':
     case 'script.update':
     case 'dictionary.save':
-      return typeof c.text === 'string'
+      return typeof c.text === 'string' && c.text.length <= maxTextLength
     case 'job.start':
       return ['narration', 'preview', 'batch'].includes(c.kind)
     case 'reference.attach':
@@ -67,7 +68,7 @@ export function validateCommand(raw: unknown): raw is StudioCommand {
     case 'batch.remove-file':
       return hasId(c.id)
     case 'device.set':
-      return ['auto', 'cpu', 'cuda'].includes(c.mode)
+      return deviceModes.includes(c.mode)
     case 'credentials.set':
       return typeof c.token === 'string' && c.token.length > 0 && c.token.length <= 4096
     case 'model.remove':

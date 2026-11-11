@@ -1,6 +1,7 @@
 {
   "compilerOptions": {
     "composite": true,
+    "resolveJsonModule": true,
     "target": "ES2022",
     "lib": ["ES2022"],
     "module": "ESNext",
@@ -16,6 +17,7 @@
     "electron.vite.config.ts",
     "src/main/**/*.ts",
     "src/preload/**/*.ts",
-    "src/shared/**/*.ts"
+    "src/shared/**/*.ts",
+    "../engine/src/contract.json"
   ]
 }

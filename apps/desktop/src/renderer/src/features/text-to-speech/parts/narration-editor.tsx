@@ -35,7 +35,6 @@ import {
   AlertDialogHeader,
   AlertDialogTitle
 } from '@phonivra/ui/components/alert-dialog'
-import { notify } from '@/lib/notify'
 import { reactionTags } from '../../../../../shared/data/catalog'
 
 interface EditorProps {
@@ -80,7 +79,6 @@ export const NarrationEditor = memo(function NarrationEditor({
     const { start, end } = selection.current
     const next = `${draft.slice(0, start)}${text}${draft.slice(end)}`
     changeText(next)
-    notify('Insert markup clicked')
     requestAnimationFrame(() => {
       editor.current?.focus()
       editor.current?.setSelectionRange(start + text.length, start + text.length)
@@ -125,7 +123,7 @@ export const NarrationEditor = memo(function NarrationEditor({
             />
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button variant="ghost" size="sm" onClick={() => notify('Project menu clicked')}>
+                <Button variant="ghost" size="sm">
                   <HugeiconsIcon icon={FileCodeIcon} data-icon="inline-start" aria-hidden="true" />
                   Project
                   <HugeiconsIcon icon={ChevronDownIcon} data-icon="inline-end" aria-hidden="true" />
@@ -168,7 +166,7 @@ export const NarrationEditor = memo(function NarrationEditor({
               </Button>
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                  <Button size="sm" variant="ghost" onClick={() => notify('Insert menu clicked')}>
+                  <Button size="sm" variant="ghost">
                     <HugeiconsIcon icon={PlusIcon} data-icon="inline-start" aria-hidden="true" />
                     Script tools
                   </Button>
@@ -218,7 +216,6 @@ export const NarrationEditor = memo(function NarrationEditor({
             placeholder="Write or paste the words you want to bring to life…"
             aria-describedby="narrate-script-help"
             onChange={(event) => changeText(event.target.value)}
-            onBlur={() => notify('Edit script clicked')}
             onSelect={() => {
               if (editor.current)
                 selection.current = {

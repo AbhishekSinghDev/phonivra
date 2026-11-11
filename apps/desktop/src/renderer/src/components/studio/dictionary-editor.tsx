@@ -14,7 +14,6 @@ import { Field, FieldDescription, FieldGroup, FieldLabel } from '@phonivra/ui/co
 import { Textarea } from '@phonivra/ui/components/textarea'
 import { BooleanField } from './settings-fields'
 import { act, updateSettings } from '@/lib/actions'
-import { notify } from '@/lib/notify'
 import { useStudioStore } from '@/stores/studio-store'
 
 export function DictionaryEditor(): React.JSX.Element | null {
@@ -29,11 +28,7 @@ export function DictionaryEditor(): React.JSX.Element | null {
       }}
     >
       <DialogTrigger asChild>
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={() => notify('Pronunciation dictionary clicked')}
-        >
+        <Button variant="ghost" size="sm">
           <HugeiconsIcon icon={BookOpenTextIcon} data-icon="inline-start" aria-hidden="true" />
           Pronunciation dictionary
         </Button>

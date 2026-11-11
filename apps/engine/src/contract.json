@@ -1,0 +1,13 @@
+{
+  "protocolVersion": 1,
+  "loopbackHost": "127.0.0.1",
+  "maxTextLength": 2000000,
+  "maxAudioImportBytes": 200000000,
+  "maxRequestBytes": 12000000,
+  "scriptExtensions": ["txt", "md", "markdown", "srt", "vtt"],
+  "audioExtensions": ["wav", "mp3", "flac", "ogg", "m4a", "opus", "aiff", "aif"],
+  "deviceModes": ["auto", "cpu", "cuda", "mps"],
+  "sampleRates": [24000, 44100, 48000],
+  "nativeSampleRate": 24000,
+  "maxRecordingSeconds": 40
+}

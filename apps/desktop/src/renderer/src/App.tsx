@@ -10,7 +10,6 @@ import { TooltipProvider } from '@phonivra/ui/components/tooltip'
 import { Skeleton } from '@phonivra/ui/components/skeleton'
 import { useTheme } from '@/hooks/use-theme'
 import { useShellStore } from '@/stores/shell-store'
-import { notify } from '@/lib/notify'
 import { connectStudio } from '@/lib/actions'
 
 const TextToSpeechPage = lazy(() =>
@@ -42,7 +41,6 @@ export default function App(): React.JSX.Element {
             open={!collapsed}
             onOpenChange={(open) => {
               if (open === collapsed) {
-                notify('Toggle sidebar clicked')
                 toggleSidebar()
               }
             }}

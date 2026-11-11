@@ -7,3 +7,4 @@ allowBuilds:
   electron: true
   esbuild: true
   '@tailwindcss/oxide': true
+  electron-winstaller: false # NSIS packaging does not use the Squirrel install script.

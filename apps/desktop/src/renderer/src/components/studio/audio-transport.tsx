@@ -8,11 +8,7 @@ import { useStudioStore } from '@/stores/studio-store'
 import { Badge } from '@phonivra/ui/components/badge'
 import { Skeleton } from '@phonivra/ui/components/skeleton'
 import { act } from '@/lib/actions'
-
-const illustrativePeaks = Array.from({ length: 160 }, (_, index) => {
-  const phrase = Math.abs(Math.sin(index * 0.12))
-  return 0.08 + phrase * (0.18 + 0.6 * Math.abs(Math.sin(index * 0.83)))
-})
+import { useEffect, useState } from 'react'
 
 export function AudioTransport({
   id,
@@ -30,6 +26,23 @@ export function AudioTransport({
   state?: 'loading' | 'ready' | 'unavailable' | 'provisional'
 }): React.JSX.Element {
   const basePlayer = useAudioPlayer()
+  const [waveform, setWaveform] = useState<{ id: string; peaks: number[] } | null>(null)
+  useEffect(() => {
+    let cancelled = false
+    if (state === 'ready') {
+      void window.api.studio
+        .waveform(id)
+        .then((values) => {
+          if (!cancelled) setWaveform({ id, peaks: values })
+        })
+        .catch(() => {
+          // Playback remains usable when waveform extraction is unavailable.
+        })
+    }
+    return () => {
+      cancelled = true
+    }
+  }, [id, state])
   const player = {
     ...basePlayer,
     status: state === 'unavailable' ? 'idle' : playing ? 'playing' : 'ready',
@@ -95,9 +108,9 @@ export function AudioTransport({
         <AudioPlayerTime type="duration" />
       </AudioPlayer>
       <Waveform
-        aria-label={`${title} illustrative waveform, seek playback`}
+        aria-label={`${title} waveform, seek playback`}
         className="h-16"
-        peaks={illustrativePeaks}
+        peaks={waveform?.id === id ? waveform.peaks : []}
         duration={duration}
         currentTime={position}
         disabled={disabled}
@@ -106,10 +119,9 @@ export function AudioTransport({
           void act('Seek audio', { type: 'playback.seek', seconds, id })
         }}
       />
-      <p className="text-xs text-muted-foreground">Illustrative waveform</p>
       {disabled && (
         <p className="text-sm text-muted-foreground">
-          Audio will be available when generation finishes.
+          No playable audio is available for this item.
         </p>
       )}
     </section>

@@ -93,11 +93,6 @@ export default function TextInspection({
               {note}
             </p>
           ))}
-          {import.meta.env.DEV && (
-            <p className="text-xs text-muted-foreground">
-              Mock inspection: text cleanup and part boundaries need backend work.
-            </p>
-          )}
           <Button
             variant="outline"
             size="sm"

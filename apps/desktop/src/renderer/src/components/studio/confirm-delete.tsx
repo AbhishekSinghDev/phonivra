@@ -15,7 +15,6 @@ import {
 import { Button } from '@phonivra/ui/components/button'
 import { Checkbox } from '@phonivra/ui/components/checkbox'
 import { Field, FieldGroup, FieldLabel } from '@phonivra/ui/components/field'
-import { notify } from '@/lib/notify'
 
 export function ConfirmDelete({
   name,
@@ -33,12 +32,7 @@ export function ConfirmDelete({
   return (
     <AlertDialog onOpenChange={() => setConfirmed(false)}>
       <AlertDialogTrigger asChild>
-        <Button
-          variant="outline"
-          size="sm"
-          disabled={disabled}
-          onClick={() => notify('Review deletion clicked')}
-        >
+        <Button variant="outline" size="sm" disabled={disabled}>
           <HugeiconsIcon icon={TrashIcon} data-icon="inline-start" aria-hidden="true" />
           Delete
         </Button>

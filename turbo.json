@@ -12,6 +12,20 @@
       "inputs": ["$TURBO_DEFAULT$", ".env*"],
       "outputs": [".next/types/**", "next-env.d.ts", "*.tsbuildinfo"]
     },
+    "check": {
+      "cache": false,
+      "outputs": []
+    },
+    "phonivra#build": {
+      "dependsOn": ["^build", "^typecheck", "@phonivra/engine#check"],
+      "inputs": ["$TURBO_DEFAULT$", ".env*"],
+      "outputs": ["out/**"]
+    },
+    "phonivra#typecheck": {
+      "dependsOn": ["^typecheck", "@phonivra/engine#check"],
+      "inputs": ["$TURBO_DEFAULT$", ".env*"],
+      "outputs": ["*.tsbuildinfo"]
+    },
     "lint": {
       "dependsOn": ["^lint"],
       "outputs": []
@@ -24,7 +38,8 @@
         "WAYLAND_DISPLAY",
         "XAUTHORITY",
         "XDG_RUNTIME_DIR",
-        "DBUS_SESSION_BUS_ADDRESS"
+        "DBUS_SESSION_BUS_ADDRESS",
+        "PHONIVRA_PYTHON"
       ]
     },
     "format": {

@@ -1,0 +1,11 @@
+{
+  "name": "@phonivra/engine",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Python speech engine managed by the Phonivra desktop app",
+  "scripts": {
+    "setup": "python3 scripts/setup.py",
+    "check": "python3 -m compileall -q src scripts",
+    "lint": "uvx --from ruff==0.17.4 ruff check ."
+  }
+}

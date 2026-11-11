@@ -1,25 +1,24 @@
 import Link from 'next/link'
 import Image from 'next/image'
+import { siteLinks } from '@/components/site-links'
 import { Button } from '@phonivra/ui/components/button'
 
 const foundations = [
   {
     name: 'Chatterbox',
     role: 'The voice engine',
-    description:
-      'Models from Resemble AI form the planned speech engine, with four model choices and Auto routing by language.'
+    description: 'Resemble AI’s Chatterbox models power local speech synthesis in Phonivra.'
   },
   {
     name: 'Hugging Face',
     role: 'The model source',
     description:
-      'The intended download flow fetches models from ResembleAI repositories and caches them on your machine for offline use.'
+      'Phonivra downloads models from Resemble AI’s Hugging Face repositories and caches them on your machine for offline use.'
   },
   {
     name: 'FFmpeg',
     role: 'The audio toolkit',
-    description:
-      'Planned non-WAV exports, resampling and speed changes require FFmpeg. Native mono 24 kHz WAV at 1× speed does not.'
+    description: 'FFmpeg handles microphone capture, audio conversion, and export.'
   }
 ] as const
 
@@ -40,8 +39,11 @@ export function IntegrationsSection(): React.JSX.Element {
           <span className="highlight">A local foundation.</span>
         </h2>
         <p className="max-w-xl text-base leading-relaxed text-muted-foreground">
-          The planned local engine brings speech models, model downloads and audio conversion
-          together behind one considered interface.
+          Phonivra began with{' '}
+          <Link href={siteLinks.chatterbox} className="underline underline-offset-4">
+            Chatterbox by Resemble AI
+          </Link>
+          . Thanks to its contributors for sharing the code and models that power the studio.
         </p>
       </header>
 

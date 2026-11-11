@@ -1,6 +1,5 @@
 import { useState } from 'react'
 import { Link } from 'react-router'
-import { notify } from '@/lib/notify'
 import { HugeiconsIcon } from '@hugeicons/react'
 import {
   FileAudioIcon,
@@ -78,9 +77,7 @@ export function HistoryPage(): React.JSX.Element {
           </EmptyHeader>
           <EmptyContent>
             <Button variant="outline" asChild>
-              <Link to="/narrate" onClick={() => notify('Create narration clicked')}>
-                Create a narration
-              </Link>
+              <Link to="/narrate">Create a narration</Link>
             </Button>
           </EmptyContent>
         </Empty>

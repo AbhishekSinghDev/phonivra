@@ -4,7 +4,6 @@ import { Button } from '@phonivra/ui/components/button'
 import { SidebarTrigger } from '@phonivra/ui/components/sidebar'
 import { Tooltip, TooltipContent, TooltipTrigger } from '@phonivra/ui/components/tooltip'
 import { useTheme } from '@/hooks/use-theme'
-import { notify } from '@/lib/notify'
 
 export function TitleBar(): React.JSX.Element {
   const { resolvedTheme, setTheme } = useTheme()
@@ -25,7 +24,6 @@ export function TitleBar(): React.JSX.Element {
               size="icon-sm"
               aria-label="Toggle light and dark theme"
               onClick={() => {
-                notify('Theme selection clicked')
                 void setTheme(resolvedTheme === 'dark' ? 'light' : 'dark')
               }}
             >

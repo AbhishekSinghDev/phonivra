@@ -29,7 +29,6 @@ import { AudioTransport } from '@/components/studio/audio-transport'
 import { OutputDetails } from '@/components/studio/output-details'
 import { JobStatus, activePhases } from '@/components/studio/job-status'
 import { useStudioStore } from '@/stores/studio-store'
-import { notify } from '@/lib/notify'
 
 export function NarrationResult(): React.JSX.Element | null {
   const job = useStudioStore((state) => state.snapshot?.job)
@@ -51,7 +50,7 @@ export function NarrationResult(): React.JSX.Element | null {
         </h2>
         {!active && output && (
           <Button variant="ghost" size="sm" asChild>
-            <Link to="/library" onClick={() => notify('Open library clicked')}>
+            <Link to="/library">
               View library
               <HugeiconsIcon icon={ArrowUpRightIcon} data-icon="inline-end" aria-hidden="true" />
             </Link>
@@ -110,7 +109,7 @@ export function NarrationResult(): React.JSX.Element | null {
             <div className="flex items-center gap-2">
               <Dialog>
                 <DialogTrigger asChild>
-                  <Button variant="ghost" size="sm" onClick={() => notify('Take details clicked')}>
+                  <Button variant="ghost" size="sm">
                     Details & exports
                   </Button>
                 </DialogTrigger>

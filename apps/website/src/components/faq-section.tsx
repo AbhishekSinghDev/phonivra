@@ -1,4 +1,5 @@
 import Link from 'next/link'
+import { siteLinks } from '@/components/site-links'
 import { Button } from '@phonivra/ui/components/button'
 import {
   Accordion,
@@ -11,32 +12,36 @@ const questions = [
   {
     question: 'Can I generate speech with Phonivra today?',
     answer:
-      'No. The desktop interface is built, but the local speech engine is not integrated. Generation, playback, imports, exports, model downloads and device detection are currently simulated. No real audio is created and no files are written.'
+      'Yes. You can run Phonivra from source with the local engine to download a model, generate a narration, and export audio. See release status for installer availability.'
   },
   {
     question: 'Will it work offline?',
     answer:
-      'That is the intended design: download models first, then generate on your computer using your CPU or a compatible NVIDIA GPU. Model downloads need an internet connection. This local engine workflow is not working yet; minimum hardware requirements have not been announced.'
+      'Yes. Download the model you want while online. Once it is cached, you can generate speech offline on your computer.'
   },
   {
-    question: 'What is planned for custom voices?',
+    question: 'How do custom voices work?',
     answer:
-      'The interface includes a flow for uploading or recording a reference and saving a voice preset, without training or a transcript. The models recommend a clean recording of 6 seconds or longer. Uploading and microphone capture are simulated today, and custom presets only last for the current session. Use recordings you have permission to clone.'
+      'Import or record a reference and save it as a voice preset. Use your own voice or get the speaker’s permission to clone and use their voice.'
   },
   {
-    question: 'Which export formats are planned?',
+    question: 'Which formats can I export?',
     answer:
-      'The interface offers WAV, MP3, FLAC, OGG and M4A, plus SRT and VTT subtitles, a TXT transcript and JSON metadata. Native model output is mono 24 kHz. Other formats, resampling and speed changes will require FFmpeg. Subtitles are intended to use approximate sentence timing, not word-level alignment. All export actions are currently simulated.'
+      'Export WAV, MP3, FLAC, OGG, or M4A, along with SRT or VTT subtitles, a transcript, and JSON metadata. Subtitle timings are approximate.'
   },
   {
     question: 'What about privacy and saved work?',
     answer:
-      'Phonivra is designed without accounts, cloud storage, telemetry or uploads of scripts and audio. In the current build, scripts, voices, jobs and outputs live in memory and are lost when the app restarts. Only the theme and sidebar state persist. Project saving and long-term library storage are not implemented yet.'
+      'Scripts, reference recordings, and generated audio stay on your device. Phonivra stores drafts, voice presets, and library outputs locally. You can also save and reopen project files.'
   },
   {
     question: 'Is commercial use allowed?',
     answer:
-      'The app license has not been decided. Each model has its own license, which may restrict commercial use; check the applicable model license before using its output commercially. Generated audio is intended to carry the Resemble Perth watermark. Real watermark verification is not implemented yet.'
+      'Phonivra’s code is MIT-licensed, and Resemble AI lists the Chatterbox model repositories used by the app as MIT. For commercial narration, make sure you have rights to the script and recordings, permission to use any cloned voice, and any disclosures your platform requires.',
+    learnMore: {
+      label: 'Read the generated audio guide',
+      href: `${siteLinks.repository}/blob/master/GENERATED_AUDIO.md`
+    }
   }
 ]
 
@@ -76,6 +81,14 @@ export function FaqSection(): React.JSX.Element {
                 <AccordionTrigger>{item.question}</AccordionTrigger>
                 <AccordionContent>
                   <p className="max-w-prose leading-relaxed text-muted-foreground">{item.answer}</p>
+                  {item.learnMore && (
+                    <Link
+                      className="mt-2 inline-block text-sm underline underline-offset-4"
+                      href={item.learnMore.href}
+                    >
+                      {item.learnMore.label}
+                    </Link>
+                  )}
                 </AccordionContent>
               </div>
             </AccordionItem>
