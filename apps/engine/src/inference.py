@@ -1,6 +1,5 @@
 """Model-independent narration orchestration; no transport or desktop UI code."""
 
-import copy
 import random
 import tempfile
 import time
@@ -12,7 +11,7 @@ import numpy as np
 import soundfile as sf
 
 from . import audio
-from .chatterbox_compat import original_zero_guidance
+from .chatterbox_compat import clone_conditionals, original_zero_guidance
 from .jobs import Jobs
 from .library import companions, filename
 from .models import Models
@@ -61,7 +60,7 @@ class Narrator:
                     else 0.5,
                 )
             else:
-                model.conds = copy.deepcopy(self.models.default_conditionals)
+                model.conds = clone_conditionals(self.models.default_conditionals)
             if model.conds is None:
                 raise ValueError(
                     "This model needs a reference. Upload or record at least 5 seconds of speech."
