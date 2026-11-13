@@ -1,0 +1,40 @@
+---
+title: Install Phonivra
+description: Get the desktop app running and download your first speech model.
+---
+
+## Check for an installer
+
+Open [GitHub Releases](https://github.com/AbhishekSinghDev/phonivra/releases) to see whether an installer is available for your computer. The project targets Windows x64, Macs with Apple silicon, and Linux x64 with a Debian package.
+
+If you find an installer for your system, follow its release notes and open Phonivra. You download speech models separately inside the app.
+
+## Run from source
+
+Use this option if an installer is unavailable or you want to work with the source code. Run the commands in a desktop session that can open graphical apps.
+
+Before you start, install:
+
+- Git
+- Node.js 24.22.0 or a later version of Node 24, plus pnpm 12.15.0
+- Python 3.11 through 3.13 and uv. Python 3.12 is recommended.
+- FFmpeg and FFprobe, both available on your PATH
+
+```bash
+git clone https://github.com/AbhishekSinghDev/phonivra.git
+cd phonivra
+pnpm install --frozen-lockfile
+pnpm engine:setup
+pnpm dev:desktop
+```
+
+Setup installs the Python dependencies in the checkout. The desktop app starts the engine when it opens. If you only need CPU support, run `pnpm engine:setup --cpu` for the engine setup step.
+
+## Finish setup in the app
+
+1. Let Phonivra check the local engine, audio tools, and compute device.
+2. Choose the language you want to narrate in.
+3. Download the suggested speech model and wait for verification to finish.
+4. Generate a short test clip, then open the studio.
+
+You need an internet connection to download models. A verified model can be used offline afterward. Continue with [your first narration](/docs/first-narration).

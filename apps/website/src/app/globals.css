@@ -1,9 +1,13 @@
 @import '@phonivra/ui/globals.css';
+@import 'fumadocs-ui/css/shadcn.css';
+@import 'fumadocs-ui/css/preset.css';
 
 @source '../';
+@source '../../content/docs';
 
 html {
   scroll-behavior: smooth;
+  scrollbar-gutter: stable;
   scrollbar-color: var(--muted-foreground) var(--background);
 }
 
@@ -147,5 +151,29 @@ a:focus-visible {
 @media (min-width: 64rem) {
   [data-feature-visual] {
     height: 29rem;
+  }
+}
+
+#nd-docs-layout a[aria-current='page'][data-active='true'] {
+  background: var(--accent);
+  color: var(--foreground);
+  font-weight: 600;
+}
+
+#nd-page:not([data-full='true']) > .prose h2 {
+  border-block-start: 1px solid var(--border);
+  padding-block-start: 1rem;
+}
+
+#nd-page:not([data-full='true']) > .prose :is(ul, ol) > li + li {
+  margin-block-start: 0.5rem;
+}
+
+@media (min-width: 768px) {
+  #nd-page:not([data-full='true']) {
+    max-width: 56rem;
+    margin-block: 1rem;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-xl);
   }
 }

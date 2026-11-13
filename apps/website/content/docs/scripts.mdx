@@ -1,0 +1,38 @@
+---
+title: Prepare a script
+description: Import text, add pauses, check pronunciation, and save your project.
+---
+
+## Write or import
+
+In **Text to speech**, type or paste your script, or use **Import script** with one of these formats:
+
+- Plain text
+- Markdown
+- SRT or VTT subtitles. Phonivra imports the dialogue and generates new timing.
+
+Importing a script replaces the text in the editor. Save the current project first if you want to keep it.
+
+## Add pauses and fix pronunciation
+
+Use `[pause]` for a pause of the current default length. Add a number in seconds for a specific pause, as in this example.
+
+```text
+The room went quiet.
+[pause=1.5]
+Then someone knocked.
+```
+
+### Pronunciation dictionary
+
+Use the pronunciation dictionary for names, abbreviations, or words the voice keeps misreading. For example, map `API` to `A P I` to read the letters separately. The dictionary changes the text prepared for speech and leaves your script as written.
+
+### Preview the prepared text
+
+Choose **Inspect text and parts** to see the prepared text and where Phonivra plans to split it. Use this when cleanup changes something you wanted spoken or when a long passage needs a different break. Number conversion supports English numbers and Hindi counting numbers.
+
+## Save a project
+
+Open the editor menu and choose **Save project**. The JSON file contains your script, generation settings, pronunciation dictionary, and selected voice ID. Use **Open project JSON** to load it again. Opening a project replaces the current script, settings, and dictionary.
+
+If you move a project to another computer, move any needed reference recording separately, add it as a [voice preset](/docs/voices), and select it before generating. Export the [finished audio](/docs/audio) separately.

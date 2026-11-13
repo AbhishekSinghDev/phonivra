@@ -1,0 +1,44 @@
+---
+title: Troubleshooting
+description: Fix common issues with setup, model downloads, microphones, and generation.
+---
+
+## The engine or audio tools are missing
+
+For a source install:
+
+1. Run `pnpm engine:setup` from the repository root. Resolve any setup errors it reports.
+2. Check that `ffmpeg -version` and `ffprobe -version` work in the same terminal.
+3. Run `pnpm dev:desktop`. The app starts the engine for you.
+
+Some formats, sample rates, and speed changes require FFmpeg.
+
+## A model download will not finish
+
+1. Check your internet connection and the free space in the model cache folder.
+2. Open **Models** and resume the download.
+3. Download the model again if verification keeps failing or you switched cache folders.
+
+Public downloads can work without an access token.
+
+## Generation fails or takes a long time
+
+- **Test a short script.** Use the default voice and an installed model that supports the selected language.
+- **Check the compute device.** If the error mentions the graphics device or memory, try **CPU** in **Settings → General**. For English, you can also try Chatterbox Nano.
+- **Wait for a job to stop.** The current operation may need time to finish stopping. Completed batch items stay available. Unfinished jobs end when you close the app.
+
+## A microphone is missing
+
+Check the selected system input and your microphone permissions. If you are running from source, confirm that your FFmpeg build can record on your platform. You can keep working by importing a recording instead.
+
+## Report a problem
+
+Open **Settings → Diagnostics** and choose **Refresh**. Use **Copy** for diagnostics or **Open logs folder** to inspect recent activity.
+
+Include the following in a [GitHub issue](https://github.com/AbhishekSinghDev/phonivra/issues):
+
+- Your operating system and the app version or Git revision.
+- The selected model and compute device.
+- The steps that produced the error and what you saw.
+
+Review anything you attach for private text, recordings, file paths, or credentials.

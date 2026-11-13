@@ -15,6 +15,7 @@ const linkGroups = [
   {
     title: 'Project and setup',
     links: [
+      { label: 'Docs', href: '/docs' },
       { label: 'Technology', href: '#foundations' },
       { label: 'Common questions', href: '#faq' },
       { label: 'Get started', href: '#download' },

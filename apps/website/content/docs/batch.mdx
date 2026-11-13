@@ -1,0 +1,36 @@
+---
+title: Generate scripts and chapters in a batch
+description: Turn several scripts into separate audio files with shared settings.
+---
+
+## Add scripts or split a long script
+
+Open **Batch** and import multiple script files or paste text. For a single script with several chapters, turn on splitting by Markdown headings. For example, paste this text and review the two chapters it creates.
+
+```markdown
+# Arrival
+
+The first train reached the station before sunrise.
+
+# Departure
+
+By noon the platform was quiet again.
+```
+
+- Text before the first heading becomes its own item.
+- Empty sections are skipped.
+- A script without headings stays together.
+
+## Review and generate
+
+1. Choose the voice, model, language, cleanup rules, and output format. These settings apply to the whole batch. If language detection is on, Phonivra checks each item separately.
+2. Review the items and check their titles and languages. Change the input and review it again if the split looks wrong.
+3. Choose **Generate batch**. Watch each item for progress or errors.
+
+## Save completed items
+
+- **Save the batch.** Choose **Save completed items** to export a ZIP with finished audio and available subtitle, transcript, and metadata files.
+- **Open one result.** Select **View output** next to the item.
+- **Retry failures.** Read the affected item’s message, fix the input or settings, and create a batch with just the scripts that still need audio.
+
+Stopping a batch keeps the audio that has already finished.

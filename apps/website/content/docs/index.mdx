@@ -1,0 +1,109 @@
+---
+title: Phonivra Docs
+description: Learn how to turn a script into narration on your computer.
+full: true
+---
+
+import Image from 'next/image'
+import Link from 'next/link'
+import { Button } from '@phonivra/ui/components/button'
+import { DocsPageIcon } from '@/components/docs-page-icon'
+
+<div className="not-prose mb-10 grid items-center gap-8 border-b border-card-edge pb-10 xl:grid-cols-[1fr_0.9fr]">
+  <div>
+    <p className="max-w-lg text-base leading-relaxed text-muted-foreground">
+      Write a script, choose a voice, and make narration on your computer. Your scripts, recordings,
+      and finished audio stay on your device.
+    </p>
+    <div className="mt-6 flex flex-wrap items-center gap-3">
+      <Button asChild className="studio-primary">
+        <Link href="/docs/first-narration">Make your first narration</Link>
+      </Button>
+      <Button asChild variant="outline">
+        <Link href="/docs/install">Install Phonivra</Link>
+      </Button>
+    </div>
+  </div>
+  <div className="overflow-hidden rounded-xl border border-card-edge">
+    <Image
+      src="/images/studio-dark.png"
+      width={1920}
+      height={1080}
+      sizes="(min-width: 1280px) 440px, 100vw"
+      className="hidden h-auto w-full dark:block"
+      alt="Phonivra studio with a script open beside the voice and export controls"
+    />
+    <Image
+      src="/images/studio-light.png"
+      width={1920}
+      height={1080}
+      sizes="(min-width: 1280px) 440px, 100vw"
+      className="h-auto w-full dark:hidden"
+      alt="Phonivra studio with a script open beside the voice and export controls"
+    />
+  </div>
+</div>
+
+## Explore the guides
+
+<div className="not-prose grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+  <Link
+    href="/docs/scripts"
+    className="group flex flex-col rounded-xl border border-card-edge bg-card p-5 transition-colors hover:bg-muted"
+  >
+    <span className="flex items-center gap-2 font-semibold">
+      <DocsPageIcon url="/docs/scripts" />
+      Scripts and chapters
+    </span>
+    <span className="mt-2 text-sm leading-relaxed text-muted-foreground">
+      Set pronunciation, add pauses, and prepare longer scripts.
+    </span>
+    <span className="mt-auto pt-4 text-sm font-medium group-hover:underline">
+      Prepare a script <span aria-hidden="true">→</span>
+    </span>
+  </Link>
+  <Link
+    href="/docs/voices"
+    className="group flex flex-col rounded-xl border border-card-edge bg-card p-5 transition-colors hover:bg-muted"
+  >
+    <span className="flex items-center gap-2 font-semibold">
+      <DocsPageIcon url="/docs/voices" />
+      Voices and models
+    </span>
+    <span className="mt-2 text-sm leading-relaxed text-muted-foreground">
+      Turn a recording into a reusable voice and listen to a sample.
+    </span>
+    <span className="mt-auto pt-4 text-sm font-medium group-hover:underline">
+      Create a voice <span aria-hidden="true">→</span>
+    </span>
+  </Link>
+  <Link
+    href="/docs/audio"
+    className="group flex flex-col rounded-xl border border-card-edge bg-card p-5 transition-colors hover:bg-muted"
+  >
+    <span className="flex items-center gap-2 font-semibold">
+      <DocsPageIcon url="/docs/audio" />
+      Audio and export
+    </span>
+    <span className="mt-2 text-sm leading-relaxed text-muted-foreground">
+      Find finished takes and save audio, subtitles, and transcripts.
+    </span>
+    <span className="mt-auto pt-4 text-sm font-medium group-hover:underline">
+      Export your audio <span aria-hidden="true">→</span>
+    </span>
+  </Link>
+</div>
+
+## Quick start
+
+1. [Install Phonivra](/docs/install) and download a speech model during setup.
+2. [Make a short narration](/docs/first-narration) with the default voice.
+3. [Save the audio](/docs/audio) and any subtitles or transcript you need.
+
+## Keep exploring
+
+- [Compare speech models](/docs/models) by language and voice controls.
+- [Generate chapters in a batch](/docs/batch) to get a separate audio file for each chapter.
+- [Find where your work is stored](/docs/storage) and learn how to generate offline.
+- [Troubleshoot setup and generation](/docs/troubleshooting) if you get stuck.
+- [Check permissions before publishing](/docs/publishing) narration you plan to share or sell.

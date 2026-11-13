@@ -1,0 +1,33 @@
+---
+title: Choose a speech model
+description: Compare Chatterbox models, supported languages, and download options.
+---
+
+## Compare models
+
+| Model               | Languages    | When to use it                                                                               |
+| ------------------- | ------------ | -------------------------------------------------------------------------------------------- |
+| Chatterbox Turbo    | English      | The default choice for English. Supports reaction tags such as `[laugh]`.                    |
+| Chatterbox Nano     | English      | The smallest model. Try it when generating on a CPU. It also supports reaction tags.         |
+| Multilingual V3     | 23 languages | Narrate in other supported languages or use a voice reference in another supported language. |
+| Original Chatterbox | English      | Use when you want expression and guidance controls for English.                              |
+
+### Automatic selection
+
+- **English.** Auto selects Chatterbox Turbo.
+- **Other supported languages.** Auto selects Multilingual V3.
+- **Nano or Original Chatterbox.** Select these yourself.
+
+If you use automatic language detection, check the language before generating from a short script or one that mixes languages.
+
+### Supported languages
+
+Multilingual V3 supports Arabic, Chinese, Danish, Dutch, English, Finnish, French, German, Greek, Hebrew, Hindi, Italian, Japanese, Korean, Malay, Norwegian, Polish, Portuguese, Russian, Spanish, Swahili, Swedish, and Turkish. The app does not add Hebrew vowel marks or Russian stress marks.
+
+## Download a model
+
+Open **Models** and download the model you want. Phonivra downloads the files from Hugging Face, checks them, and keeps them in its model cache. You can pause and resume a download. Once the model is ready, it can generate speech offline.
+
+## Choose where generation runs
+
+In **Settings → General**, use **Auto** to let Phonivra choose NVIDIA CUDA or Apple Metal when available and CPU otherwise. You can also choose a device explicitly. If a graphics device fails to load a model, try CPU or use Nano for English. Phonivra keeps one model loaded at a time.

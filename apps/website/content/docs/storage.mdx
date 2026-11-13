@@ -1,0 +1,30 @@
+---
+title: Storage and offline use
+description: Find out where Phonivra keeps your files and when it needs a connection.
+---
+
+## What stays on your computer
+
+Phonivra generates speech on your computer. The local data folder holds drafts, settings, voice presets, finished audio, previews, and logs.
+
+To keep a project you can reopen:
+
+1. [Save the project JSON](/docs/scripts#save-a-project) to a folder you back up.
+2. Keep a copy of any custom voice recording. The project file stores the selected voice ID.
+3. [Export the finished audio](/docs/audio) separately.
+
+## Use Phonivra offline
+
+- Download the models you need while connected. You can generate offline after verification.
+- You can also use the network check in **Settings → Diagnostics** when you want to test connectivity.
+- Public models can download without a Hugging Face token. If you save one in **Settings → Storage and downloads**, Phonivra uses your operating system’s secure storage and excludes it from project files and exported metadata.
+
+## Move or clear storage
+
+Open **Settings → Storage and downloads** to manage the model cache and temporary previews.
+
+| If you want to                | What to do                                                                                |
+| ----------------------------- | ----------------------------------------------------------------------------------------- |
+| Change the model cache folder | Choose a new location. Files stay in the old folder, so download models again if needed.  |
+| Clear preview audio           | Clear temporary voice previews. Your saved presets and finished narration stay available. |
+| Find finished audio on disk   | Choose **Output folder** in the studio.                                                   |
