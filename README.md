@@ -37,7 +37,7 @@ pnpm dev:desktop
 
 Engine setup installs Python dependencies into a project-local virtual environment. Electron starts the engine when the app opens. For a CPU-only setup, use `pnpm engine:setup --cpu`. See the [engine setup guide](apps/engine/README.md#development-setup) for alternate runtimes and platform details.
 
-For a first run, open **Text to speech**, enter a short script, choose a model and voice, then generate a narration. Download the model when prompted. Play the finished take or export it from the result panel.
+On first launch, Phonivra checks the local runtime and audio tools, then helps you choose a narration language and install a compatible model. Generate a short test clip to unlock the studio. In **Text to speech**, enter a script and generate a narration. Play the finished take or export it from the result panel.
 
 ### Run the website
 

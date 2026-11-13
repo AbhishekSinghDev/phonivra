@@ -3,7 +3,7 @@ import { useStudioStore } from '@/stores/studio-store'
 import { controlPlayback, reconcilePlayback } from '@/lib/playback'
 import type { GenerationSettings, StudioCommand, StudioSnapshot } from '../../../shared/studio'
 
-async function receive(request: Promise<StudioSnapshot>, reportStatus = false): Promise<void> {
+async function receive(request: Promise<StudioSnapshot>, reportStatus = false): Promise<boolean> {
   try {
     const snapshot = await request
     useStudioStore.getState().accept(snapshot)
@@ -11,10 +11,12 @@ async function receive(request: Promise<StudioSnapshot>, reportStatus = false): 
       if (snapshot.statusIsError) notifyError(snapshot.status)
       else notify(snapshot.status)
     }
+    return !snapshot.statusIsError
   } catch (error) {
     const message = error instanceof Error ? error.message : 'The action could not be completed.'
     useStudioStore.getState().setError(message)
     notifyError(message)
+    return false
   }
 }
 let pendingScript: string | null = null
@@ -28,16 +30,16 @@ export function flushScriptDraft(): Promise<void> {
   if (pendingScript !== null) {
     const text = pendingScript
     pendingScript = null
-    scriptWrite = scriptWrite.then(() =>
-      receive(window.api.studio.dispatch({ type: 'script.update', text }))
-    )
+    scriptWrite = scriptWrite.then(async () => {
+      await receive(window.api.studio.dispatch({ type: 'script.update', text }))
+    })
   }
   if (pendingBatchText !== null) {
     const text = pendingBatchText
     pendingBatchText = null
-    scriptWrite = scriptWrite.then(() =>
-      receive(window.api.studio.dispatch({ type: 'batch.text', text }))
-    )
+    scriptWrite = scriptWrite.then(async () => {
+      await receive(window.api.studio.dispatch({ type: 'batch.text', text }))
+    })
   }
   return scriptWrite
 }
@@ -54,7 +56,12 @@ export function act(label: string, command: StudioCommand): Promise<void> {
       notifyError(error instanceof Error ? error.message : `${label} failed.`)
     })
   }
-  return flushScriptDraft().then(() => receive(window.api.studio.dispatch(command), true))
+  return dispatchStudioCommand(command).then(() => undefined)
+}
+
+export async function dispatchStudioCommand(command: StudioCommand): Promise<boolean> {
+  await flushScriptDraft()
+  return receive(window.api.studio.dispatch(command), true)
 }
 // Keep typing synchronous locally, and coalesce IPC snapshots. Actions flush the
 // latest draft before generating, inspecting, importing or saving a project.

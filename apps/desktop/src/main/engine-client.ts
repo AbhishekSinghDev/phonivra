@@ -14,6 +14,14 @@ function isSnapshot(value: unknown): value is StudioSnapshot {
   const state = value as Partial<StudioSnapshot>
   return (
     Number.isInteger(state.revision) &&
+    typeof state.setup?.complete === 'boolean' &&
+    typeof state.setup.resuming === 'boolean' &&
+    typeof state.setup.mediaReady === 'boolean' &&
+    (state.setup.freeBytes === null || Number.isSafeInteger(state.setup.freeBytes)) &&
+    !!state.setup.modelSizes &&
+    Object.values(state.setup.modelSizes).every(
+      (size) => size === null || (Number.isSafeInteger(size) && size > 0)
+    ) &&
     typeof state.script === 'string' &&
     typeof state.dictionary === 'string' &&
     !!state.settings &&

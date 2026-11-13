@@ -111,7 +111,7 @@ class JobCommand(Input):
 
 
 class IdCommand(Input):
-    type: Literal["output.select", "output.watermark", "batch.remove-file"]
+    type: Literal["output.select", "output.watermark", "batch.remove-file", "setup.finish"]
     id: str = Field(min_length=1, max_length=256)
 
 
@@ -122,7 +122,7 @@ class DeleteCommand(Input):
 
 
 class ModelCommand(Input):
-    type: Literal["model.download"]
+    type: Literal["model.download", "setup.model-size"]
     id: ModelId
 
 

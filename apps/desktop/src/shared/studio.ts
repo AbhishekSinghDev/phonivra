@@ -208,6 +208,13 @@ export interface PreviewResult {
   text: string
 }
 export interface StudioSnapshot {
+  setup: {
+    complete: boolean
+    resuming: boolean
+    mediaReady: boolean
+    freeBytes: number | null
+    modelSizes: Partial<Record<Exclude<ModelId, 'auto'>, number | null>>
+  }
   revision: number
   settings: GenerationSettings
   script: string
@@ -268,7 +275,8 @@ export type StudioCommand =
   | { type: 'voice.delete'; id: string; confirmed: boolean }
   | { type: 'voices.refresh' }
   | { type: 'model.pause'; id: Exclude<ModelId, 'auto'>; paused: boolean }
-  | { type: 'model.download'; id: Exclude<ModelId, 'auto'> }
+  | { type: 'model.download' | 'setup.model-size'; id: Exclude<ModelId, 'auto'> }
+  | { type: 'setup.finish'; id: string }
   | { type: 'model.remove'; id: Exclude<ModelId, 'auto'>; confirmed: boolean }
   | { type: 'output.select'; id: string }
   | { type: 'output.delete'; id: string; confirmed: boolean }

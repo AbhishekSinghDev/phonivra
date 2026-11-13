@@ -73,8 +73,10 @@ export function validateCommand(raw: unknown): raw is StudioCommand {
       return typeof c.token === 'string' && c.token.length > 0 && c.token.length <= 4096
     case 'model.remove':
       return models.some((m) => m.id === c.id && m.downloadable) && typeof c.confirmed === 'boolean'
+    case 'setup.model-size':
     case 'model.download':
       return models.some((m) => m.id === c.id && m.downloadable)
+    case 'setup.finish':
     case 'output.select':
     case 'output.watermark':
     case 'playback.toggle':

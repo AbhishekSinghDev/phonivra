@@ -1,5 +1,5 @@
 {
-  "protocolVersion": 1,
+  "protocolVersion": 2,
   "loopbackHost": "127.0.0.1",
   "maxTextLength": 2000000,
   "maxAudioImportBytes": 200000000,

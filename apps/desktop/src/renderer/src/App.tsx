@@ -11,6 +11,8 @@ import { Skeleton } from '@phonivra/ui/components/skeleton'
 import { useTheme } from '@/hooks/use-theme'
 import { useShellStore } from '@/stores/shell-store'
 import { connectStudio } from '@/lib/actions'
+import { useStudioStore } from '@/stores/studio-store'
+import { SetupPage } from '@/features/setup/page'
 
 const TextToSpeechPage = lazy(() =>
   import('@/features/text-to-speech/page').then((module) => ({ default: module.TextToSpeechPage }))
@@ -31,6 +33,7 @@ export default function App(): React.JSX.Element {
   const { resolvedTheme } = useTheme()
   const collapsed = useShellStore((state) => state.collapsed)
   const toggleSidebar = useShellStore((state) => state.toggleSidebar)
+  const setupComplete = useStudioStore((state) => state.snapshot?.setup.complete === true)
   useEffect(connectStudio, [])
   return (
     <HashRouter>
@@ -45,9 +48,9 @@ export default function App(): React.JSX.Element {
               }
             }}
           >
-            <TitleBar />
+            <TitleBar showNavigation={setupComplete} />
             <div className="flex min-h-0 flex-1">
-              <AppSidebar />
+              {setupComplete && <AppSidebar />}
               <div className="relative isolate min-w-0 flex-1 overflow-hidden border-l border-card-edge bg-background">
                 <div
                   className="pointer-events-none absolute inset-0 -z-10 overflow-hidden"
@@ -60,27 +63,31 @@ export default function App(): React.JSX.Element {
                   className="content-area h-full overflow-auto p-6 sm:p-12"
                   tabIndex={-1}
                 >
-                  <Suspense
-                    fallback={
-                      <div className="flex flex-col gap-4" aria-label="Loading screen">
-                        <Skeleton className="h-8 w-60" />
-                        <Skeleton className="h-80 w-full" />
-                      </div>
-                    }
-                  >
-                    <Routes>
-                      <Route path="/" element={<Navigate to="/narrate" replace />} />
-                      <Route path="/narrate" element={<TextToSpeechPage />} />
-                      <Route path="/batch" element={<BatchPage />} />
-                      <Route path="/voices" element={<VoicesModelsPage />} />
-                      <Route path="/models" element={<ModelsPage />} />
-                      <Route path="/library" element={<HistoryPage />} />
-                      <Route path="/settings" element={<SettingsPage />} />
-                      <Route path="/history" element={<Navigate to="/library" replace />} />
-                      <Route path="/voices-models" element={<Navigate to="/voices" replace />} />
-                      <Route path="*" element={<Navigate to="/" replace />} />
-                    </Routes>
-                  </Suspense>
+                  {!setupComplete ? (
+                    <SetupPage />
+                  ) : (
+                    <Suspense
+                      fallback={
+                        <div className="flex flex-col gap-4" aria-label="Loading screen">
+                          <Skeleton className="h-8 w-60" />
+                          <Skeleton className="h-80 w-full" />
+                        </div>
+                      }
+                    >
+                      <Routes>
+                        <Route path="/" element={<Navigate to="/narrate" replace />} />
+                        <Route path="/narrate" element={<TextToSpeechPage />} />
+                        <Route path="/batch" element={<BatchPage />} />
+                        <Route path="/voices" element={<VoicesModelsPage />} />
+                        <Route path="/models" element={<ModelsPage />} />
+                        <Route path="/library" element={<HistoryPage />} />
+                        <Route path="/settings" element={<SettingsPage />} />
+                        <Route path="/history" element={<Navigate to="/library" replace />} />
+                        <Route path="/voices-models" element={<Navigate to="/voices" replace />} />
+                        <Route path="*" element={<Navigate to="/" replace />} />
+                      </Routes>
+                    </Suspense>
+                  )}
                 </main>
               </div>
             </div>

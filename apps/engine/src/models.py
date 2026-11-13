@@ -109,6 +109,32 @@ class Models:
             )
         return result
 
+    def download_size(self, model_id: str) -> int | None:
+        import httpx
+
+        spec = SPECS[model_id]
+        url = f"https://huggingface.co/api/models/{spec.repository}/tree/{spec.revision}"
+        try:
+            headers = {"Authorization": f"Bearer {self.token}"} if self.token else None
+            response = httpx.get(url, headers=headers, timeout=5)
+            response.raise_for_status()
+            entries = response.json()
+        except (httpx.HTTPError, ValueError):
+            return None
+        if not isinstance(entries, list):
+            return None
+        sizes = {
+            entry["path"]: entry["size"]
+            for entry in entries
+            if isinstance(entry, dict)
+            and isinstance(entry.get("path"), str)
+            and type(entry.get("size")) is int
+            and entry["size"] > 0
+        }
+        if not spec.digests.keys() <= sizes.keys():
+            return None
+        return sum(sizes[name] for name in spec.digests)
+
     def download(self, model_id: str) -> Path:
         from huggingface_hub import hf_hub_download
         from tqdm.auto import tqdm

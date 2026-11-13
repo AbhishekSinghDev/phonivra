@@ -3,6 +3,7 @@
 import copy
 import importlib.util
 import logging
+import shutil
 import threading
 import zipfile
 from collections import deque
@@ -96,6 +97,25 @@ class Studio:
         self.voices = self.library.voices()
         self.outputs = self.library.refresh()
         self.selected_output = self.outputs[0]["id"] if self.outputs else None
+        self.setup_complete = saved.get("setupComplete") is True
+        self.setup_resuming = saved.get("setupComplete") is False and self.settings.model != "auto"
+        self.setup_model_sizes: dict[str, int | None] = {}
+        self.setup_test: tuple[str, Settings] | None = None
+        if saved and "setupComplete" not in saved and self.setup_media_ready():
+            model = self.settings.model
+            if model == "auto":
+                model = "turbo" if self.settings.language == "en" else "multilingual"
+            self.setup_complete = bool(
+                self.device_info["available"]
+                and (model == "multilingual" or self.settings.language == "en")
+                and self.models.installed(model)
+                and (
+                    self.settings.voice == "default"
+                    or self.settings.voice in self.library.voice_paths
+                )
+            )
+            if self.setup_complete:
+                self.storage.save({**saved, "setupComplete": True})
         self.playback = {"playing": False, "position": 0, "outputId": None}
         self.batch = {
             "source": "files",
@@ -134,10 +154,15 @@ class Studio:
                             )
             self.changed()
 
-    def persist(self) -> None:
+    @staticmethod
+    def setup_media_ready() -> bool:
+        return bool(audio.media_binary("ffmpeg") and audio.media_binary("ffprobe"))
+
+    def persist(self, *, setup_complete: bool | None = None) -> None:
         self.storage.save(
             {
                 "version": 1,
+                "setupComplete": self.setup_complete if setup_complete is None else setup_complete,
                 "settings": self.settings.model_dump(),
                 "savedSettings": self.saved_settings.model_dump(),
                 "script": self.script,
@@ -157,9 +182,22 @@ class Studio:
             preview_bytes = sum(
                 p.stat().st_size for p in self.storage.previews.iterdir() if p.is_file()
             )
+            free_bytes = None
+            if not self.setup_complete:
+                try:
+                    free_bytes = shutil.disk_usage(self.models.root).free
+                except OSError:
+                    pass
             return copy.deepcopy(
                 {
                     "revision": self.revision,
+                    "setup": {
+                        "complete": self.setup_complete,
+                        "resuming": self.setup_resuming,
+                        "mediaReady": self.setup_media_ready() if not self.setup_complete else True,
+                        "freeBytes": free_bytes,
+                        "modelSizes": self.setup_model_sizes,
+                    },
                     "settings": self.settings.model_dump(),
                     "script": self.script,
                     "documentRevision": self.document_revision,
@@ -270,6 +308,23 @@ class Studio:
             self.start_job(command.kind if kind == "job.start" else "batch")
         elif kind == "job.cancel":
             self.jobs.cancel()
+        elif kind == "setup.model-size":
+            self.setup_model_sizes[command.id] = self.models.download_size(command.id)
+        elif kind == "setup.finish":
+            if self.setup_complete:
+                return
+            if (
+                not self.preview
+                or self.preview["id"] != command.id
+                or self.job["kind"] != "preview"
+                or self.job["phase"] != "complete"
+                or self.setup_test != (self.job["id"], self.settings)
+                or not self.library.media_path(command.id).is_file()
+                or not self.setup_media_ready()
+            ):
+                raise ValueError("Generate a successful test clip before opening the studio.")
+            self.persist(setup_complete=True)
+            self.setup_complete = True
         elif kind == "model.download":
             self.jobs.start(
                 "download", f"Download {command.id}", lambda: self.models.download(command.id)
@@ -409,6 +464,8 @@ class Studio:
                             "duration": record["duration"],
                             "text": script,
                         }
+                        if not self.setup_complete and reference is None and settings.voice == "default":
+                            self.setup_test = (self.job["id"], settings)
                     else:
                         self.accept_output(record)
                     self.changed()

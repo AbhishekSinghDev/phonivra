@@ -5,14 +5,18 @@ import { SidebarTrigger } from '@phonivra/ui/components/sidebar'
 import { Tooltip, TooltipContent, TooltipTrigger } from '@phonivra/ui/components/tooltip'
 import { useTheme } from '@/hooks/use-theme'
 
-export function TitleBar(): React.JSX.Element {
+export function TitleBar({
+  showNavigation = true
+}: {
+  showNavigation?: boolean
+}): React.JSX.Element {
   const { resolvedTheme, setTheme } = useTheme()
   return (
     <header
       className="title-bar flex h-12 shrink-0 items-center border-b border-card-edge bg-transparent px-4"
       data-platform={window.api.platform}
     >
-      <SidebarTrigger className="mr-2 md:hidden" aria-label="Open navigation" />
+      {showNavigation && <SidebarTrigger className="mr-2 md:hidden" aria-label="Open navigation" />}
       <div className="flex items-center gap-2 text-sm font-semibold">
         <span className="text-xs font-medium text-muted-foreground">Phonivra Studio</span>
       </div>
