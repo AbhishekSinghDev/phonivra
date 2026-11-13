@@ -8,6 +8,7 @@ from dataclasses import dataclass
 from importlib.resources import files
 from pathlib import Path
 
+from . import directml
 from .chatterbox_compat import configure_local_cangjie
 from .jobs import Jobs
 from .storage import write_json
@@ -33,6 +34,7 @@ class Models:
         self.root, self.jobs = root, jobs
         self.token: str | None = None
         self.active: str | None = None
+        self.active_backend: str | None = None
         self.model = None
         self.default_conditionals = None
         self.mode = "auto"
@@ -262,7 +264,10 @@ class Models:
     def backend(self) -> str:
         import torch
 
-        available = {"cuda": torch.cuda.is_available(), "mps": torch.backends.mps.is_available()}
+        if self.mode == "directml":
+            return "directml" if directml.available() else "cpu"
+        gpu_backend = "rocm" if torch.version.hip else "cuda"
+        available = {gpu_backend: torch.cuda.is_available(), "mps": torch.backends.mps.is_available()}
         if self.mode == "auto":
             return next((name for name, ready in available.items() if ready), "cpu")
         return self.mode if available.get(self.mode) else "cpu"
@@ -271,18 +276,24 @@ class Models:
         import torch
 
         backend = self.backend()
-        labels = {"cpu": "CPU", "mps": "Apple Metal (MPS)"}
+        if backend in {"cuda", "rocm"}:
+            label = torch.cuda.get_device_name(0)
+            if backend == "rocm":
+                label = f"{label} (ROCm)"
+            vram = f"{torch.cuda.get_device_properties(0).total_memory / 1024**3:.1f} GB"
+        else:
+            labels = {"mps": "Apple Metal (MPS)", "directml": "Windows DirectML (preview)"}
+            label = labels.get(backend, "CPU")
+            vram = None
         return {
             "mode": self.mode,
-            "label": torch.cuda.get_device_name(0) if backend == "cuda" else labels[backend],
-            "vram": f"{torch.cuda.get_device_properties(0).total_memory / 1024**3:.1f} GB"
-            if backend == "cuda"
-            else None,
+            "label": label,
+            "vram": vram,
             "available": self.mode == "auto" or self.mode == backend,
         }
 
     def release(self) -> None:
-        self.model = self.default_conditionals = self.active = None
+        self.model = self.default_conditionals = self.active = self.active_backend = None
         gc.collect()
         import torch
 
@@ -291,8 +302,13 @@ class Models:
         if torch.backends.mps.is_available():
             torch.mps.empty_cache()
 
-    def load(self, model_id: str):
-        if self.active == model_id and self.model is not None:
+    def load(self, model_id: str, *, force_cpu: bool = False):
+        backend = "cpu" if force_cpu else self.backend()
+        if not force_cpu and self.mode not in ("auto", backend):
+            raise ValueError(f"{self.mode.upper()} is unavailable. Select CPU or Auto in Settings.")
+        if backend == "directml" and model_id != "multilingual":
+            backend = "cpu"
+        if self.active == model_id and self.active_backend == backend and self.model is not None:
             return self.model
         directory = self.installed(model_id)
         if directory:
@@ -308,9 +324,8 @@ class Models:
         self.release()
         import huggingface_hub.constants as hub_constants
 
-        device = self.backend()
-        if self.mode not in ("auto", device):
-            raise ValueError(f"{self.mode.upper()} is unavailable. Select CPU or Auto in Settings.")
+        # PyTorch's HIP build uses the same tensor device names as its CUDA build.
+        device = {"rocm": "cuda", "directml": "cpu"}.get(backend, backend)
         load_device = "cpu" if device == "cuda" else device
         previous_offline = hub_constants.HF_HUB_OFFLINE
         hub_constants.HF_HUB_OFFLINE = True
@@ -334,6 +349,9 @@ class Models:
 
                 model = ChatterboxMultilingualTTS.from_local(directory, load_device, t3_model="v3")
                 configure_local_cangjie(model, directory)
+                if backend == "directml":
+                    self.jobs.progress("loading", 0, "Preparing the DirectML speech transformer…")
+                    directml.accelerate(model.t3)
             if device == "cuda" and model_id == "multilingual":
                 model.t3.half().to(device)
                 model.s3gen.to(device)
@@ -342,7 +360,7 @@ class Models:
                 if model.conds is not None:
                     model.conds.to(device)
                     self.half_conditionals(model)
-            self.model, self.active = model, model_id
+            self.model, self.active, self.active_backend = model, model_id, backend
             self.default_conditionals = getattr(model, "conds", None)
             self.jobs.checkpoint()
             return model

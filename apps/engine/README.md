@@ -26,7 +26,8 @@ dependencies, including PyTorch. Model downloads happen separately
 inside the app. CPU-only development setup is available with `pnpm engine:setup --cpu`.
 On Linux, the CPU option replaces the locked PyTorch wheel with its matching CPU build after sync.
 The standard Linux PyTorch distribution includes NVIDIA runtime dependencies; a compatible
-host driver is still required. Auto prefers CUDA or Apple Metal (MPS) when available and otherwise uses CPU.
+host driver is still required. Auto prefers an available CUDA, ROCm or Apple Metal (MPS)
+device and otherwise uses CPU.
 
 `PHONIVRA_PYTHON=/absolute/path/to/python pnpm dev:desktop` selects another prepared
 environment. That environment must contain this engine's dependencies. The launcher sets
@@ -37,6 +38,33 @@ the installed Python package `phonivra_engine`, preserving the desktop's module 
 command. Run `pnpm engine:setup` after changing the layout to refresh the editable
 installation. An alternate `PHONIVRA_PYTHON` environment must also have this project
 installed, not just its dependencies.
+
+### Radeon development runtime
+
+On a [ROCm 10.1 supported Linux x86-64 system](https://rocm.docs.amd.com/en/latest/compatibility/compatibility-matrix.html)
+with the matching AMD driver, prepare the separate development environment:
+
+```sh
+pnpm engine:setup --rocm
+PHONIVRA_PYTHON="$PWD/apps/engine/.venv-rocm/bin/python" pnpm dev:desktop
+```
+
+Settings shows **AMD ROCm** and the GPU name when the runtime detects a compatible card.
+The regular installers use the locked runtime. The RX 470 is outside the supported ROCm
+matrix and needs a separate inference backend.
+
+### Windows DirectML preview
+
+The Windows x64 runtime includes DirectML through ONNX Runtime. In **Settings → Generation
+device**, select **Windows DirectML (preview)** and generate with **Chatterbox Multilingual V3**.
+This includes Hindi with the default voice or a reference voice. The engine exports the verified
+local transformer weights when loading the model. The first load can take longer and requires
+about 2 GB of free temporary disk space. Voice conditioning, audio decoding and watermarking
+use the existing CPU pipeline. Other models run on CPU in this mode.
+
+If the DirectML session fails, Phonivra retries the narration on CPU and shows the change in
+job progress. The output metadata records the backend that completed the job. **Auto** keeps
+using the existing device selection while DirectML is in preview.
 
 ```text
 apps/engine/

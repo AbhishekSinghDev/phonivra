@@ -29,7 +29,7 @@ import { useTheme } from '@/hooks/use-theme'
 import { useStudioStore } from '@/stores/studio-store'
 import { act } from '@/lib/actions'
 import type { Theme } from '../../../../shared/api'
-import type { GenerationSettings } from '../../../../shared/studio'
+import type { DeviceMode, GenerationSettings } from '../../../../shared/studio'
 
 export function SettingsPage(): React.JSX.Element {
   const snapshot = useStudioStore((state) => state.snapshot)
@@ -127,7 +127,16 @@ export function SettingsPage(): React.JSX.Element {
                       label: 'Auto',
                       description: 'Uses an available GPU or falls back to CPU'
                     },
-                    { value: 'cpu', label: 'CPU', description: 'Available without an NVIDIA GPU' },
+                    {
+                      value: 'cpu',
+                      label: 'CPU',
+                      description: 'Available on all supported systems'
+                    },
+                    {
+                      value: 'rocm',
+                      label: 'AMD ROCm',
+                      description: 'Requires a compatible Radeon GPU, driver and ROCm engine'
+                    },
                     {
                       value: 'cuda',
                       label: 'NVIDIA CUDA',
@@ -137,18 +146,27 @@ export function SettingsPage(): React.JSX.Element {
                       value: 'mps',
                       label: 'Apple Metal',
                       description: 'Requires macOS with MPS support'
-                    }
+                    },
+                    ...(window.api.platform === 'win32'
+                      ? [
+                          {
+                            value: 'directml',
+                            label: 'Windows DirectML (preview)',
+                            description: 'Accelerates Multilingual V3 on compatible DirectX 12 GPUs'
+                          }
+                        ]
+                      : [])
                   ]}
                   onChange={(mode) =>
                     act('Change generation device', {
                       type: 'device.set',
-                      mode: mode as 'auto' | 'cpu' | 'cuda' | 'mps'
+                      mode: mode as DeviceMode
                     })
                   }
                 />
               </FieldGroup>
               <dl className="grid grid-cols-2 gap-4">
-                <DetailValue label="Active device">{snapshot.device.label}</DetailValue>
+                <DetailValue label="Selected device">{snapshot.device.label}</DetailValue>
                 <DetailValue label="GPU memory">
                   {snapshot.device.vram ?? 'Not reported for this device'}
                 </DetailValue>
@@ -163,7 +181,7 @@ export function SettingsPage(): React.JSX.Element {
                 and one generation job run at a time.
               </p>
               <p className="text-xs text-muted-foreground">
-                MPS, GPU index, precision and quantization controls are not available.
+                GPU index, precision and quantization controls are not available.
               </p>
             </section>
             <Separator />

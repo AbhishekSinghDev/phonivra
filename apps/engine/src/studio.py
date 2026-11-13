@@ -102,6 +102,11 @@ class Studio:
         self.models = Models(self.storage.model_root, self.jobs)
         mode = saved.get("device", "auto")
         self.models.mode = mode if mode in DEVICE_MODES else "auto"
+        # Older versions exposed HIP through the CUDA preference.
+        if self.models.mode == "cuda" and self.models.backend() == "cpu":
+            self.models.mode = "rocm"
+            if self.models.backend() != "rocm":
+                self.models.mode = "cuda"
         self.device_info = self.models.device()
         self.library = Library(self.storage)
         self.voices = self.library.voices()

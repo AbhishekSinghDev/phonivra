@@ -26,3 +26,5 @@ Resemble AI labels the Chatterbox model repositories MIT. The Multilingual V3 la
 Thanks to the [Electron](https://www.electronjs.org/) and [Chromium](https://www.chromium.org/) projects for the desktop runtime, [Python](https://www.python.org/) and [PyTorch](https://pytorch.org/) for the inference runtime, and the [FFmpeg project](https://ffmpeg.org/) for FFmpeg and FFprobe, which Phonivra uses for audio capture and processing.
 
 Redistributors should retain applicable copyright and license texts for the components they ship. FFmpeg licensing depends on the binary's build configuration and linked libraries. The [FFmpeg licensing guidance](https://ffmpeg.org/legal.html) and [desktop release guide](apps/desktop/RELEASE.md) describe what to check for packaged releases.
+
+Windows builds include Microsoft's [ONNX Runtime with DirectML](https://onnxruntime.ai/docs/execution-providers/DirectML-ExecutionProvider.html). Retain the license and third-party notices shipped in the locked ONNX Runtime distribution.

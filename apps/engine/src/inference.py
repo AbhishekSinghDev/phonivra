@@ -1,5 +1,6 @@
 """Model-independent narration orchestration; no transport or desktop UI code."""
 
+import logging
 import random
 import tempfile
 import time
@@ -14,11 +15,14 @@ import soundfile as sf
 from . import audio
 from .chatterbox_compat import clone_conditionals
 from .contract import INDIC_LANGUAGES
+from .directml import DirectMLError
 from .jobs import Jobs
 from .library import companions, filename
 from .models import Models
 from .schemas import Settings, resolve_model
 from .text import prepare, split_chunks
+
+log = logging.getLogger(__name__)
 
 
 class Narrator:
@@ -35,6 +39,40 @@ class Narrator:
         directory: Path,
         transcript: str = "",
     ) -> dict:
+        seed = settings.seed or random.SystemRandom().randint(1, 2147483647)
+        try:
+            return self._generate(
+                script, settings, dictionary, reference, voice_label, directory, transcript, seed
+            )
+        except DirectMLError:
+            log.exception("DirectML narration failed. Retrying on CPU.")
+        self.jobs.checkpoint()
+        self.jobs.progress("loading", 0, "DirectML failed. Retrying on CPU…")
+        return self._generate(
+            script,
+            settings,
+            dictionary,
+            reference,
+            voice_label,
+            directory,
+            transcript,
+            seed,
+            force_cpu=True,
+        )
+
+    def _generate(
+        self,
+        script: str,
+        settings: Settings,
+        dictionary: str,
+        reference: Path | None,
+        voice_label: str,
+        directory: Path,
+        transcript: str,
+        seed: int,
+        *,
+        force_cpu: bool = False,
+    ) -> dict:
         import torch
 
         model_id = resolve_model(settings)
@@ -49,13 +87,12 @@ class Narrator:
             raise ValueError("Choose IndicF5 or Auto for this language.")
         prepared = prepare(script, settings, dictionary)
         chunks = split_chunks(prepared, settings.chunk_limit, settings.gap)
-        seed = settings.seed or random.SystemRandom().randint(1, 2147483647)
         random.seed(seed)
         np.random.seed(seed)
         torch.manual_seed(seed)
         if torch.cuda.is_available():
             torch.cuda.manual_seed_all(seed)
-        model = self.models.load(model_id)
+        model = self.models.load(model_id, force_cpu=force_cpu)
         self.jobs.progress("preparing", 0, "Preparing voice reference…", total=len(chunks))
         with torch.inference_mode():
             prompt = None
@@ -133,7 +170,13 @@ class Narrator:
                     self.jobs.progress(
                         "generating",
                         index / len(chunks) * 85,
-                        f"Generating part {index + 1} of {len(chunks)}…",
+                        f"Generating part {index + 1} of {len(chunks)}"
+                        + (
+                            " on CPU…"
+                            if self.models.mode == "directml"
+                            and self.models.active_backend == "cpu"
+                            else "…"
+                        ),
                         part=index + 1,
                     )
                     if chunk.text:
@@ -163,6 +206,8 @@ class Narrator:
                             )
                         self.jobs.checkpoint()
                         if not np.isfinite(wav).all() or not len(wav):
+                            if self.models.active_backend == "directml":
+                                raise DirectMLError("DirectML generation returned invalid audio.")
                             raise ValueError(
                                 "The model returned invalid audio. Try different settings."
                             )
@@ -207,6 +252,7 @@ class Narrator:
                 "sampleRate": settings.sample_rate,
                 "language": settings.language,
                 "model": model_id,
+                "backend": self.models.active_backend,
                 "voice": voice_label,
                 "seed": seed,
                 "loudnessGain": gain,

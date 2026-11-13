@@ -3,6 +3,7 @@ import type { BatchWorkspace, SettingsWorkspace, WatermarkResult } from './works
 export type ModelId = 'auto' | 'turbo' | 'multilingual' | 'indicf5'
 type RecordedModelId = ModelId | 'nano' | 'original'
 export type EngineId = 'chatterbox' | 'indicf5'
+export type DeviceMode = 'auto' | 'cpu' | 'cuda' | 'rocm' | 'mps' | 'directml'
 export type LanguageCode =
   | 'as'
   | 'bn'
@@ -185,6 +186,7 @@ export interface OutputRecord {
   sampleRate: number
   language: LanguageCode | null
   model: RecordedModelId | null
+  backend?: Exclude<DeviceMode, 'auto'>
   voice: string | null
   seed: number | null
   loudnessGain: number | null
@@ -245,7 +247,7 @@ export interface StudioSnapshot {
   watermark: WatermarkResult | null
   statusIsError: boolean
   device: {
-    mode: 'auto' | 'cpu' | 'cuda' | 'mps'
+    mode: DeviceMode
     label: string
     vram: string | null
     available: boolean
@@ -268,7 +270,7 @@ export type StudioCommand =
   | { type: 'batch.split'; enabled: boolean }
   | { type: 'batch.import' | 'batch.prepare' | 'batch.start' }
   | { type: 'batch.remove-file'; id: string }
-  | { type: 'device.set'; mode: 'auto' | 'cpu' | 'cuda' | 'mps' }
+  | { type: 'device.set'; mode: DeviceMode }
   | {
       type:
         | 'preferences.save'

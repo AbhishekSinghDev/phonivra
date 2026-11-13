@@ -99,6 +99,14 @@ export function OutputDetails({
                   'Resolved model',
                   models.find((model) => model.id === output.model)?.label ?? 'Unavailable'
                 ],
+                ...(output.backend
+                  ? [
+                      [
+                        'Generation device',
+                        output.backend === 'directml' ? 'DirectML' : output.backend.toUpperCase()
+                      ]
+                    ]
+                  : []),
                 [
                   'Language',
                   languages.find((language) => language.code === output.language)?.label ??

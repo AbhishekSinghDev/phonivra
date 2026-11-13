@@ -16,6 +16,7 @@ dependencies = [
   "num2words @ git+https://github.com/savoirfairelinux/num2words.git@07814cb114157f582c40a00119c2e9faba8dcee2",
   "langid==1.1.6",
   "httpx>=0.28,<1",
+  "onnxruntime-directml==1.24.4; sys_platform == 'win32' and platform_machine == 'AMD64'",
   "f5-tts==1.1.22",
   "chatterbox-tts @ git+https://github.com/resemble-ai/chatterbox.git@5de7a54aa4e5e2baadb0182dde554908b48b85c2"
 ]

@@ -190,11 +190,19 @@ export function SetupPage(): React.JSX.Element {
                       options={[
                         { value: 'auto', label: 'Automatic' },
                         { value: 'cpu', label: 'CPU' },
-                        ...(snapshot.device.mode === 'cuda' || snapshot.device.mode === 'mps'
+                        ...(window.api.platform === 'win32'
+                          ? [{ value: 'directml', label: 'Windows DirectML (preview)' }]
+                          : []),
+                        ...(snapshot.device.mode !== 'auto' &&
+                        snapshot.device.mode !== 'cpu' &&
+                        !(window.api.platform === 'win32' && snapshot.device.mode === 'directml')
                           ? [
                               {
                                 value: snapshot.device.mode,
-                                label: snapshot.device.mode.toUpperCase()
+                                label:
+                                  snapshot.device.mode === 'rocm'
+                                    ? 'AMD ROCm'
+                                    : snapshot.device.mode.toUpperCase()
                               }
                             ]
                           : [])
@@ -208,7 +216,9 @@ export function SetupPage(): React.JSX.Element {
                                 ? 'cpu'
                                 : value === 'auto'
                                   ? 'auto'
-                                  : snapshot.device.mode
+                                  : value === 'directml'
+                                    ? 'directml'
+                                    : snapshot.device.mode
                           })
                         )
                       }

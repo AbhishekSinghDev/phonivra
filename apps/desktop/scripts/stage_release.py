@@ -146,7 +146,13 @@ def main() -> None:
                 "import torch; import phonivra_engine.server; "
                 "import chatterbox.mtl_tts; import chatterbox.tts_turbo; "
                 "from f5_tts.model import CFM, DiT; import vocos; "
-                "print(torch.__version__)"
+                + (
+                    "from phonivra_engine.directml import available; "
+                    "assert available(), 'The Windows runtime is missing DirectML'; "
+                    if WINDOWS
+                    else ""
+                )
+                + "print(torch.__version__)"
             ),
         ],
         check=True,

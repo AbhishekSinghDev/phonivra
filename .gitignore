@@ -159,6 +159,7 @@ next-env.d.ts
 
 # Local Python engine environment and bytecode
 .venv/
+.venv-rocm/
 __pycache__/
 *.py[cod]
 .ruff_cache/

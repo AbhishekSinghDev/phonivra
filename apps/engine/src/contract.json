@@ -1,5 +1,5 @@
 {
-  "protocolVersion": 2,
+  "protocolVersion": 3,
   "loopbackHost": "127.0.0.1",
   "maxTextLength": 2000000,
   "maxReferenceTranscriptLength": 2000,
@@ -8,7 +8,7 @@
   "scriptExtensions": ["txt", "md", "markdown", "srt", "vtt"],
   "audioExtensions": ["wav", "mp3", "flac", "ogg", "m4a", "opus", "aiff", "aif"],
   "indicLanguages": ["as", "bn", "gu", "hi", "kn", "ml", "mr", "or", "pa", "ta", "te"],
-  "deviceModes": ["auto", "cpu", "cuda", "mps"],
+  "deviceModes": ["auto", "cpu", "cuda", "rocm", "mps", "directml"],
   "sampleRates": [24000, 44100, 48000],
   "nativeSampleRate": 24000,
   "maxRecordingSeconds": 40

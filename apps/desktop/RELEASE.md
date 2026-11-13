@@ -40,6 +40,12 @@ Run the installed application on a clean machine. Check first launch, light and 
 model download and verification, generation on CPU, available GPU modes, importing and recording
 a voice reference, playback and seeking, project save/open, export, and quit during an active job.
 
+On Windows, qualify the DirectML preview with the installed app on an RX 470, a newer discrete
+Radeon, and a Radeon integrated GPU. Generate short and long Hindi narration with Multilingual V3
+using both the default voice and a reference voice. Confirm that the output metadata reports
+`directml`, compare audio and total generation time with CPU, and record the GPU and driver.
+Test CPU fallback before enabling DirectML in Auto or listing a card as supported.
+
 Signed workflow runs use the `desktop-signing` environment from `master`. Configure a protected
 environment and the following signing credentials before running a signed build.
 
