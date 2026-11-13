@@ -7,7 +7,7 @@ export function BatchVisual(): React.JSX.Element {
       className="flex flex-col justify-center gap-7 overflow-hidden rounded-xl bg-muted p-5 sm:p-8"
     >
       <div className="flex items-center justify-between gap-3">
-        <p className="font-montserrat text-sm font-medium">One script. A chapter plan.</p>
+        <p className="font-montserrat text-sm font-medium">From headings to chapters</p>
         <Badge variant="outline">Example</Badge>
       </div>
       <div className="grid items-center gap-5 sm:grid-cols-2">

@@ -15,14 +15,8 @@ export function BentoSection(): React.JSX.Element {
           id="details-title"
           className="text-3xl leading-tight font-medium tracking-tight text-balance sm:text-4xl"
         >
-          The details behind
-          <br />
-          <span className="highlight">Every take.</span>
+          More tools for <span className="highlight">your narration</span>
         </h2>
-        <p className="max-w-sm text-sm leading-relaxed text-muted-foreground">
-          Set pronunciation for recurring terms, turn headings into batch items, and choose which
-          files to export with your audio.
-        </p>
       </header>
 
       <div className="grid gap-4 lg:grid-cols-3">

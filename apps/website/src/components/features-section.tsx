@@ -5,21 +5,20 @@ const workspaces = [
   {
     id: 'narration',
     label: 'Narration',
-    title: 'Write and prepare your script.',
-    description:
-      'Write, paste, or import a script. Set the pace, add pauses, and use the pronunciation dictionary for words that need a specific reading.',
+    title: 'Prepare your script',
+    description: 'Set the pace, add pauses, and adjust how names and tricky words are read aloud.',
     details: [
       'Live word and character counts',
-      'Import text, Markdown, or subtitles',
+      'Import text files, Markdown, or subtitles',
       'Automatic language detection'
     ]
   },
   {
     id: 'voices',
     label: 'Voices',
-    title: 'Find the voice for the story.',
+    title: 'Save a voice you can use again',
     description:
-      'Use the model’s default voice or create a preset from a recording. Audition the preset before generating a full script.',
+      'Create a voice preset from a recording. Listen to a short sample before you narrate the whole script.',
     details: [
       'Record from your microphone or import audio',
       'Search and filter your voice collection',
@@ -29,35 +28,35 @@ const workspaces = [
   {
     id: 'batch',
     label: 'Batch',
-    title: 'Give every chapter its place.',
+    title: 'Generate several scripts at once',
     description:
-      'Import multiple scripts or paste chaptered text. Use Markdown headings to create separate batch items, then review the plan before generating.',
+      'Import several scripts or split one script into chapters using Markdown headings. Review the list before you generate.',
     details: [
       'Shared voice and generation settings',
       'Progress and errors for each item',
-      'ZIP export of completed takes and their companion files'
+      'Export finished audio and optional files as a ZIP'
     ]
   },
   {
     id: 'library',
     label: 'Library',
-    title: 'Revisit and export your takes.',
+    title: 'Find your finished audio',
     description:
-      'Play back finished takes and find their generation details in the local Audio library. Completed takes are available when you reopen the app.',
+      'The audio library keeps your finished takes so you can listen again or export them the next time you open the app.',
     details: [
-      'Searchable take list and detail view',
-      'Model, voice, seed, and settings for generated takes',
+      'Search your saved takes',
+      'See the voice, model, and settings used for each take',
       'Export audio, subtitles, transcripts, and metadata'
     ]
   },
   {
     id: 'models',
     label: 'Models',
-    title: 'Choose the model behind the voice.',
+    title: 'Pick a speech model',
     description:
-      'Compare four Chatterbox models by language coverage and speech controls, then download the ones you want to use.',
+      'See which languages and speech controls each Chatterbox model supports. Download the models you want to use.',
     details: [
-      'Auto routing by narration language',
+      'Automatic model selection by language',
       'Pause and resume model downloads',
       'Offline generation with downloaded models'
     ]
@@ -76,14 +75,8 @@ export function FeaturesSection(): React.JSX.Element {
           id="studio-title"
           className="text-3xl leading-tight font-medium tracking-tight text-balance sm:text-4xl"
         >
-          Five workspaces.
-          <br />
-          <span className="highlight">One studio.</span>
+          Inside the <span className="highlight">studio</span>
         </h2>
-        <p className="max-w-xl text-base leading-relaxed text-muted-foreground">
-          Explore the tools for writing scripts, managing voices and models, and organizing finished
-          audio.
-        </p>
       </header>
       <Tabs defaultValue="narration" className="mt-10">
         <div className="flex overflow-x-auto px-1 py-2">

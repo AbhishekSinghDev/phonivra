@@ -4,7 +4,7 @@ export function ChapterCard(): React.JSX.Element {
   return (
     <Card>
       <figure
-        aria-label="Markdown headings become separate batch items with one shared voice"
+        aria-label="Markdown headings split a script into chapters that share a voice"
         className="flex flex-1 flex-col justify-center gap-4 px-6 pt-8 pb-6 sm:px-8"
       >
         <ol className="flex flex-col gap-3 text-sm">
@@ -17,13 +17,13 @@ export function ChapterCard(): React.JSX.Element {
             </li>
           ))}
         </ol>
-        <span className="text-xs text-muted-foreground">Separate items. One shared voice.</span>
+        <span className="text-xs text-muted-foreground">One voice for all chapters</span>
       </figure>
       <div className="mx-2 mb-3 sm:mx-4">
         <CardBody>
-          <CardTitle>A chapter at a time.</CardTitle>
+          <CardTitle>Split a script into chapters</CardTitle>
           <CardText>
-            Plan batch items from Markdown headings, then review them before generation.
+            Use Markdown headings to turn a long script into separate audio files.
           </CardText>
         </CardBody>
       </div>

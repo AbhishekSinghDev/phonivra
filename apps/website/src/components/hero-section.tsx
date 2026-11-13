@@ -15,12 +15,13 @@ export function HeroSection(): React.JSX.Element {
             id="hero-title"
             className="max-w-2xl text-5xl leading-tight font-semibold tracking-tight text-balance sm:text-6xl"
           >
-            Your words.
-            <br />A voice of <span className="highlight">their own.</span>
+            Turn your scripts
+            <br />
+            into <span className="highlight">spoken audio.</span>
           </h1>
           <p className="max-w-xl text-base leading-relaxed text-muted-foreground sm:text-lg">
-            Turn scripts into narration on your computer. Create voices from recordings, generate
-            chapters in batches, and export audio with subtitles.
+            Use the default voice or create one from a recording. Then export your narration with
+            subtitles and a transcript.
           </p>
           <div className="flex flex-wrap items-center gap-3">
             <Button asChild size="lg" className="studio-primary">
@@ -46,8 +47,8 @@ export function HeroSection(): React.JSX.Element {
         <div className="flex max-w-sm flex-col items-start gap-4 border-t border-card-edge pt-5 lg:mb-1">
           <Badge variant="outline">Open source</Badge>
           <p className="text-sm leading-relaxed text-muted-foreground">
-            Scripts, reference recordings, and generated audio stay on your device. Download a
-            speech model once to generate offline.
+            Your scripts, recordings, and audio stay on your computer. Once you download a speech
+            model, you can make narration offline.
           </p>
         </div>
       </div>

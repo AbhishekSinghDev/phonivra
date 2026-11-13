@@ -10,9 +10,9 @@ const manrope = localFont({
   declarations: [{ prop: 'font-family', value: 'Manrope Variable' }]
 })
 
-const title = 'Phonivra | Local text-to-speech studio'
+const title = 'Phonivra | Turn text into speech on your computer'
 const description =
-  'Turn scripts into narration on your computer. Create voice presets from recordings, generate chapters in batches, and export audio with subtitles and transcripts.'
+  'Turn text into speech with Phonivra. Make a voice from a recording, narrate several chapters at once, and export audio with subtitles.'
 
 export const metadata: Metadata = {
   title,

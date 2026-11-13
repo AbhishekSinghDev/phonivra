@@ -4,18 +4,18 @@ export function AudioExportCard(): React.JSX.Element {
   return (
     <Card className="lg:col-span-2">
       <figure
-        aria-label="Audio formats WAV, MP3, FLAC, OGG and M4A, with SRT, VTT, TXT and JSON companions"
+        aria-label="Audio formats and optional files for subtitles, transcripts, and take details"
         className="grid flex-1 items-center gap-6 px-6 pt-8 pb-6 sm:grid-cols-2 sm:gap-8 sm:px-8"
       >
         <div className="flex flex-col gap-4">
           <p className="text-xs text-muted-foreground">Audio</p>
           <p className="font-montserrat text-4xl font-medium tracking-tight text-highlight">WAV</p>
-          <p className="text-xs text-muted-foreground">Native mono · 24 kHz</p>
+          <p className="text-xs text-muted-foreground">Mono at 24 kHz by default</p>
           <p className="text-sm">MP3 · FLAC · OGG · M4A</p>
         </div>
         <dl className="flex flex-col gap-3 text-sm">
           {[
-            { format: 'SRT / VTT', description: 'Approx. subtitles' },
+            { format: 'SRT / VTT', description: 'Subtitles' },
             { format: 'TXT', description: 'Transcript' },
             { format: 'JSON', description: 'Take metadata' }
           ].map((companion) => (
@@ -31,10 +31,10 @@ export function AudioExportCard(): React.JSX.Element {
       </figure>
       <div className="mx-2 mb-3 sm:mx-4">
         <CardBody>
-          <CardTitle>Audio, with the context attached.</CardTitle>
+          <CardTitle>Choose what to export</CardTitle>
           <CardText>
-            Choose the audio format before generating. Export the finished take on its own or as a
-            ZIP with its companion files.
+            Choose an audio format before you generate. Export the audio by itself or include the
+            other files in a ZIP. Subtitle timings are approximate.
           </CardText>
         </CardBody>
       </div>

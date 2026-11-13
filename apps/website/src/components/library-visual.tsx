@@ -23,9 +23,7 @@ export function LibraryVisual(): React.JSX.Element {
         </svg>
         <div>
           <p className="font-montserrat text-base font-medium">A place to begin</p>
-          <p className="mt-1 text-xs text-muted-foreground">
-            An example take and its export options
-          </p>
+          <p className="mt-1 text-xs text-muted-foreground">Example from the audio library</p>
         </div>
       </div>
       <div className="flex flex-col gap-3">
@@ -41,8 +39,8 @@ export function LibraryVisual(): React.JSX.Element {
       <dl className="grid grid-cols-2 gap-x-5 gap-y-4 text-sm">
         {[
           { file: 'SRT + VTT', label: 'Subtitles' },
-          { file: 'TXT', label: 'Prepared transcript' },
-          { file: 'JSON', label: 'Generation metadata' },
+          { file: 'TXT', label: 'Transcript' },
+          { file: 'JSON', label: 'Generation settings' },
           { file: 'Seed + settings', label: 'Take details' }
         ].map((item) => (
           <div key={item.file}>

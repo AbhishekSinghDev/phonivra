@@ -5,7 +5,7 @@ export function LocalEngineCard(): React.JSX.Element {
   return (
     <Card>
       <figure
-        aria-label="On-device speech generation"
+        aria-label="Speech generation on your computer"
         className="flex flex-1 flex-col items-center justify-center gap-5 px-6 pt-8 pb-6"
       >
         <svg
@@ -29,9 +29,10 @@ export function LocalEngineCard(): React.JSX.Element {
       </figure>
       <div className="mx-2 mb-3 sm:mx-4">
         <CardBody>
-          <CardTitle>At home on your machine.</CardTitle>
+          <CardTitle>Use the hardware you have</CardTitle>
           <CardText>
-            Auto uses compatible GPU acceleration when available and falls back to CPU.
+            Phonivra uses a compatible graphics processor when available and can also generate audio
+            on the CPU.
           </CardText>
         </CardBody>
       </div>

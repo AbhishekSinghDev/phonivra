@@ -4,7 +4,7 @@ export function PronunciationCard(): React.JSX.Element {
   return (
     <Card className="lg:col-span-2">
       <figure
-        aria-label="Dictionary example: API is prepared as A P I while the original script stays unchanged"
+        aria-label="Pronunciation example where API is read as A P I"
         className="flex flex-1 flex-col justify-center gap-5 px-6 pt-8 pb-5 sm:px-8"
       >
         <div className="flex items-center justify-between gap-3">
@@ -17,7 +17,7 @@ export function PronunciationCard(): React.JSX.Element {
             <dd className="mt-2 text-lg tracking-tight">The API is ready.</dd>
           </div>
           <div>
-            <dt className="text-xs text-muted-foreground">Prepared for speech</dt>
+            <dt className="text-xs text-muted-foreground">Read aloud</dt>
             <dd className="mt-2 text-lg tracking-tight">
               The <span className="text-highlight">A P I</span> is ready.
             </dd>
@@ -26,9 +26,9 @@ export function PronunciationCard(): React.JSX.Element {
       </figure>
       <div className="mx-2 mb-3 sm:mx-4">
         <CardBody>
-          <CardTitle>Your words. Your pronunciation.</CardTitle>
+          <CardTitle>Set how words are pronounced</CardTitle>
           <CardText>
-            Use the dictionary to set how names, acronyms, and recurring terms are read aloud.
+            Add names, acronyms, and tricky words to the dictionary without editing your script.
           </CardText>
         </CardBody>
       </div>

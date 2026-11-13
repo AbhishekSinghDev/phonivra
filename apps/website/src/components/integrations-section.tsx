@@ -7,18 +7,18 @@ const foundations = [
   {
     name: 'Chatterbox',
     role: 'The voice engine',
-    description: 'Resemble AI’s Chatterbox models power local speech synthesis in Phonivra.'
+    description: 'Chatterbox models turn your text into speech on your computer.'
   },
   {
     name: 'Hugging Face',
     role: 'The model source',
     description:
-      'Phonivra downloads models from Resemble AI’s Hugging Face repositories and caches them on your machine for offline use.'
+      'The app downloads speech models from Hugging Face and keeps a local copy for offline use.'
   },
   {
     name: 'FFmpeg',
     role: 'The audio toolkit',
-    description: 'FFmpeg handles microphone capture, audio conversion, and export.'
+    description: 'FFmpeg records microphone audio and converts files to your chosen export format.'
   }
 ] as const
 
@@ -34,16 +34,14 @@ export function IntegrationsSection(): React.JSX.Element {
           id="foundations-title"
           className="text-3xl leading-tight font-medium tracking-tight text-balance sm:text-4xl"
         >
-          Chatterbox at heart.
-          <br />
-          <span className="highlight">A local foundation.</span>
+          What <span className="highlight">powers Phonivra</span>
         </h2>
         <p className="max-w-xl text-base leading-relaxed text-muted-foreground">
-          Phonivra began with{' '}
+          Phonivra was inspired by{' '}
           <Link href={siteLinks.chatterbox} className="underline underline-offset-4">
             Chatterbox by Resemble AI
           </Link>
-          . Thanks to its contributors for sharing the code and models that power the studio.
+          . Thanks to the contributors who shared the code and models that made the studio possible.
         </p>
       </header>
 
@@ -94,7 +92,7 @@ export function IntegrationsSection(): React.JSX.Element {
 
       <div className="mt-10 flex justify-center">
         <Button variant="outline" asChild>
-          <Link href="#models">Explore the model catalog</Link>
+          <Link href="#models">Compare speech models</Link>
         </Button>
       </div>
     </section>

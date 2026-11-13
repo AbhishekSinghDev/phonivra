@@ -35,24 +35,29 @@ const languages = [
 ]
 
 const models = [
-  { name: 'Chatterbox Turbo', size: '350M', language: 'English', detail: 'Native reaction tags' },
+  {
+    name: 'Chatterbox Turbo',
+    size: '350M',
+    language: 'English',
+    detail: 'Supports tags like [laugh]'
+  },
   {
     name: 'Chatterbox Nano',
     size: '110M',
     language: 'English',
-    detail: 'Smallest model, with native reaction tags'
+    detail: 'Smallest model. Supports tags like [laugh]'
   },
   {
     name: 'Multilingual V3',
     size: '500M',
     language: '23 languages',
-    detail: 'Cross-language voice cloning'
+    detail: 'Use a voice recording in another language'
   },
   {
     name: 'Original Chatterbox',
     size: '500M',
     language: 'English',
-    detail: 'Expression and guidance controls'
+    detail: 'Controls for expression and guidance'
   }
 ]
 
@@ -68,13 +73,10 @@ export function ModelsSection(): React.JSX.Element {
           id="models-title"
           className="text-2xl leading-tight font-medium tracking-tight text-balance sm:text-3xl lg:col-span-2"
         >
-          Four models.
-          <br />
-          <span className="highlight">A wider vocabulary.</span>
+          Compare <span className="highlight">speech models</span>
         </h2>
         <p className="max-w-xl text-sm leading-relaxed text-muted-foreground lg:col-span-3">
-          Download Resemble AI’s Chatterbox models from the studio. Each model offers a different
-          set of speech controls and supported languages.
+          Download the model you need from the app. Compare the languages and controls below.
         </p>
       </header>
 
@@ -113,8 +115,8 @@ export function ModelsSection(): React.JSX.Element {
             </Table>
           </div>
           <p className="mt-4 text-xs leading-relaxed text-muted-foreground">
-            Auto routing uses Chatterbox Turbo for English and Multilingual V3 for other supported
-            languages.
+            With Auto selected, Phonivra uses Chatterbox Turbo for English and Multilingual V3 for
+            other supported languages.
           </p>
         </div>
 
@@ -135,8 +137,8 @@ export function ModelsSection(): React.JSX.Element {
         </div>
       </div>
       <p className="mt-6 border-t border-card-edge pt-4 text-xs leading-relaxed text-muted-foreground">
-        Text preparation supports number conversion in English and cardinal number conversion in
-        Hindi. Hebrew diacritics and Russian stress processors are unavailable in the app.
+        Phonivra can write out numbers in English and counting numbers in Hindi before generating
+        speech. It does not add Hebrew vowel marks or Russian stress marks.
       </p>
     </section>
   )

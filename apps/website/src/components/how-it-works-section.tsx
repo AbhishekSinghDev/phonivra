@@ -13,13 +13,8 @@ export function HowItWorksSection(): React.JSX.Element {
           id="workflow-title"
           className="text-3xl leading-tight font-medium tracking-tight text-balance sm:text-4xl"
         >
-          From a first line
-          <br />
-          <span className="highlight">To a finished take.</span>
+          How to make <br /> <span className="highlight">your first narration</span>
         </h2>
-        <p className="max-w-sm text-base leading-relaxed text-muted-foreground">
-          Write or import a script, choose how it sounds, and export the finished narration.
-        </p>
         <Button variant="outline" asChild>
           <Link href="#download">Get started</Link>
         </Button>
@@ -31,19 +26,17 @@ export function HowItWorksSection(): React.JSX.Element {
             01
           </span>
           <div className="col-span-11 flex min-w-0 flex-col gap-4">
-            <h3 className="font-montserrat text-xl font-medium tracking-tight">
-              Start with your words.
-            </h3>
+            <h3 className="font-montserrat text-xl font-medium tracking-tight">Add your script</h3>
             <p className="text-sm leading-relaxed text-muted-foreground">
-              Write or paste a script and give your narration a title. Add pause markers where the
-              story needs a moment to breathe.
+              Write, paste, or import your script. Add a pause wherever you want a little space
+              between lines.
             </p>
             <blockquote className="mt-1 border-l border-card-edge pl-5 text-base leading-loose">
-              Every story starts with a voice.
+              The room went quiet.
               <br />
               <code className="text-sm text-highlight">[pause=1.5]</code>
               <br />
-              This is a place to find yours.
+              Then someone knocked.
             </blockquote>
           </div>
         </li>
@@ -53,16 +46,14 @@ export function HowItWorksSection(): React.JSX.Element {
             02
           </span>
           <div className="col-span-11 flex min-w-0 flex-col gap-4">
-            <h3 className="font-montserrat text-xl font-medium tracking-tight">
-              Choose how it sounds.
-            </h3>
+            <h3 className="font-montserrat text-xl font-medium tracking-tight">Choose a voice</h3>
             <p className="text-sm leading-relaxed text-muted-foreground">
-              Pick a voice, set the language, and adjust the pace. Choose a model or let Auto select
-              one for the language.
+              Pick a voice and set the pace. Choose a speech model or let Phonivra pick one for the
+              language.
             </p>
             <dl className="mt-1 flex flex-wrap gap-x-8 gap-y-4 text-sm">
               {[
-                { label: 'Voice', value: 'Original narrator' },
+                { label: 'Voice', value: 'Model default' },
                 { label: 'Language', value: 'English' },
                 { label: 'Model', value: 'Auto' }
               ].map((setting) => (
@@ -81,11 +72,11 @@ export function HowItWorksSection(): React.JSX.Element {
           </span>
           <div className="col-span-11 flex min-w-0 flex-col gap-4">
             <h3 className="font-montserrat text-xl font-medium tracking-tight">
-              Carry the story forward.
+              Listen and export
             </h3>
             <p className="text-sm leading-relaxed text-muted-foreground">
-              Generate speech on your device and play back the finished take. Export the audio with
-              approximate subtitles, a prepared transcript, and generation metadata.
+              Generate the narration and listen to the result. Save the audio on its own or include
+              subtitles, a transcript, and the settings used to create it.
             </p>
             <dl className="mt-1 grid gap-3 text-sm sm:grid-cols-2">
               <div className="flex flex-col gap-2">
@@ -93,7 +84,7 @@ export function HowItWorksSection(): React.JSX.Element {
                 <dd className="leading-relaxed">WAV · MP3 · FLAC · OGG · M4A</dd>
               </div>
               <div className="flex flex-col gap-2">
-                <dt className="text-xs text-muted-foreground">Companion files</dt>
+                <dt className="text-xs text-muted-foreground">Optional files</dt>
                 <dd className="leading-relaxed">SRT · VTT · TXT · JSON</dd>
               </div>
             </dl>

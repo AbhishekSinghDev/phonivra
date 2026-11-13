@@ -8,15 +8,15 @@ const linkGroups = [
     links: [
       { label: 'How it works', href: '#how-it-works' },
       { label: 'The studio', href: '#studio' },
-      { label: 'The details', href: '#details' },
+      { label: 'Narration tools', href: '#details' },
       { label: 'Speech models', href: '#models' }
     ]
   },
   {
-    title: 'Before you begin',
+    title: 'Project and setup',
     links: [
       { label: 'Technology', href: '#foundations' },
-      { label: 'Questions', href: '#faq' },
+      { label: 'Common questions', href: '#faq' },
       { label: 'Get started', href: '#download' },
       { label: 'GitHub repository', href: siteLinks.repository }
     ]
@@ -31,7 +31,7 @@ export function SiteFooter(): React.JSX.Element {
           <div className="flex flex-col items-start gap-5">
             <SiteLogo size={40} />
             <p className="max-w-xs text-sm leading-relaxed text-muted-foreground">
-              An open-source desktop studio for generating and exporting narration on your computer.
+              An open source desktop app for making narration on your computer.
             </p>
           </div>
 
@@ -61,7 +61,7 @@ export function SiteFooter(): React.JSX.Element {
         <div className="flex flex-col items-start justify-between gap-4 border-t border-card-edge py-6 text-xs sm:flex-row sm:items-center">
           <div className="flex flex-col gap-2 text-muted-foreground">
             <p>
-              Built with love by{' '}
+              Built by{' '}
               <Link
                 href={siteLinks.author}
                 target="_blank"

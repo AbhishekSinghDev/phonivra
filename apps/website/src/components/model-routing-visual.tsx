@@ -7,8 +7,8 @@ export function ModelRoutingVisual(): React.JSX.Element {
       className="flex flex-col justify-center gap-7 overflow-hidden rounded-xl bg-muted p-5 sm:p-8"
     >
       <div className="flex flex-col items-center gap-3">
-        <Badge variant="outline">Auto routing</Badge>
-        <p className="font-montserrat text-lg font-medium">A model for the language.</p>
+        <Badge variant="outline">Auto</Badge>
+        <p className="font-montserrat text-lg font-medium">How Phonivra picks a model</p>
       </div>
       <div className="grid gap-4 sm:grid-cols-2">
         <div className="flex flex-col gap-4 border-t border-card-edge pt-5">
@@ -23,7 +23,7 @@ export function ModelRoutingVisual(): React.JSX.Element {
         </div>
       </div>
       <p className="text-center text-xs leading-relaxed text-muted-foreground">
-        Nano and Original Chatterbox can also be selected in the model catalog.
+        You can also choose Nano or Original Chatterbox yourself.
       </p>
     </figure>
   )
