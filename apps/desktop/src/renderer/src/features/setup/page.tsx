@@ -10,29 +10,16 @@ import { languages, models } from '../../../../shared/data/catalog'
 import type { LanguageCode, ModelId, StudioSnapshot } from '../../../../shared/studio'
 
 const steps = ['Check device', 'Choose language', 'Prepare model', 'Test audio'] as const
-const languageOptions = languages.map((language) => ({
-  value: language.code,
-  label: language.label,
-  description: language.nativeLabel
-}))
+const setupLanguages = models.find(({ id }) => id === 'multilingual')?.languages ?? []
+const languageOptions = languages
+  .filter(({ code }) => setupLanguages.includes(code))
+  .map(({ code, label, nativeLabel }) => ({ value: code, label, description: nativeLabel }))
 
 type DownloadableModel = Exclude<ModelId, 'auto'>
 
 function isInstalled(snapshot: StudioSnapshot, id: DownloadableModel): boolean {
   return snapshot.models.some(
     (model) => model.id === id && (model.status === 'installed' || model.status === 'active')
-  )
-}
-
-function recommendedModel(snapshot: StudioSnapshot, language: LanguageCode): DownloadableModel {
-  if (language !== 'en') return 'multilingual'
-  const preferred = snapshot.device.label === 'CPU' ? 'nano' : 'turbo'
-  const selected = snapshot.settings.model
-  if (selected !== 'auto' && isInstalled(snapshot, selected)) return selected
-  return (
-    ([preferred, 'nano', 'turbo', 'multilingual', 'original'] as const).find((id) =>
-      isInstalled(snapshot, id)
-    ) ?? preferred
   )
 }
 
@@ -69,11 +56,14 @@ export function SetupPage(): React.JSX.Element {
     }
   }
 
-  const language = languageChoice ?? snapshot?.settings.language ?? 'en'
-  const model = snapshot ? recommendedModel(snapshot, language) : 'nano'
+  const savedLanguage = snapshot?.settings.language
+  const language =
+    languageChoice ??
+    (savedLanguage && setupLanguages.includes(savedLanguage) ? savedLanguage : 'en')
+  const model = 'multilingual'
   const modelName = models.find((entry) => entry.id === model)?.label ?? model
   const selectedModel = snapshot?.settings.model
-  const preparedModel = selectedModel && selectedModel !== 'auto' ? selectedModel : model
+  const preparedModel = selectedModel === 'turbo' && language === 'en' ? selectedModel : model
   const preparedName = models.find((entry) => entry.id === preparedModel)?.label ?? preparedModel
   const ready = snapshot ? isInstalled(snapshot, preparedModel) : false
   const job = snapshot?.job
@@ -268,6 +258,9 @@ export function SetupPage(): React.JSX.Element {
                 }}
                 disabled={pending}
               />
+              <p className="text-sm text-muted-foreground">
+                You can set up more languages from Speech models after opening the studio.
+              </p>
               <p className="text-sm text-muted-foreground">
                 Recommended model <span className="font-medium text-foreground">{modelName}</span>
                 {snapshot && isInstalled(snapshot, model) ? ' · Already installed' : ''}

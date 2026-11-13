@@ -25,6 +25,7 @@ class Library:
     def __init__(self, storage: Storage):
         self.storage = storage
         self.records: dict[str, dict] = {}
+        self.voice_transcripts: dict[str, str] = {}
         self.voice_paths: dict[str, Path] = {}
         self.preview_paths: dict[str, Path] = {}
 
@@ -134,6 +135,7 @@ class Library:
             }
         ]
         self.voice_paths = {}
+        self.voice_transcripts = {}
         for path in sorted(self.storage.voices.iterdir()):
             if path.suffix.lower() not in AUDIO_EXTENSIONS or path.is_symlink():
                 continue
@@ -143,34 +145,44 @@ class Library:
                 log.warning("Skipping unreadable voice %s", path.name)
                 continue
             saved = registry.get(path.name)
+            label = saved.get("label") if isinstance(saved, dict) else saved
             voice_id = f"custom:{path.stem}" if saved else f"file:{path.name}"
             self.voice_paths[voice_id] = path
+            transcript = saved.get("transcript") if isinstance(saved, dict) else None
+            if isinstance(transcript, str) and transcript:
+                self.voice_transcripts[voice_id] = transcript
             result.append(
                 {
                     "id": voice_id,
-                    "label": saved or path.stem,
+                    "label": label or path.stem,
                     "kind": "custom" if saved else "external",
                     "description": "Saved reference recording."
                     if saved
                     else "Recording in your voice folder.",
                     "duration": seconds,
                     "previewAvailable": True,
+                    "hasTranscript": voice_id in self.voice_transcripts,
                     "available": True,
                 }
             )
         return result
 
-    def save_voice(self, reference: Path | None, label: str) -> None:
+    def save_voice(self, reference: Path | None, label: str, transcript: str) -> str:
         if not reference or not reference.is_file():
             raise ValueError("Attach or record a voice reference first.")
         label = label.strip()
         if not label:
             raise ValueError("Give the voice a name.")
-        path = self.storage.voices / f"{uuid4().hex}.wav"
-        shutil.copyfile(reference, path)
         registry = read_json(self.storage.voices / "registry.json", {})
-        registry[path.name] = label
-        write_json(self.storage.voices / "registry.json", registry)
+        path = self.storage.voices / f"{uuid4().hex}.wav"
+        registry[path.name] = {"label": label, "transcript": transcript.strip()}
+        try:
+            shutil.copyfile(reference, path)
+            write_json(self.storage.voices / "registry.json", registry)
+        except OSError:
+            path.unlink(missing_ok=True)
+            raise
+        return f"custom:{path.stem}"
 
     def delete_voice(self, voice_id: str) -> None:
         path = self.voice_paths.get(voice_id)

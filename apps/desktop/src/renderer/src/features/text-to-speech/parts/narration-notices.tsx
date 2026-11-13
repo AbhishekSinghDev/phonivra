@@ -7,6 +7,7 @@ export function NarrationNotices(): React.JSX.Element | null {
   const settings = useStudioStore((state) => state.snapshot?.settings)
   const reference = useStudioStore((state) => state.snapshot?.reference)
   const dependencies = useStudioStore((state) => state.snapshot?.dependencies)
+  const voices = useStudioStore((state) => state.snapshot?.voices)
   const script = useStudioStore((state) => state.snapshot?.script ?? '')
   if (!settings || !reference || !dependencies) return null
   const model = resolvedModel(settings)
@@ -21,10 +22,18 @@ export function NarrationNotices(): React.JSX.Element | null {
           <HugeiconsIcon icon={AlertCircleIcon} aria-hidden="true" />
           <p className="font-medium">Model and language do not match</p>
           <div className="leading-relaxed">
-            {model.label} is English-only. Choose Multilingual V3 or Auto for {language?.label}.
+            Choose a model that supports {language?.label}, or select Auto.
           </div>
         </div>
       )}
+      {model.id === 'indicf5' &&
+        (reference.status !== 'empty' ||
+          !voices?.find(({ id }) => id === settings.voice)?.hasTranscript) && (
+          <p className="text-sm leading-relaxed text-muted-foreground">
+            Select a saved voice preset with a transcript. Use a recording with 5 to 12 seconds of
+            speech.
+          </p>
+        )}
       {!dependencies.ffmpeg && requiresFFmpeg && (
         <div role="alert" className="flex flex-col gap-1 text-sm text-destructive">
           <HugeiconsIcon icon={AlertCircleIcon} aria-hidden="true" />
@@ -39,7 +48,7 @@ export function NarrationNotices(): React.JSX.Element | null {
         /\[(laugh|chuckle|cough|sigh|gasp|groan|sniff|shush|clear throat)\]/iu.test(script) && (
           <p className="text-sm leading-relaxed text-muted-foreground">
             This model does not support reaction tags. They may be spoken as text; remove them or
-            use Turbo or Nano with English.
+            use Turbo with English.
           </p>
         )}
       {settings.convert_numbers && settings.language !== 'en' && settings.language !== 'hi' && (

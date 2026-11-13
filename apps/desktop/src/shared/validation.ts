@@ -1,4 +1,4 @@
-import { deviceModes, maxTextLength, sampleRates } from './contract'
+import { deviceModes, maxReferenceTranscriptLength, maxTextLength, sampleRates } from './contract'
 import { languages, models, numericSettings } from './data/catalog'
 import type { GenerationSettings, StudioCommand } from './studio'
 
@@ -52,7 +52,12 @@ export function validateCommand(raw: unknown): raw is StudioCommand {
     case 'reference.attach':
       return c.source === 'upload' || c.source === 'record'
     case 'voice.save':
-      return typeof c.label === 'string' && c.label.length <= 60
+      return (
+        typeof c.label === 'string' &&
+        c.label.length <= 60 &&
+        (c.transcript === undefined ||
+          (typeof c.transcript === 'string' && c.transcript.length <= maxReferenceTranscriptLength))
+      )
     case 'voice.delete':
     case 'output.delete':
       return hasId(c.id) && typeof c.confirmed === 'boolean'

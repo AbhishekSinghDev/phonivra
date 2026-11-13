@@ -1,8 +1,19 @@
 import type { BatchWorkspace, SettingsWorkspace, WatermarkResult } from './workspace'
 
-export type ModelId = 'auto' | 'turbo' | 'nano' | 'multilingual' | 'original'
-export type EngineId = 'chatterbox'
+export type ModelId = 'auto' | 'turbo' | 'multilingual' | 'indicf5'
+type RecordedModelId = ModelId | 'nano' | 'original'
+export type EngineId = 'chatterbox' | 'indicf5'
 export type LanguageCode =
+  | 'as'
+  | 'bn'
+  | 'gu'
+  | 'kn'
+  | 'ml'
+  | 'mr'
+  | 'or'
+  | 'pa'
+  | 'ta'
+  | 'te'
   | 'ar'
   | 'da'
   | 'de'
@@ -69,6 +80,7 @@ export interface VoiceDefinition {
   description: string
   duration: number | null
   previewAvailable: boolean
+  hasTranscript?: boolean
   available: boolean
 }
 export interface GenerationSettings {
@@ -172,15 +184,15 @@ export interface OutputRecord {
   format: AudioFileFormat
   sampleRate: number
   language: LanguageCode | null
-  model: ModelId | null
+  model: RecordedModelId | null
   voice: string | null
   seed: number | null
   loudnessGain: number | null
-  requestedModel: ModelId | null
+  requestedModel: RecordedModelId | null
   sourceCharacters: number | null
   speed: number | null
   trimStart: number | null
-  settingsSnapshot: GenerationSettings | null
+  settingsSnapshot: (Omit<GenerationSettings, 'model'> & { model: RecordedModelId }) | null
   metadataAvailable: boolean
   external: boolean
   companions: readonly ('srt' | 'vtt' | 'txt' | 'json')[]
@@ -271,7 +283,7 @@ export type StudioCommand =
   | { type: 'credentials.set'; token: string }
   | { type: 'reference.attach'; source: 'upload' | 'record' }
   | { type: 'reference.clear' }
-  | { type: 'voice.save'; label: string }
+  | { type: 'voice.save'; label: string; transcript?: string }
   | { type: 'voice.delete'; id: string; confirmed: boolean }
   | { type: 'voices.refresh' }
   | { type: 'model.pause'; id: Exclude<ModelId, 'auto'>; paused: boolean }

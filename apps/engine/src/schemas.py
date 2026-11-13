@@ -4,10 +4,29 @@ from typing import Annotated, Literal
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
-from .contract import DEVICE_MODES, MAX_TEXT_LENGTH, NATIVE_SAMPLE_RATE, SAMPLE_RATES
+from .contract import (
+    DEVICE_MODES,
+    INDIC_LANGUAGES,
+    MAX_REFERENCE_TRANSCRIPT_LENGTH,
+    MAX_TEXT_LENGTH,
+    NATIVE_SAMPLE_RATE,
+    SAMPLE_RATES,
+)
 
-ModelId = Literal["turbo", "nano", "multilingual", "original"]
+ModelId = Literal["turbo", "multilingual", "indicf5"]
+ModelSelection = Literal["auto", "turbo", "multilingual", "indicf5"]
+RecordedModel = Literal["auto", "turbo", "multilingual", "indicf5", "nano", "original"]
 Language = Literal[
+    "as",
+    "bn",
+    "gu",
+    "kn",
+    "ml",
+    "mr",
+    "or",
+    "pa",
+    "ta",
+    "te",
     "ar",
     "da",
     "de",
@@ -41,7 +60,7 @@ class Input(BaseModel):
 class Settings(Input):
     title: str = Field(default="", max_length=120)
     language: Language = "en"
-    model: Literal["auto", "turbo", "nano", "multilingual", "original"] = "auto"
+    model: ModelSelection = "auto"
     auto_detect: bool = False
     voice: str = Field(default="default", max_length=256)
     temperature: float = Field(default=0.8, ge=0.1, le=1.5)
@@ -75,6 +94,12 @@ class Settings(Input):
     strip_markdown: bool = True
     remove_emoji: bool = True
     pronounce: bool = False
+
+
+def resolve_model(settings: Settings) -> ModelId:
+    if settings.model == "auto":
+        return "indicf5" if settings.language in INDIC_LANGUAGES - {"hi"} else "multilingual"
+    return settings.model
 
 
 class SimpleCommand(Input):
@@ -168,6 +193,7 @@ class ReferenceCommand(Input):
 class VoiceSave(Input):
     type: Literal["voice.save"]
     label: str = Field(min_length=1, max_length=60)
+    transcript: str = Field(default="", max_length=MAX_REFERENCE_TRANSCRIPT_LENGTH)
 
 
 class CredentialCommand(Input):
@@ -220,6 +246,10 @@ class PartRecord(Input):
     pause: float = Field(ge=0)
 
 
+class RecordedSettings(Settings):
+    model: RecordedModel = "auto"
+
+
 class OutputRecord(Input):
     """Persisted output schema; validate sidecars before presenting them to the desktop."""
 
@@ -231,15 +261,15 @@ class OutputRecord(Input):
     format: Literal["wav", "mp3", "flac", "ogg", "m4a", "opus", "aiff", "aif"]
     sampleRate: int = Field(gt=0)
     language: Language | None
-    model: Literal["auto", "turbo", "nano", "multilingual", "original"] | None
+    model: RecordedModel | None
     voice: str | None
     seed: int | None
     loudnessGain: float | None
-    requestedModel: Literal["auto", "turbo", "nano", "multilingual", "original"] | None
+    requestedModel: RecordedModel | None
     sourceCharacters: int | None
     speed: float | None
     trimStart: float | None
-    settingsSnapshot: Settings | None
+    settingsSnapshot: RecordedSettings | None
     metadataAvailable: bool
     external: bool
     companions: list[Literal["srt", "vtt", "txt", "json"]] = Field(default_factory=list)

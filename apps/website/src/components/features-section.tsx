@@ -54,7 +54,7 @@ const workspaces = [
     label: 'Models',
     title: 'Pick a speech model',
     description:
-      'See which languages and speech controls each Chatterbox model supports. Download the models you want to use.',
+      'See which languages and speech controls each speech model supports. Download the models you want to use.',
     details: [
       'Automatic model selection by language',
       'Pause and resume model downloads',

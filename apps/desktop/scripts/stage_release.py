@@ -144,7 +144,8 @@ def main() -> None:
             "-c",
             (
                 "import torch; import phonivra_engine.server; "
-                "import chatterbox.tts; import chatterbox.mtl_tts; import chatterbox.tts_turbo; "
+                "import chatterbox.mtl_tts; import chatterbox.tts_turbo; "
+                "from f5_tts.model import CFM, DiT; import vocos; "
                 "print(torch.__version__)"
             ),
         ],

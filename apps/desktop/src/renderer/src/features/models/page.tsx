@@ -46,7 +46,7 @@ import type { ModelId, SamplingKey } from '../../../../shared/studio'
 
 export default function ModelsPage(): React.JSX.Element {
   const snapshot = useStudioStore((state) => state.snapshot)
-  const [selected, setSelected] = useState<ModelId>('turbo')
+  const [selected, setSelected] = useState<ModelId>('multilingual')
   if (!snapshot) return <ScreenLoading />
   const model = models.find((item) => item.id === selected) ?? models[1]
   const active = activePhases.has(snapshot.job.phase)
@@ -89,8 +89,8 @@ export default function ModelsPage(): React.JSX.Element {
         </div>
       </div>
       <p className="text-sm leading-relaxed text-muted-foreground">
-        Auto uses Turbo for English and Multilingual V3 for other supported languages. It has no
-        files to download.
+        Auto uses Multilingual V3 where available and IndicF5 for additional Indian languages.
+        Choose Turbo for English reaction tags.
       </p>
       <ItemGroup className="grid gap-4 lg:grid-cols-2">
         {models
@@ -130,6 +130,20 @@ export default function ModelsPage(): React.JSX.Element {
                     </Badge>
                   </ItemTitle>
                   <ItemDescription>{item.description}</ItemDescription>
+                  {id === 'indicf5' && !available && (
+                    <p className="text-xs text-muted-foreground">
+                      Accept access on{' '}
+                      <a
+                        className="relative z-20 underline"
+                        href="https://huggingface.co/ai4bharat/IndicF5"
+                        target="_blank"
+                        rel="noreferrer"
+                      >
+                        Hugging Face
+                      </a>
+                      , then connect a read token in Settings → Storage and downloads.
+                    </p>
+                  )}
                   <p className="text-xs text-muted-foreground">
                     {item.parameters} ·{' '}
                     {item.languages.length === 1
@@ -222,7 +236,11 @@ export default function ModelsPage(): React.JSX.Element {
                     <Button
                       variant="outline"
                       size="sm"
-                      disabled={active || !snapshot.dependencies.online}
+                      disabled={
+                        active ||
+                        !snapshot.dependencies.online ||
+                        (id === 'indicf5' && !snapshot.configuration.preferences.tokenConfigured)
+                      }
                       onClick={() =>
                         act(
                           installation?.status === 'error'
@@ -282,14 +300,20 @@ export default function ModelsPage(): React.JSX.Element {
             {model.referenceStrict ? 'More than' : 'At least'} {model.referenceMinimum}s; 6+s
             recommended
           </DetailValue>
-          <DetailValue label="Speech per part">Up to {model.maxSpeechTokens} tokens</DetailValue>
+          {model.id !== 'indicf5' && (
+            <DetailValue label="Speech per part">Up to {model.maxSpeechTokens} tokens</DetailValue>
+          )}
           <DetailValue label="CUDA precision">
             {model.cudaPrecision === 'half' ? 'Half precision T3' : 'Full precision'}
           </DetailValue>
           <DetailValue label="Native reactions">
             {model.reactions ? 'Supported' : 'Not supported'}
           </DetailValue>
-          <DetailValue label="Speech conditioning">First {model.conditioningSeconds}s</DetailValue>
+          <DetailValue label="Speech conditioning">
+            {model.id === 'indicf5'
+              ? '5–12 seconds with an exact transcript'
+              : `First ${model.conditioningSeconds}s`}
+          </DetailValue>
           <DetailValue label="Source">{model.repository ?? 'Automatic router'}</DetailValue>
         </dl>
         <Accordion type="multiple">
@@ -346,10 +370,9 @@ export default function ModelsPage(): React.JSX.Element {
             <AccordionTrigger>Output and runtime limits</AccordionTrigger>
             <AccordionContent>
               <p className="text-sm leading-relaxed text-muted-foreground">
-                Current models output mono 24 kHz audio with the Resemble Perth watermark. The
-                1000-token cap is roughly 40 seconds of speech per part. CPU inference uses full
-                precision. Switching models releases the previous one. Precision, quantization, GPU
-                index and MPS controls are not available.
+                All models synthesize mono 24 kHz audio. Chatterbox models apply the Resemble AI
+                PerTh watermark and cap each part at 1,000 speech tokens. Phonivra keeps one model
+                loaded at a time.
               </p>
             </AccordionContent>
           </AccordionItem>

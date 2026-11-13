@@ -25,12 +25,22 @@ from .jobs import Jobs
 from .library import Library
 from .models import Models
 from .recording import Recorder
-from .schemas import Command, DesktopOperation, Settings
+from .schemas import Command, DesktopOperation, Settings, resolve_model
 from .storage import Storage, read_json, selected_file, write_json
 
 log = logging.getLogger(__name__)
 
 PREVIEW_TEXT = {
+    "as": "নমস্কাৰ, এয়া আপোনাৰ কাহিনীৰ বাবে এটা সৰু নমুনা।",
+    "bn": "নমস্কার, এটি আপনার গল্পের জন্য একটি ছোট নমুনা।",
+    "gu": "નમસ્તે, આ તમારી વાર્તા માટે એક નાનું ઉદાહરણ છે.",
+    "kn": "ನಮಸ್ಕಾರ, ಇದು ನಿಮ್ಮ ಕಥೆಗಾಗಿ ಒಂದು ಚಿಕ್ಕ ಮಾದರಿ.",
+    "ml": "നമസ്കാരം, ഇത് നിങ്ങളുടെ കഥയ്ക്കുള്ള ഒരു ചെറിയ മാതൃകയാണ്.",
+    "mr": "नमस्कार, हा तुमच्या कथेचा एक छोटा नमुना आहे.",
+    "or": "ନମସ୍କାର, ଏହା ଆପଣଙ୍କ କାହାଣୀ ପାଇଁ ଏକ ଛୋଟ ନମୁନା।",
+    "pa": "ਸਤਿ ਸ੍ਰੀ ਅਕਾਲ, ਇਹ ਤੁਹਾਡੀ ਕਹਾਣੀ ਲਈ ਇੱਕ ਛੋਟਾ ਨਮੂਨਾ ਹੈ।",
+    "ta": "வணக்கம், இது உங்கள் கதைக்கான ஒரு சிறிய மாதிரி.",
+    "te": "నమస్కారం, ఇది మీ కథ కోసం ఒక చిన్న నమూనా.",
     "ar": "مرحباً، هذه عينة صوتية لمساعدتك على اختيار الصوت المناسب لقصتك.",
     "da": "Hej, dette er en stemmeprøve til din næste fortælling.",
     "de": "Hallo, dies ist eine Hörprobe für deine nächste Geschichte.",
@@ -62,8 +72,8 @@ class Studio:
         self.lock = threading.RLock()
         self.storage = Storage(root)
         saved = self.storage.saved
-        self.settings = Settings.model_validate(saved.get("settings", {}))
-        self.saved_settings = Settings.model_validate(
+        self.settings = self.load_settings(saved.get("settings", {}))
+        self.saved_settings = self.load_settings(
             saved.get("savedSettings", self.settings.model_dump())
         )
         self.script = saved.get("script", "")
@@ -102,12 +112,10 @@ class Studio:
         self.setup_model_sizes: dict[str, int | None] = {}
         self.setup_test: tuple[str, Settings] | None = None
         if saved and "setupComplete" not in saved and self.setup_media_ready():
-            model = self.settings.model
-            if model == "auto":
-                model = "turbo" if self.settings.language == "en" else "multilingual"
+            model = resolve_model(self.settings)
             self.setup_complete = bool(
                 self.device_info["available"]
-                and (model == "multilingual" or self.settings.language == "en")
+                and (model != "turbo" or self.settings.language == "en")
                 and self.models.installed(model)
                 and (
                     self.settings.voice == "default"
@@ -371,6 +379,12 @@ class Studio:
         else:
             raise ValueError(f"Unsupported engine command: {kind}")
 
+    @staticmethod
+    def load_settings(values: object) -> Settings:
+        if isinstance(values, dict) and values.get("model") in ("nano", "original"):
+            values = {**values, "model": "auto"}
+        return Settings.model_validate(values)
+
     def effective_settings(self, script: str, settings: Settings | None = None) -> Settings:
         value = (settings or self.settings).model_copy()
         if value.auto_detect:
@@ -386,6 +400,9 @@ class Studio:
         reference = self.reference_path or self.library.voice_paths.get(settings.voice)
         if self.reference_path is None and settings.voice != "default" and reference is None:
             raise ValueError("That voice is missing. Refresh the voice collection.")
+        transcript = (
+            "" if self.reference_path else self.library.voice_transcripts.get(settings.voice, "")
+        )
         voice = (
             self.reference["name"]
             if self.reference_path
@@ -423,6 +440,7 @@ class Studio:
                             reference,
                             voice,
                             self.storage.outputs,
+                            transcript,
                         )
                         with self.lock:
                             current.update(status="complete", outputId=record["id"])
@@ -449,7 +467,7 @@ class Studio:
             def work():
                 directory = self.storage.previews if kind == "preview" else self.storage.outputs
                 record = self.narrator.generate(
-                    script, settings, dictionary, reference, voice, directory
+                    script, settings, dictionary, reference, voice, directory, transcript
                 )
                 with self.lock:
                     if kind == "preview":
@@ -464,7 +482,11 @@ class Studio:
                             "duration": record["duration"],
                             "text": script,
                         }
-                        if not self.setup_complete and reference is None and settings.voice == "default":
+                        if (
+                            not self.setup_complete
+                            and reference is None
+                            and settings.voice == "default"
+                        ):
                             self.setup_test = (self.job["id"], settings)
                     else:
                         self.accept_output(record)
@@ -558,7 +580,15 @@ class Studio:
             self.reference_path = None
             self.reference = {"status": "empty", "name": "", "duration": 0}
         elif command.type == "voice.save":
-            self.library.save_voice(self.reference_path, command.label)
+            voice_id = self.library.save_voice(
+                self.reference_path, command.label, command.transcript
+            )
+            if command.transcript.strip():
+                self.reference_path.unlink(missing_ok=True)
+                self.reference_path = None
+                self.reference = {"status": "empty", "name": "", "duration": 0}
+                self.settings.voice = voice_id
+                self.persist()
             self.voices = self.library.voices()
             self.status = "Voice preset saved."
         elif command.type == "voice.delete":
@@ -692,7 +722,7 @@ class Studio:
                 data = read_json(path)
                 if not isinstance(data, dict) or data.get("phonivraProject") != 1:
                     raise ValueError("Choose a Phonivra project file.")
-                settings = Settings.model_validate(data["settings"])
+                settings = self.load_settings(data["settings"])
                 script, dictionary = data.get("script"), data.get("dictionary", "")
                 if not isinstance(script, str) or not isinstance(dictionary, str):
                     raise ValueError("The project contains invalid text fields.")

@@ -1,4 +1,4 @@
-import { nativeSampleRate } from '../contract'
+import { indicLanguages, nativeSampleRate } from '../contract'
 import type {
   GenerationSettings,
   LanguageDefinition,
@@ -69,8 +69,24 @@ export const languages: readonly LanguageDefinition[] = [
     label: 'Chinese',
     nativeLabel: '中文',
     note: 'Sentence boundaries include CJK punctuation.'
-  }
+  },
+  { code: 'as', label: 'Assamese', nativeLabel: 'অসমীয়া' },
+  { code: 'bn', label: 'Bengali', nativeLabel: 'বাংলা' },
+  { code: 'gu', label: 'Gujarati', nativeLabel: 'ગુજરાતી' },
+  { code: 'kn', label: 'Kannada', nativeLabel: 'ಕನ್ನಡ' },
+  { code: 'ml', label: 'Malayalam', nativeLabel: 'മലയാളം' },
+  { code: 'mr', label: 'Marathi', nativeLabel: 'मराठी' },
+  { code: 'or', label: 'Odia', nativeLabel: 'ଓଡ଼ିଆ' },
+  { code: 'pa', label: 'Punjabi', nativeLabel: 'ਪੰਜਾਬੀ' },
+  { code: 'ta', label: 'Tamil', nativeLabel: 'தமிழ்' },
+  { code: 'te', label: 'Telugu', nativeLabel: 'తెలుగు' }
 ]
+const indic = languages
+  .filter((language) => indicLanguages.includes(language.code))
+  .map(({ code }) => code)
+const multilingual = languages
+  .filter(({ code }) => code === 'hi' || !indic.includes(code))
+  .map(({ code }) => code)
 const english = ['en'] as const
 const common = ['temperature', 'top_p', 'repetition_penalty'] as const
 const base = {
@@ -86,7 +102,7 @@ export const models: readonly ModelDefinition[] = [
     ...base,
     id: 'auto',
     label: 'Auto',
-    description: 'Turbo for English. Multilingual V3 for other languages.',
+    description: 'Uses Multilingual V3 or IndicF5 according to the language.',
     parameters: 'Automatic routing',
     repository: null,
     languages: languages.map((l) => l.code),
@@ -115,28 +131,12 @@ export const models: readonly ModelDefinition[] = [
   },
   {
     ...base,
-    id: 'nano',
-    label: 'Chatterbox Nano',
-    description: 'Smallest model, suited to CPU generation.',
-    parameters: '110M parameters',
-    repository: 'ResembleAI/chatterbox-nano',
-    languages: english,
-    sampling: [...common, 'top_k'],
-    reactions: true,
-    referenceStrict: true,
-    conditioningSeconds: 15,
-    referenceLoudnessLufs: -27,
-    cudaPrecision: 'full',
-    downloadable: true
-  },
-  {
-    ...base,
     id: 'multilingual',
     label: 'Multilingual V3',
     description: 'Narration and cross-language cloning in 23 languages.',
     parameters: '500M parameters',
     repository: 'ResembleAI/chatterbox',
-    languages: languages.map((l) => l.code),
+    languages: multilingual,
     sampling: [...common, 'min_p', 'exaggeration', 'cfg_weight'],
     reactions: false,
     referenceStrict: false,
@@ -146,17 +146,19 @@ export const models: readonly ModelDefinition[] = [
   },
   {
     ...base,
-    id: 'original',
-    label: 'Original Chatterbox',
-    description: 'English narration with expression and guidance controls.',
-    parameters: '500M parameters',
-    repository: 'ResembleAI/chatterbox',
-    languages: english,
-    sampling: [...common, 'min_p', 'exaggeration', 'cfg_weight'],
+    engine: 'indicf5',
+    id: 'indicf5',
+    label: 'AI4Bharat IndicF5',
+    description: 'Narration in 11 Indian languages from a voice recording and its transcript.',
+    parameters: '400M parameters',
+    repository: 'ai4bharat/IndicF5',
+    languages: indic,
+    sampling: [],
     reactions: false,
     referenceStrict: false,
-    conditioningSeconds: 6,
-    cudaPrecision: 'half',
+    conditioningSeconds: 12,
+    referenceLoudnessLufs: null,
+    cudaPrecision: 'full',
     downloadable: true
   }
 ]
@@ -165,11 +167,11 @@ export function resolvedModel(
 ): ModelDefinition {
   const id =
     settings.model === 'auto'
-      ? settings.language === 'en'
-        ? 'turbo'
+      ? indic.includes(settings.language) && settings.language !== 'hi'
+        ? 'indicf5'
         : 'multilingual'
       : settings.model
-  return models.find((model) => model.id === id) ?? models[1]
+  return models.find((model) => model.id === id)!
 }
 export const defaultSettings: GenerationSettings = {
   title: '',
@@ -236,7 +238,7 @@ export const numericSettings: readonly NumericSetting[] = [
     min: 0,
     max: 2000,
     step: 10,
-    description: 'Turbo and Nano only.',
+    description: 'Turbo only.',
     group: 'sampling'
   },
   {
@@ -245,7 +247,7 @@ export const numericSettings: readonly NumericSetting[] = [
     min: 0,
     max: 0.5,
     step: 0.01,
-    description: 'Multilingual and Original only.',
+    description: 'Multilingual V3 only.',
     group: 'sampling'
   },
   {
@@ -263,7 +265,7 @@ export const numericSettings: readonly NumericSetting[] = [
     min: 0,
     max: 1,
     step: 0.05,
-    description: 'Expressiveness for Multilingual and Original.',
+    description: 'Expressiveness for Multilingual V3.',
     group: 'sampling'
   },
   {
@@ -272,7 +274,7 @@ export const numericSettings: readonly NumericSetting[] = [
     min: 0,
     max: 1,
     step: 0.05,
-    description: 'Guidance and pacing for Multilingual and Original.',
+    description: 'Guidance and pacing for Multilingual V3.',
     group: 'sampling'
   },
   {

@@ -4,35 +4,12 @@ import re
 import unicodedata
 from dataclasses import dataclass
 from pathlib import Path
+from typing import get_args
 
 from .contract import MAX_TEXT_LENGTH
 from .schemas import Language, Settings
 
-LANGUAGES = [
-    "ar",
-    "da",
-    "de",
-    "el",
-    "en",
-    "es",
-    "fi",
-    "fr",
-    "he",
-    "hi",
-    "it",
-    "ja",
-    "ko",
-    "ms",
-    "nl",
-    "no",
-    "pl",
-    "pt",
-    "ru",
-    "sv",
-    "sw",
-    "tr",
-    "zh",
-]
+LANGUAGES = get_args(Language)
 PAUSE = re.compile(r"\[pause(?:=(\d+(?:\.\d+)?))?\]", re.IGNORECASE)
 
 

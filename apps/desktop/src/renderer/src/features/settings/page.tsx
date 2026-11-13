@@ -171,7 +171,8 @@ export function SettingsPage(): React.JSX.Element {
               <h2 className="text-base font-semibold">Local by design</h2>
               <p className="text-sm leading-relaxed text-muted-foreground">
                 No account, cloud storage or telemetry. Model downloads need a network connection;
-                installed models can generate offline. Audio includes the Resemble Perth watermark.
+                installed models can generate offline. Chatterbox audio includes the Resemble AI
+                PerTh watermark.
               </p>
             </section>
           </div>
@@ -284,8 +285,8 @@ export function SettingsPage(): React.JSX.Element {
                 </Badge>
               </div>
               <p className="text-sm text-muted-foreground">
-                Public model downloads usually work without a token. A token may be needed for
-                account-specific access.
+                IndicF5 downloads require access to its Hugging Face model page and a read token.
+                Chatterbox models can download without an account.
               </p>
               <FieldGroup>
                 <Field>

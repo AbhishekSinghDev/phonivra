@@ -2,7 +2,7 @@
 
 This workspace contains the Python backend for the existing desktop studio. The sibling Chatterbox Narrator
 project was a behavior reference; its Gradio application and helpers are not imported or
-copied into this engine. Speech synthesis uses the pinned [Chatterbox library by Resemble AI](https://github.com/resemble-ai/chatterbox).
+copied into this engine. Speech synthesis uses the pinned [Chatterbox library](https://github.com/resemble-ai/chatterbox) and [F5-TTS](https://github.com/SWivid/F5-TTS) for AI4Bharat IndicF5.
 See the [third-party notices](../../THIRD_PARTY_NOTICES.md) for checkpoint sources, licenses, and the upstream citation.
 
 ## Development setup
@@ -73,7 +73,7 @@ and `uv.lock`; the workspace manifest introduces no JavaScript runtime dependenc
 | `studio.py`            | Studio commands and workspace orchestration                                          |
 | `jobs.py`              | One compute worker, cancellation, download pause and job state                       |
 | `models.py`            | Pinned model manifests, downloads, device selection and model residency              |
-| `chatterbox_compat.py` | Local Cangjie assets and Original's zero-guidance batch compatibility                |
+| `chatterbox_compat.py` | Local Cangjie assets and reusable voice conditioning                                 |
 | `inference.py`         | Reference conditioning, chunk generation and committing complete outputs             |
 | `text.py`              | Subtitle imports, cleanup, dictionary, language detection and chapter/part splitting |
 | `audio.py`             | Reference conversion, mastering and cancellable encoding                             |
@@ -109,18 +109,17 @@ Inference loads local checkpoints. Scripts and reference recordings are never se
 remote inference service. Downloads and the explicitly requested diagnostics connectivity
 check use the network. Credentials are encrypted by Electron, kept out of workspace/project
 files and metadata, and only supplied in memory to the downloader. Public downloads can
-be used without a token. A usable OS keyring is required to save a token.
+be used without a token. IndicF5 requires access to its gated Hugging Face repository. A usable OS keyring is required to save a token.
 
 Generation snapshots its settings, script, voice reference and dictionary at job start.
-Changing editor settings during a job affects the next job. Batch preparation splits headings
+IndicF5 also snapshots the selected voice preset’s transcript and loads its pinned Vocos decoder from the local cache. Changing editor settings during a job affects the next job. Batch preparation splits headings
 before cleanup, and records per-item failures while preserving completed items. The completed
 batch ZIP includes each finished audio file and its available companions.
 
 Cancellation checks speech-transformer steps, chunk boundaries, downloads and FFmpeg encoding.
 An in-flight model load or decoder operation may finish before cancellation is observed.
 Unfinished narration is discarded; completed batch items remain. Jobs are not resumed after
-application shutdown. Only one model is resident at a time. Multilingual/Original use half
-precision for the text transformer on CUDA; CPU and Turbo/Nano use default precision.
+application shutdown. Only one model is resident at a time. Multilingual V3 uses half precision for the text transformer on CUDA. Turbo and CPU inference use default precision.
 
 Library refresh also discovers audio placed directly in the output folder. Files without
 Phonivra sidecars remain playable/exportable with unavailable metadata marked explicitly.

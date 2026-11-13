@@ -4,9 +4,11 @@ export const {
   protocolVersion,
   loopbackHost,
   maxTextLength,
+  maxReferenceTranscriptLength,
   scriptExtensions,
   audioExtensions,
   deviceModes,
+  indicLanguages,
   sampleRates,
   nativeSampleRate
 } = contract

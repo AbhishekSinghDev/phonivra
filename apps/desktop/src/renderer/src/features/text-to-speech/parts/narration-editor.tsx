@@ -191,7 +191,7 @@ export const NarrationEditor = memo(function NarrationEditor({
                   <DropdownMenuSeparator />
                   <DropdownMenuGroup>
                     <DropdownMenuLabel>
-                      {reactions ? 'Reactions' : 'Reactions need Turbo or Nano'}
+                      {reactions ? 'Reactions' : 'Reactions need Turbo'}
                     </DropdownMenuLabel>
                     {reactionTags.map((tag) => (
                       <DropdownMenuItem

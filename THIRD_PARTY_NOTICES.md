@@ -10,14 +10,16 @@ Phonivra is an independent, MIT-licensed desktop project inspired by Chatterbox.
 
 Chatterbox and PerTh share the same Resemble AI copyright notice and MIT terms. [License text](licenses/RESEMBLE-AI-MIT.txt)
 
-| Phonivra model | Publisher's model repository                                                      | Revision used by Phonivra                  |
-| -------------- | --------------------------------------------------------------------------------- | ------------------------------------------ |
-| Original       | [ResembleAI/chatterbox](https://huggingface.co/ResembleAI/chatterbox)             | `5bb1f6ee58e50c3b8d408bc82a6d3740c2db6e18` |
-| Multilingual   | [ResembleAI/chatterbox](https://huggingface.co/ResembleAI/chatterbox)             | `5bb1f6ee58e50c3b8d408bc82a6d3740c2db6e18` |
-| Turbo          | [ResembleAI/chatterbox-turbo](https://huggingface.co/ResembleAI/chatterbox-turbo) | `749d1c1a46eb10492095d68fbcf55691ccf137cd` |
-| Nano           | [ResembleAI/chatterbox-nano](https://huggingface.co/ResembleAI/chatterbox-nano)   | `71ccd1d0081b430592cea481f4307e764e07bc64` |
+| Phonivra model        | Publisher's model repository                                                      | Revision used by Phonivra                  |
+| --------------------- | --------------------------------------------------------------------------------- | ------------------------------------------ |
+| Multilingual          | [ResembleAI/chatterbox](https://huggingface.co/ResembleAI/chatterbox)             | `5bb1f6ee58e50c3b8d408bc82a6d3740c2db6e18` |
+| Turbo                 | [ResembleAI/chatterbox-turbo](https://huggingface.co/ResembleAI/chatterbox-turbo) | `749d1c1a46eb10492095d68fbcf55691ccf137cd` |
+| IndicF5               | [ai4bharat/IndicF5](https://huggingface.co/ai4bharat/IndicF5)                     | `fb652a96e508091045890dae5bb99fe511facbcf` |
+| IndicF5 audio decoder | [charactr/vocos-mel-24khz](https://huggingface.co/charactr/vocos-mel-24khz)       | `0feb3fdd929bcd6649e0e7c5a688cf7dd012ef21` |
 
-Resemble AI labels these model repositories MIT. The license label was also verified at the pinned revision for Original and Multilingual. Turbo and Nano labels were verified on their current publisher cards. The exact asset list and checksums are in the [model manifest](apps/engine/src/model-assets.json). See [Using generated audio](GENERATED_AUDIO.md) for rights and attribution when publishing audio.
+IndicF5 uses [F5-TTS](https://github.com/SWivid/F5-TTS/blob/main/LICENSE) and [Vocos](https://github.com/gemelo-ai/vocos/blob/main/LICENSE), both MIT-licensed inference libraries. AI4Bharat labels the IndicF5 weights MIT and publishes [voice cloning terms](https://huggingface.co/ai4bharat/IndicF5#terms-of-use).
+
+Resemble AI labels the Chatterbox model repositories MIT. The Multilingual V3 label was verified at the pinned revision. The Turbo label was verified on its publisher card. The exact asset list and checksums are in the [model manifest](apps/engine/src/model-assets.json). See [Using generated audio](GENERATED_AUDIO.md) for rights and attribution when publishing audio.
 
 ## Desktop runtime and audio tools
 

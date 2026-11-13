@@ -38,7 +38,7 @@ const questions = [
   {
     question: 'Is commercial use allowed?',
     answer:
-      'Phonivra’s code uses the MIT license. Resemble AI lists the Chatterbox model repositories used by the app under MIT. Before publishing or selling narration, check that you have permission to use the script, recordings, and any cloned voice. Follow your platform’s disclosure rules.',
+      'Phonivra’s code uses the MIT license. The publishers list the Chatterbox and IndicF5 model repositories under MIT. Before publishing or selling narration, check that you have permission to use the script, recordings, and any cloned voice. Follow your platform’s disclosure rules.',
     learnMore: {
       label: 'Read the generated audio guide',
       href: siteLinks.generatedAudio

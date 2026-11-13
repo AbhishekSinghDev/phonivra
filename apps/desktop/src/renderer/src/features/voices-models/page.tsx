@@ -333,9 +333,10 @@ export function VoicesModelsPage(): React.JSX.Element {
                 />
               )}
               <p className="text-xs leading-relaxed text-muted-foreground">
-                {effective.label} uses up to {effective.conditioningSeconds}s for speech
-                conditioning and up to 10s for the decoder. Previews are kept separately from the
-                Library.
+                {effective.id === 'indicf5'
+                  ? 'IndicF5 needs a saved recording with 5 to 12 seconds of speech and an exact transcript.'
+                  : `${effective.label} uses up to ${effective.conditioningSeconds}s for speech conditioning and up to 10s for the decoder.`}{' '}
+                Previews are kept separately from the Library.
               </p>
             </div>
           </ScrollArea>

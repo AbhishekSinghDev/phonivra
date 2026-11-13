@@ -17,7 +17,7 @@ Synthesis runs locally. The app downloads model weights from Hugging Face and ca
 
 ## Models and generated audio
 
-Phonivra was inspired by [Chatterbox](https://github.com/resemble-ai/chatterbox) and uses Resemble AI’s Chatterbox models for speech synthesis. Thanks to the Resemble AI team and contributors for making the models and inference code available to the community.
+Phonivra offers **Chatterbox Multilingual V3** for narration in 23 languages, **Chatterbox Turbo** for English narration with reaction tags, and **AI4Bharat IndicF5** for 11 Indian languages. IndicF5 requires a Hugging Face read token to download and a saved voice preset with its transcript to generate.
 
 See [Using generated audio](GENERATED_AUDIO.md) before publishing or selling narration, especially when using a cloned voice. The [third-party notices](THIRD_PARTY_NOTICES.md) list the model sources, exact revisions, and upstream credits.
 

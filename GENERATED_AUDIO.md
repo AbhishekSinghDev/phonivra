@@ -1,6 +1,6 @@
 # Using generated audio
 
-Phonivra uses Resemble AI’s Chatterbox models to synthesize audio locally. Resemble AI publishes the model repositories used by Phonivra under an MIT label. The MIT terms permit commercial use of the licensed material. Find the exact model sources, revision pins, and verification details in the [third-party notices](THIRD_PARTY_NOTICES.md#speech-synthesis-and-watermarking).
+Phonivra synthesizes audio locally with Resemble AI’s Chatterbox models and AI4Bharat’s IndicF5. The publishers label their model repositories MIT. IndicF5’s published terms require explicit permission to clone a voice. The MIT terms permit commercial use of the licensed material. Find the exact model sources, revision pins, and verification details in the [third-party notices](THIRD_PARTY_NOTICES.md#speech-synthesis-and-watermarking).
 
 ## Publishing or selling audio
 
@@ -20,4 +20,4 @@ If you’d like to credit the tools in your show notes or project credits, use:
 
 > Narration generated locally with Phonivra using Chatterbox TTS by Resemble AI.
 
-For research, use [Resemble AI’s suggested Chatterbox citation](https://github.com/resemble-ai/chatterbox#citation).
+For research, use the publisher’s suggested citation for [Chatterbox](https://github.com/resemble-ai/chatterbox#citation) or [IndicF5](https://huggingface.co/ai4bharat/IndicF5#citation).

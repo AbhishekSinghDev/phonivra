@@ -52,11 +52,16 @@ class Models:
         return self.cache(model_id) / f"models--{repository}" / "snapshots" / spec.revision
 
     @staticmethod
-    def asset_is_local(asset: Path, digest: str) -> bool:
-        blob = asset.parent.parent.parent / "blobs" / digest
+    def asset_is_local(asset: Path, digest: str, directory: Path) -> bool:
+        blob = directory.parent.parent / "blobs" / digest
         return asset.parent.resolve() == asset.parent and asset.resolve() in (asset, blob)
 
     def installed(self, model_id: str) -> Path | None:
+        if model_id == "indicf5" and not self.installed_snapshot("indicf5-vocoder"):
+            return None
+        return self.installed_snapshot(model_id)
+
+    def installed_snapshot(self, model_id: str) -> Path | None:
         try:
             manifest = self.manifest(model_id)
             if manifest.is_symlink():
@@ -67,11 +72,15 @@ class Models:
             directory = self.snapshot_path(model_id)
             if directory.resolve() != directory:
                 return None
-            if {asset.name for asset in directory.iterdir()} != set(spec.digests):
+            if {
+                asset.relative_to(directory).as_posix()
+                for asset in directory.rglob("*")
+                if not asset.is_dir()
+            } != set(spec.digests):
                 return None
             for name, digest in spec.digests.items():
                 asset = directory / name
-                if not self.asset_is_local(asset, digest) or not asset.is_file():
+                if not self.asset_is_local(asset, digest, directory) or not asset.is_file():
                     return None
             return directory
         except (OSError, ValueError, RuntimeError):
@@ -90,10 +99,19 @@ class Models:
     def catalog(self) -> list[dict]:
         result = []
         for model_id, spec in SPECS.items():
+            if model_id == "indicf5-vocoder":
+                continue
             directory = self.installed(model_id)
             downloading = self.jobs.busy and self.jobs.download_id == model_id
             status = "not-installed"
+            size = None
             if directory:
+                size = sum((directory / name).stat().st_size for name in spec.digests)
+                if model_id == "indicf5":
+                    vocoder = self.snapshot_path("indicf5-vocoder")
+                    size += sum(
+                        (vocoder / name).stat().st_size for name in SPECS["indicf5-vocoder"].digests
+                    )
                 status = "active" if self.active == model_id else "installed"
             if downloading:
                 status = "paused" if not self.jobs.resumed.is_set() else "downloading"
@@ -101,9 +119,7 @@ class Models:
                 {
                     "id": model_id,
                     "status": status,
-                    "bytes": sum((directory / f).stat().st_size for f in spec.digests)
-                    if directory
-                    else None,
+                    "bytes": size,
                     "progress": 100 if directory else 0,
                 }
             )
@@ -112,31 +128,49 @@ class Models:
     def download_size(self, model_id: str) -> int | None:
         import httpx
 
-        spec = SPECS[model_id]
-        url = f"https://huggingface.co/api/models/{spec.repository}/tree/{spec.revision}"
+        asset_ids = [model_id]
+        if model_id == "indicf5" and not self.installed_snapshot("indicf5-vocoder"):
+            asset_ids.append("indicf5-vocoder")
+        headers = {"Authorization": f"Bearer {self.token}"} if self.token else None
+        total = 0
         try:
-            headers = {"Authorization": f"Bearer {self.token}"} if self.token else None
-            response = httpx.get(url, headers=headers, timeout=5)
-            response.raise_for_status()
-            entries = response.json()
-        except (httpx.HTTPError, ValueError):
+            for asset_id in asset_ids:
+                spec = SPECS[asset_id]
+                url = f"https://huggingface.co/api/models/{spec.repository}/tree/{spec.revision}"
+                response = httpx.get(url, headers=headers, timeout=5, params={"recursive": "true"})
+                response.raise_for_status()
+                entries = response.json()
+                if not isinstance(entries, list):
+                    return None
+                sizes = {
+                    entry["path"]: entry["size"]
+                    for entry in entries
+                    if isinstance(entry, dict)
+                    and isinstance(entry.get("path"), str)
+                    and type(entry.get("size")) is int
+                    and entry["size"] > 0
+                }
+                total += sum(sizes[name] for name in spec.digests)
+        except (httpx.HTTPError, ValueError, KeyError):
             return None
-        if not isinstance(entries, list):
-            return None
-        sizes = {
-            entry["path"]: entry["size"]
-            for entry in entries
-            if isinstance(entry, dict)
-            and isinstance(entry.get("path"), str)
-            and type(entry.get("size")) is int
-            and entry["size"] > 0
-        }
-        if not spec.digests.keys() <= sizes.keys():
-            return None
-        return sum(sizes[name] for name in spec.digests)
+        return total
 
     def download(self, model_id: str) -> Path:
+        if model_id == "indicf5" and not self.token:
+            raise ValueError(
+                "Connect a Hugging Face read token with access to IndicF5 in Settings."
+            )
+        self.jobs.download_id = model_id
+        try:
+            if model_id == "indicf5" and not self.installed_snapshot("indicf5-vocoder"):
+                self.download_snapshot("indicf5-vocoder")
+            return self.download_snapshot(model_id)
+        finally:
+            self.jobs.download_id = None
+
+    def download_snapshot(self, model_id: str) -> Path:
         from huggingface_hub import hf_hub_download
+        from huggingface_hub.errors import GatedRepoError
         from tqdm.auto import tqdm
 
         spec, jobs = SPECS[model_id], self.jobs
@@ -144,7 +178,6 @@ class Models:
         destination = self.snapshot_path(model_id)
         endpoint = "https://huggingface.co"
         token = self.token or False
-        jobs.download_id = model_id
         try:
             blobs = destination.parent.parent / "blobs"
             locks = cache / ".locks" / destination.parent.parent.name
@@ -159,7 +192,7 @@ class Models:
                 ):
                     if target.is_symlink():
                         raise ValueError("The model cache contains an unexpected link.")
-                if not self.asset_is_local(destination / name, digest):
+                if not self.asset_is_local(destination / name, digest, destination):
                     raise ValueError("The model cache contains an unexpected link.")
             for index, filename in enumerate(digests):
                 jobs.progress("downloading", index / len(digests) * 100, f"Downloading {filename}")
@@ -206,19 +239,25 @@ class Models:
                     )
                     if (
                         path == destination / filename
-                        and self.asset_is_local(path, digests[filename])
+                        and self.asset_is_local(path, digests[filename], destination)
                         and self.verify_asset(path, digests[filename])
                     ):
                         break
                 else:
                     raise ValueError(f"Could not verify the downloaded asset {filename}.")
-            if {asset.name for asset in destination.iterdir()} != set(digests):
+            if {
+                asset.relative_to(destination).as_posix()
+                for asset in destination.rglob("*")
+                if not asset.is_dir()
+            } != set(digests):
                 raise ValueError("The pinned model cache contains unrecognized files.")
             jobs.checkpoint()
             write_json(self.manifest(model_id), spec.revision)
             return destination
-        finally:
-            jobs.download_id = None
+        except GatedRepoError:
+            raise ValueError(
+                "Accept access to IndicF5 on Hugging Face and connect a read token."
+            ) from None
 
     def backend(self) -> str:
         import torch
@@ -276,20 +315,26 @@ class Models:
         previous_offline = hub_constants.HF_HUB_OFFLINE
         hub_constants.HF_HUB_OFFLINE = True
         try:
-            if model_id in {"turbo", "nano"}:
+            if model_id == "indicf5":
+                from .indicf5 import IndicF5
+
+                vocoder = self.snapshot_path("indicf5-vocoder")
+                if not all(
+                    self.verify_asset(vocoder / name, digest)
+                    for name, digest in SPECS["indicf5-vocoder"].digests.items()
+                ):
+                    raise ValueError("IndicF5 vocoder verification failed. Reinstall IndicF5.")
+                model = IndicF5(directory, vocoder, device)
+            elif model_id == "turbo":
                 from chatterbox.tts_turbo import ChatterboxTurboTTS
 
-                model = ChatterboxTurboTTS.from_local(directory, device, nano=model_id == "nano")
-            elif model_id == "multilingual":
+                model = ChatterboxTurboTTS.from_local(directory, device)
+            else:
                 from chatterbox.mtl_tts import ChatterboxMultilingualTTS
 
                 model = ChatterboxMultilingualTTS.from_local(directory, load_device, t3_model="v3")
                 configure_local_cangjie(model, directory)
-            else:
-                from chatterbox.tts import ChatterboxTTS
-
-                model = ChatterboxTTS.from_local(directory, load_device)
-            if device == "cuda" and model_id in {"multilingual", "original"}:
+            if device == "cuda" and model_id == "multilingual":
                 model.t3.half().to(device)
                 model.s3gen.to(device)
                 model.ve.to(device)
@@ -298,7 +343,7 @@ class Models:
                     model.conds.to(device)
                     self.half_conditionals(model)
             self.model, self.active = model, model_id
-            self.default_conditionals = model.conds
+            self.default_conditionals = getattr(model, "conds", None)
             self.jobs.checkpoint()
             return model
         finally:
@@ -321,11 +366,16 @@ class Models:
         self.jobs.require_idle()
         if self.active == model_id:
             self.release()
+        if model_id == "indicf5":
+            self.remove("indicf5-vocoder")
         directory = self.snapshot_path(model_id)
         blobs = directory.parent.parent / "blobs"
         if directory.resolve() != directory or blobs.resolve() != blobs:
             raise ValueError("The model cache must not be redirected by a link.")
         self.manifest(model_id).unlink(missing_ok=True)
         for name, digest in SPECS[model_id].digests.items():
-            (directory / name).unlink(missing_ok=True)
+            asset = directory / name
+            if asset.parent.resolve() != asset.parent:
+                raise ValueError("The model cache must not be redirected by a link.")
+            asset.unlink(missing_ok=True)
             (blobs / digest).unlink(missing_ok=True)

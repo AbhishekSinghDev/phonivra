@@ -5,9 +5,9 @@ import { Button } from '@phonivra/ui/components/button'
 
 const foundations = [
   {
-    name: 'Chatterbox',
+    name: 'Chatterbox and IndicF5',
     role: 'The voice engine',
-    description: 'Chatterbox models turn your text into speech on your computer.'
+    description: 'Chatterbox and AI4Bharat IndicF5 generate speech on your computer.'
   },
   {
     name: 'Hugging Face',

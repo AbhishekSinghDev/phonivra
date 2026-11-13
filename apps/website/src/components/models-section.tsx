@@ -42,22 +42,16 @@ const models = [
     detail: 'Supports tags like [laugh]'
   },
   {
-    name: 'Chatterbox Nano',
-    size: '110M',
-    language: 'English',
-    detail: 'Smallest model. Supports tags like [laugh]'
-  },
-  {
     name: 'Multilingual V3',
     size: '500M',
     language: '23 languages',
     detail: 'Use a voice recording in another language'
   },
   {
-    name: 'Original Chatterbox',
-    size: '500M',
-    language: 'English',
-    detail: 'Controls for expression and guidance'
+    name: 'AI4Bharat IndicF5',
+    size: '400M',
+    language: '11 Indian languages',
+    detail: 'Use a short voice recording and its transcript'
   }
 ]
 
@@ -85,7 +79,7 @@ export function ModelsSection(): React.JSX.Element {
           <div className="overflow-x-auto">
             <Table>
               <TableCaption className="sr-only">
-                Chatterbox models available in Phonivra. M denotes millions of parameters.
+                Speech models available in Phonivra. M denotes millions of parameters.
               </TableCaption>
               <TableHeader>
                 <TableRow>
@@ -115,8 +109,8 @@ export function ModelsSection(): React.JSX.Element {
             </Table>
           </div>
           <p className="mt-4 text-xs leading-relaxed text-muted-foreground">
-            With Auto selected, Phonivra uses Chatterbox Turbo for English and Multilingual V3 for
-            other supported languages.
+            Auto uses Multilingual V3 where available and IndicF5 for additional Indian languages.
+            Select Turbo for English reaction tags.
           </p>
         </div>
 

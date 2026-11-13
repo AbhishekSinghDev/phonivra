@@ -322,7 +322,9 @@ export function AdvancedSettings(): React.JSX.Element | null {
               {group === 'sampling' && (
                 <div className="flex flex-wrap gap-2">
                   <Badge variant="secondary">{effective.label}</Badge>
-                  <Badge variant="outline">1000 speech tokens per part</Badge>
+                  {effective.id !== 'indicf5' && (
+                    <Badge variant="outline">1,000 speech tokens per part</Badge>
+                  )}
                 </div>
               )}
               {group === 'mastering' && (
