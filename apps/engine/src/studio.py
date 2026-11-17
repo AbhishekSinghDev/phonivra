@@ -550,7 +550,7 @@ class Studio:
 
             def work():
                 failures = 0
-                for unit, script in plan:
+                for index, (unit, script) in enumerate(plan):
                     self.jobs.checkpoint()
                     with self.lock:
                         current = next(item for item in self.units if item["id"] == unit["id"])
@@ -571,11 +571,24 @@ class Studio:
                         with self.lock:
                             current.update(status="complete", outputId=record["id"])
                             self.accept_output(record)
-                    except (ValueError, RuntimeError) as error:
+                    except Cancelled:
+                        raise
+                    except Exception as error:
+                        recoverable = isinstance(error, (ValueError, RuntimeError))
                         failures += 1
                         with self.lock:
-                            current.update(status="error", message=str(error))
+                            current.update(
+                                status="error", message=str(error) or type(error).__name__
+                            )
+                            if not recoverable:
+                                for remaining in self.units[index + 1 :]:
+                                    remaining.update(
+                                        status="skipped",
+                                        message="Skipped because the batch stopped after an earlier failure.",
+                                    )
                             self.changed()
+                        if not recoverable:
+                            raise
                 if failures:
                     raise ValueError(
                         f"Batch finished with {failures} failed item(s). Completed files are in the library."
