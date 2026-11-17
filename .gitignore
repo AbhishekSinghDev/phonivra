@@ -168,3 +168,6 @@ apps/engine/*.egg-info/
 
 # Desktop installer staging and artifacts
 apps/desktop/.release/
+
+# Miscellaneous
+misc
