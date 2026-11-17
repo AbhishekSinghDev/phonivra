@@ -4,6 +4,8 @@ import re
 import subprocess
 import sys
 import tempfile
+import threading
+from collections.abc import Callable
 from contextlib import ExitStack, contextmanager
 from pathlib import Path
 
@@ -23,6 +25,7 @@ class Recorder:
         self.process: subprocess.Popen | None = None
         self.errors = None
         self.resources = ExitStack()
+        self.finish_lock = threading.Lock()
 
     @staticmethod
     def input_format() -> str | None:
@@ -48,7 +51,7 @@ class Recorder:
             re.match(rf"^\s*D[ E]\s+{driver}\s", line) for line in result.stdout.splitlines()
         )
 
-    def start(self) -> None:
+    def start(self, on_exit: Callable[[subprocess.Popen], None]) -> None:
         binary, driver = media_binary("ffmpeg"), self.input_format()
         if not binary or not driver:
             raise ValueError("Microphone capture is unavailable. Upload a recording instead.")
@@ -105,8 +108,24 @@ class Recorder:
             self.resources.close()
             self.errors = None
             raise
+        threading.Thread(
+            target=self.watch, args=(self.process, on_exit), daemon=True, name="microphone-watch"
+        ).start()
+
+    @staticmethod
+    def watch(process: subprocess.Popen, on_exit: Callable[[subprocess.Popen], None]) -> None:
+        try:
+            # FFmpeg's duration is based on samples. Also stop a capture with a stalled device.
+            process.wait(timeout=MAX_RECORDING_SECONDS + 2)
+        except subprocess.TimeoutExpired:
+            pass
+        on_exit(process)
 
     def finish(self) -> Path:
+        with self.finish_lock:
+            return self._finish_capture()
+
+    def _finish_capture(self) -> Path:
         if not self.process:
             raise ValueError("There is no active recording.")
         process, self.process = self.process, None
@@ -125,15 +144,20 @@ class Recorder:
             process.wait()
             raise ValueError("The microphone did not stop correctly.") from None
         finally:
+            if process.stdin:
+                process.stdin.close()
             self.resources.close()
             self.errors = None
 
     def close(self) -> None:
-        if self.process:
-            self.process.kill()
-            self.process.wait()
-            self.process = None
-        if self.errors:
-            self.resources.close()
-            self.errors = None
-        self.path.unlink(missing_ok=True)
+        with self.finish_lock:
+            if self.process:
+                self.process.kill()
+                self.process.wait()
+                if self.process.stdin:
+                    self.process.stdin.close()
+                self.process = None
+            if self.errors:
+                self.resources.close()
+                self.errors = None
+            self.path.unlink(missing_ok=True)

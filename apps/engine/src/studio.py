@@ -4,8 +4,10 @@ import copy
 import importlib.util
 import logging
 import shutil
+import subprocess
 import threading
 from collections import deque
+from concurrent.futures import CancelledError
 from pathlib import Path
 from uuid import uuid4
 
@@ -92,6 +94,7 @@ class Studio:
         self.reference_path: Path | None = None
         self.reference = {"status": "empty", "name": "", "duration": 0}
         self.pre_recording_reference = self.reference
+        self.closed = False
         self.job = {
             "id": "idle",
             "kind": "narration",
@@ -694,17 +697,19 @@ class Studio:
             )
             return
         self.jobs.require_idle()
-        if command.type.startswith("voice.") or self.reference["status"] == "validating":
+        if self.reference["status"] == "validating":
+            raise ValueError("Wait for the reference check to finish or stop its operation.")
+        if command.type.startswith("voice."):
             self.maintenance.require_idle()
         if command.type == "reference.attach":
             if self.reference["status"] == "recording":
-                self.start_reference_import(self.recorder.path, recording=True)
+                self.finish_recording(self.recorder.process)
             else:
                 if not self.recording_available:
                     raise ValueError(
                         "Microphone capture is unavailable. Upload a recording instead."
                     )
-                self.recorder.start()
+                self.recorder.start(self.finish_recording)
                 self.pre_recording_reference = self.reference
                 self.reference = {
                     "status": "recording",
@@ -758,6 +763,54 @@ class Studio:
                 self.settings.voice = "default"
                 self.persist()
 
+    def finish_recording(self, process: subprocess.Popen | None) -> None:
+        with self.lock:
+            if (
+                self.closed
+                or process is None
+                or self.recorder.process is not process
+                or self.reference["status"] != "recording"
+            ):
+                return
+            self.reference = {"status": "validating", "name": "Microphone recording", "duration": 0}
+            self.changed()
+            threading.Thread(
+                target=self.finalize_recording, daemon=True, name="microphone-finish"
+            ).start()
+
+    def finalize_recording(self) -> None:
+        try:
+            path = self.recorder.finish()
+        except (OSError, ValueError) as error:
+            try:
+                self.recorder.path.unlink(missing_ok=True)
+            except OSError:
+                log.warning("Could not remove the failed microphone recording.", exc_info=True)
+            with self.lock:
+                if not self.closed:
+                    self.reference = {
+                        "status": "error",
+                        "name": "Microphone recording",
+                        "duration": 0,
+                        "message": str(error),
+                    }
+                    self.status, self.status_is_error = str(error), True
+                    self.changed()
+            return
+        while True:
+            with self.lock:
+                if self.closed:
+                    path.unlink(missing_ok=True)
+                    return
+                if not self.maintenance.busy:
+                    self.start_reference_import(path, recording=True)
+                    return
+                active = self.maintenance.future
+            try:
+                active.result()
+            except CancelledError:
+                pass
+
     def start_reference_import(self, path: Path, *, recording: bool = False) -> None:
         previous_state = self.reference
         name = "Microphone recording" if recording else path.name
@@ -765,8 +818,6 @@ class Studio:
 
         def convert():
             try:
-                if recording:
-                    self.recorder.finish()
                 source = (
                     path
                     if recording
@@ -869,8 +920,8 @@ class Studio:
                     "Model folder changed. Existing downloads remain in the previous folder."
                 )
             elif kind == "reference.import":
-                if self.reference["status"] == "recording":
-                    raise ValueError("Finish or clear the microphone capture before importing.")
+                if self.reference["status"] in {"recording", "validating"}:
+                    raise ValueError("Finish or clear the current reference before importing.")
                 self.start_reference_import(Path(paths[0]))
             elif kind == "script.import":
                 path = selected_file(paths[0], SCRIPT_EXTENSIONS)
@@ -971,6 +1022,7 @@ class Studio:
 
     def close(self) -> None:
         with self.lock:
+            self.closed = True
             self.maintenance.close()
             self.jobs.close()
             self.recorder.close()
