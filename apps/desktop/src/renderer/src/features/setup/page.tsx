@@ -90,7 +90,7 @@ export function SetupPage(): React.JSX.Element {
     if (!snapshot) return
     const updated = await dispatchStudioCommand({
       type: 'settings.update',
-      settings: { ...snapshot.settings, language, model, voice: 'default', auto_detect: false }
+      settings: { language, model, voice: 'default', auto_detect: false }
     })
     if (!updated) return
     setStep(2)

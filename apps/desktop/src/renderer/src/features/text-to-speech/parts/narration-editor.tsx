@@ -60,6 +60,7 @@ export const NarrationEditor = memo(function NarrationEditor({
   onGenerate
 }: EditorProps): React.JSX.Element {
   const draft = useDraftStore((state) => state['script.update']?.text ?? initialText)
+  const draftTitle = useDraftStore((state) => state.settings.title ?? title)
   const tooLong = draft.length > maxTextLength
   const [replacement, setReplacement] = useState<'script.import' | 'project.open' | null>(null)
   const modifier = window.api.platform === 'darwin' ? '⌘' : 'Ctrl'
@@ -115,7 +116,7 @@ export const NarrationEditor = memo(function NarrationEditor({
             <Input
               className="h-10 min-w-0 flex-1 px-0"
               id="narrate-title"
-              value={title}
+              value={draftTitle}
               maxLength={120}
               placeholder="Untitled narration"
               onChange={(event) => updateSettings('title', event.target.value)}

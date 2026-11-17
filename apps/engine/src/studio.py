@@ -255,6 +255,7 @@ class Studio:
         cache_path: Path | None = None,
         script: str | None = None,
         batch_text: str | None = None,
+        settings: Settings | None = None,
     ) -> None:
         cache_preference = (
             str(cache_path) if cache_path else self.storage.saved.get("cachePath", "")
@@ -263,7 +264,7 @@ class Studio:
             {
                 "version": 1,
                 "setupComplete": self.setup_complete if setup_complete is None else setup_complete,
-                "settings": self.settings.model_dump(),
+                "settings": (settings if settings is not None else self.settings).model_dump(),
                 "savedSettings": self.saved_settings.model_dump(),
                 "script": self.script if script is None else script,
                 "dictionary": self.dictionary,
@@ -350,10 +351,14 @@ class Studio:
     def _dispatch(self, command: Command) -> None:
         kind = command.type
         if kind == "settings.update":
-            self.settings = command.settings
+            patch = command.settings.model_dump(exclude_unset=True)
+            if not patch:
+                raise ValueError("Choose at least one setting to update.")
+            settings = Settings.model_validate({**self.settings.model_dump(), **patch})
+            self.persist(settings=settings)
+            self.settings = settings
             self.inspection = None
             self.batch["reviewed"] = False
-            self.persist()
         elif kind == "script.update":
             self.persist(script=command.text)
             self.script, self.inspection = command.text, None

@@ -13,26 +13,39 @@ const booleanKeys = [
   'remove_emoji',
   'pronounce'
 ] as const
-export function validateSettings(raw: unknown): raw is GenerationSettings {
-  if (!raw || typeof raw !== 'object') return false
-  const s = raw as GenerationSettings
+function validateSettingsPatch(raw: unknown): raw is Partial<GenerationSettings> {
+  if (!raw || typeof raw !== 'object' || Array.isArray(raw)) return false
+  const fields = Object.entries(raw)
   return (
-    typeof s.title === 'string' &&
-    s.title.length <= 120 &&
-    typeof s.voice === 'string' &&
-    s.voice.length <= 256 &&
-    languages.some((l) => l.code === s.language) &&
-    models.some((m) => m.id === s.model) &&
-    ['wav', 'mp3', 'flac', 'ogg', 'm4a'].includes(s.format) &&
-    sampleRates.includes(s.sample_rate) &&
-    booleanKeys.every((key) => typeof s[key] === 'boolean') &&
-    numericSettings.every(
-      (field) =>
-        Number.isFinite(s[field.key]) &&
-        s[field.key] >= field.min &&
-        s[field.key] <= field.max &&
-        (field.step >= 1 ? Number.isInteger(s[field.key]) : true)
-    )
+    fields.length > 0 &&
+    fields.every(([key, value]) => {
+      switch (key) {
+        case 'title':
+          return typeof value === 'string' && value.length <= 120
+        case 'voice':
+          return typeof value === 'string' && value.length <= 256
+        case 'language':
+          return languages.some((language) => language.code === value)
+        case 'model':
+          return models.some((model) => model.id === value)
+        case 'format':
+          return ['wav', 'mp3', 'flac', 'ogg', 'm4a'].includes(value)
+        case 'sample_rate':
+          return sampleRates.includes(value)
+        default: {
+          if (booleanKeys.some((field) => field === key)) return typeof value === 'boolean'
+          const field = numericSettings.find((item) => item.key === key)
+          return (
+            !!field &&
+            typeof value === 'number' &&
+            Number.isFinite(value) &&
+            value >= field.min &&
+            value <= field.max &&
+            (field.step < 1 || Number.isInteger(value))
+          )
+        }
+      }
+    })
   )
 }
 export function validateCommand(raw: unknown): raw is StudioCommand {
@@ -42,7 +55,7 @@ export function validateCommand(raw: unknown): raw is StudioCommand {
     typeof value === 'string' && value.length > 0 && value.length <= 256
   switch (c.type) {
     case 'settings.update':
-      return validateSettings(c.settings)
+      return validateSettingsPatch(c.settings)
     case 'batch.text':
     case 'script.update':
     case 'dictionary.save':

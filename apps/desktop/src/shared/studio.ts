@@ -270,7 +270,7 @@ export function studioUpdate(snapshot: StudioSnapshot, outputsAfter?: number): S
   return update
 }
 export type StudioCommand =
-  | { type: 'settings.update'; settings: GenerationSettings }
+  | { type: 'settings.update'; settings: Partial<GenerationSettings> }
   | { type: 'script.update'; text: string }
   | { type: 'script.inspect' }
   | { type: 'status.dismiss' }

@@ -48,6 +48,18 @@ const writers: Record<DraftCommand, DraftWriter> = {
   'script.update': { timer: null, write: null },
   'batch.text': { timer: null, write: null }
 }
+const commandsUsingSettings = new Set([
+  'script.inspect',
+  'job.start',
+  'batch.start',
+  'batch.prepare',
+  'preferences.save',
+  'setup.finish',
+  'project.save',
+  'project.open',
+  'settings.restore'
+])
+let settingsWrite: Promise<boolean> | null = null
 export const draftLimitMessage = `Shorten this draft to ${maxTextLength.toLocaleString()} characters to save it.`
 
 async function writeDraft(type: DraftCommand): Promise<boolean> {
@@ -92,12 +104,17 @@ export function act(label: string, command: StudioCommand): Promise<void> {
 }
 
 export async function dispatchStudioCommand(command: StudioCommand): Promise<boolean> {
+  if (command.type === 'settings.update') {
+    useDraftStore.setState((state) => ({ settings: { ...state.settings, ...command.settings } }))
+    return flushSettings()
+  }
   const draft = requiredDraft(command)
   if (draft && !(await flushDraft(draft))) {
     if ((useDraftStore.getState()[draft]?.text.length ?? 0) > maxTextLength)
       notifyError(draftLimitMessage)
     return false
   }
+  if (commandsUsingSettings.has(command.type) && !(await flushSettings())) return false
   return receive(dispatch(command), true)
 }
 
@@ -130,12 +147,33 @@ export function updateSettings<K extends keyof GenerationSettings>(
   key: K,
   value: GenerationSettings[K]
 ): void {
-  const state = useStudioStore.getState().snapshot
-  if (state)
-    act('Change setting', {
-      type: 'settings.update',
-      settings: { ...state.settings, [key]: value }
+  void dispatchStudioCommand({ type: 'settings.update', settings: { [key]: value } })
+}
+
+async function writeSettings(): Promise<boolean> {
+  while (true) {
+    const settings = useDraftStore.getState().settings
+    const keys = Object.keys(settings) as (keyof GenerationSettings)[]
+    if (!keys.length) return true
+    if (!(await receive(dispatch({ type: 'settings.update', settings }), true))) return false
+    useDraftStore.setState((state) => {
+      const pending = { ...state.settings }
+      for (const key of keys) {
+        if (pending[key] === settings[key]) delete pending[key]
+      }
+      return { settings: pending }
     })
+  }
+}
+
+function flushSettings(): Promise<boolean> {
+  if (!settingsWrite) {
+    if (!Object.keys(useDraftStore.getState().settings).length) return Promise.resolve(true)
+    settingsWrite = writeSettings().finally(() => {
+      settingsWrite = null
+    })
+  }
+  return settingsWrite
 }
 export async function retryStudioConnection(): Promise<void> {
   useStudioStore.getState().setError(null)
@@ -147,7 +185,11 @@ export function registerDraftClose(): void {
     async () => {
       if (document.activeElement instanceof HTMLElement) document.activeElement.blur()
       document.body.inert = true
-      const saved = await Promise.all([flushDraft('script.update'), flushDraft('batch.text')])
+      const saved = await Promise.all([
+        flushDraft('script.update'),
+        flushDraft('batch.text'),
+        flushSettings()
+      ])
       return saved.every(Boolean)
     },
     () => {

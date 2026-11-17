@@ -70,7 +70,7 @@ export function VoicesModelsPage(): React.JSX.Element {
     if (!voice) return
     await act('Use voice for preview', {
       type: 'settings.update',
-      settings: { ...snapshot!.settings, voice: voice.id }
+      settings: { voice: voice.id }
     })
     await act('Generate voice preview', { type: 'job.start', kind: 'preview' })
   }
