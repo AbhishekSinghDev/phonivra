@@ -49,6 +49,12 @@ export class LocalStudio {
     return this.state
   }
 
+  private commandResult(snapshot: StudioUpdate): StudioSnapshot {
+    const state = this.accept(snapshot)
+    // The caller needs the outcome of this command even if a newer snapshot already arrived.
+    return { ...state, status: snapshot.status, statusIsError: snapshot.statusIsError }
+  }
+
   private async initialize(): Promise<void> {
     await this.engine.start()
     if (this.initialized && this.engineGeneration === this.engine.generation) return
@@ -135,7 +141,7 @@ export class LocalStudio {
       if (native) return native
       const snapshot = await this.engine.snapshot('/command', command, this.engineOutputsRevision)
       if (!snapshot) throw new Error('The engine returned an empty command result.')
-      return this.accept(snapshot)
+      return this.commandResult(snapshot)
     } catch (error) {
       return this.fail(error)
     }
@@ -144,7 +150,7 @@ export class LocalStudio {
   private async desktop(body: object): Promise<StudioSnapshot> {
     const snapshot = await this.engine.snapshot('/desktop', body, this.engineOutputsRevision)
     if (!snapshot) throw new Error('The engine returned an empty desktop result.')
-    return this.accept(snapshot)
+    return this.commandResult(snapshot)
   }
 
   private async nativeCommand(command: StudioCommand): Promise<StudioSnapshot | null> {

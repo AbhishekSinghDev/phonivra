@@ -1041,9 +1041,9 @@ class Studio:
             ids = [operation.id]
 
         def publish(staging: Path) -> None:
-            with self.lock:
-                self.maintenance.checkpoint()
-                staging.replace(destination)
+            self.maintenance.begin_commit()
+            self.maintenance.progress("preparing", 99, "Finalizing the export…")
+            staging.replace(destination)
 
         def export():
             self.maintenance.progress("preparing", 0, "Writing the export…")
