@@ -60,7 +60,9 @@ export function act(label: string, command: StudioCommand): Promise<void> {
 }
 
 export async function dispatchStudioCommand(command: StudioCommand): Promise<boolean> {
-  await flushScriptDraft()
+  if (command.type !== 'job.cancel' && command.type !== 'maintenance.cancel') {
+    await flushScriptDraft()
+  }
   return receive(window.api.studio.dispatch(command), true)
 }
 // Keep typing synchronous locally, and coalesce IPC snapshots. Actions flush the
@@ -98,6 +100,14 @@ export function connectStudio(): () => void {
       notifyError(snapshot.status)
     if (snapshot.job.phase === 'error' && previous?.job.phase !== 'error')
       notifyError(snapshot.job.message)
+    const task = snapshot.maintenance
+    if (
+      task &&
+      (task.id !== previous?.maintenance?.id || task.phase !== previous.maintenance.phase)
+    ) {
+      if (task.phase === 'error') notifyError(task.message)
+      if (task.phase === 'complete' && task.title === 'Export audio files') notify('File exported.')
+    }
   })
   void receive(window.api.studio.getSnapshot())
   return unsubscribe

@@ -5,16 +5,72 @@ import logging
 import re
 import shutil
 import zipfile
+from collections.abc import Callable
 from datetime import UTC, datetime
 from pathlib import Path
+from tempfile import NamedTemporaryFile
 from uuid import uuid4
 
 from . import audio
 from .contract import AUDIO_EXTENSIONS
+from .jobs import Jobs
 from .schemas import Input, OutputRecord
 from .storage import Storage, Utf8Text, read_json, recover_fields, write_json
 
 log = logging.getLogger(__name__)
+
+COMPANION_EXTENSIONS = ("srt", "vtt", "txt", "json")
+
+
+def companion_paths(path: Path) -> list[Path]:
+    return [path.with_suffix(f".{extension}") for extension in COMPANION_EXTENSIONS]
+
+
+def export_files(
+    sources: list[Path],
+    destination: Path,
+    *,
+    archive: bool,
+    jobs: Jobs | None = None,
+    publish: Callable[[Path], None] | None = None,
+) -> None:
+    def copy(source, target):
+        with source.open("rb") as file:
+            while block := file.read(1024 * 1024):
+                if jobs:
+                    jobs.checkpoint()
+                target.write(block)
+
+    if not archive:
+        source = sources[0]
+        if not source.is_file():
+            raise ValueError("That companion file is unavailable.")
+        if source.resolve() == destination.resolve():
+            return
+    elif any(source.resolve() == destination.resolve() for source in sources):
+        raise ValueError("Choose an export destination outside the source files.")
+
+    with NamedTemporaryFile(
+        dir=destination.parent, prefix=".phonivra-export-", delete=False
+    ) as file:
+        staging = Path(file.name)
+    try:
+        if archive:
+            with zipfile.ZipFile(staging, "w", zipfile.ZIP_DEFLATED) as output:
+                for source in sources:
+                    if jobs:
+                        jobs.checkpoint()
+                    with output.open(source.name, "w", force_zip64=True) as member:
+                        copy(source, member)
+        else:
+            with staging.open("wb") as file:
+                copy(source, file)
+        if publish:
+            publish(staging)
+        else:
+            staging.replace(destination)
+    finally:
+        staging.unlink(missing_ok=True)
 
 
 def filename(title: str) -> str:
@@ -65,9 +121,11 @@ class Library:
         self.voice_paths: dict[str, Path] = {}
         self.preview_paths: dict[str, Path] = {}
 
-    def refresh(self) -> list[dict]:
+    def scan_outputs(self, jobs: Jobs | None = None) -> dict[str, dict]:
         records = {}
         for path in self.storage.outputs.iterdir():
+            if jobs:
+                jobs.checkpoint()
             if path.suffix.lower() not in AUDIO_EXTENSIONS or path.is_symlink():
                 continue
             try:
@@ -80,7 +138,7 @@ class Library:
                     if record.get("filename") != path.name:
                         raise ValueError("Sidecar filename does not match audio.")
                 else:
-                    seconds, rate = audio.duration(path)
+                    seconds, rate = audio.duration(path, jobs) if jobs else audio.duration(path)
                     record = {
                         "id": f"external:{hashlib.sha256(path.name.encode()).hexdigest()[:24]}",
                         "title": path.stem,
@@ -105,14 +163,17 @@ class Library:
                     }
                 record["companions"] = [
                     extension
-                    for extension in ("srt", "vtt", "txt", "json")
+                    for extension in COMPANION_EXTENSIONS
                     if path.with_suffix(f".{extension}").is_file()
                 ]
                 records[record["id"]] = record
             except (ValueError, KeyError, OSError, RuntimeError):
                 log.warning("Skipping unreadable library entry %s", path.name, exc_info=True)
-        self.records = records
-        return sorted(records.values(), key=lambda record: record["created"], reverse=True)
+        return records
+
+    def refresh(self) -> list[dict]:
+        self.records = self.scan_outputs()
+        return sorted(self.records.values(), key=lambda record: record["created"], reverse=True)
 
     def output_path(self, output_id: str) -> Path:
         record = self.records.get(output_id)
@@ -132,31 +193,18 @@ class Library:
             return path
         return self.output_path(media_id)
 
-    def export(self, output_id: str, kind: str, destination: Path) -> None:
+    def export_sources(self, output_id: str, kind: str) -> list[Path]:
         path = self.output_path(output_id)
-        companions = [
-            path.with_suffix(f".{extension}")
-            for extension in ("srt", "vtt", "txt", "json")
-            if path.with_suffix(f".{extension}").is_file()
-        ]
         if kind == "zip":
-            with zipfile.ZipFile(destination, "w", zipfile.ZIP_DEFLATED) as archive:
-                for file in [path, *companions]:
-                    archive.write(file, file.name)
-        else:
-            source = path if kind == "audio" else path.with_suffix(f".{kind}")
-            if not source.is_file():
-                raise ValueError("That companion file is unavailable.")
-            if source.resolve() == destination.resolve():
-                return
-            shutil.copyfile(source, destination)
+            return [path, *(file for file in companion_paths(path) if file.is_file())]
+        return [path if kind == "audio" else path.with_suffix(f".{kind}")]
+
+    def export(self, output_id: str, kind: str, destination: Path) -> None:
+        export_files(self.export_sources(output_id, kind), destination, archive=kind == "zip")
 
     def delete(self, output_id: str) -> None:
         path = self.output_path(output_id)
-        for file in [
-            path,
-            *(path.with_suffix(f".{extension}") for extension in ("srt", "vtt", "txt", "json")),
-        ]:
+        for file in [path, *companion_paths(path)]:
             file.unlink(missing_ok=True)
         self.records.pop(output_id, None)
 
@@ -166,49 +214,70 @@ class Library:
     def save_registry(self, registry: dict) -> None:
         self.storage.save_document(self.registry_file, {"version": 1, "voices": registry})
 
-    def voices(self) -> list[dict]:
+    @staticmethod
+    def default_voice() -> dict:
+        return {
+            "id": "default",
+            "label": "Original narrator",
+            "kind": "built-in",
+            "description": "Uses the model’s built-in voice when available.",
+            "duration": None,
+            "previewAvailable": False,
+            "available": True,
+        }
+
+    @staticmethod
+    def voice_definition(
+        voice_id: str, label: str, seconds: float, *, custom: bool, has_transcript: bool
+    ) -> dict:
+        return {
+            "id": voice_id,
+            "label": label,
+            "kind": "custom" if custom else "external",
+            "description": "Saved reference recording."
+            if custom
+            else "Recording in your voice folder.",
+            "duration": seconds,
+            "previewAvailable": True,
+            "hasTranscript": has_transcript,
+            "available": True,
+        }
+
+    def scan_voices(
+        self, jobs: Jobs | None = None
+    ) -> tuple[list[dict], dict[str, Path], dict[str, str]]:
         registry = self.read_registry()
-        result = [
-            {
-                "id": "default",
-                "label": "Original narrator",
-                "kind": "built-in",
-                "description": "Uses the model’s built-in voice when available.",
-                "duration": None,
-                "previewAvailable": False,
-                "available": True,
-            }
-        ]
-        self.voice_paths = {}
-        self.voice_transcripts = {}
+        result = [self.default_voice()]
+        paths, transcripts = {}, {}
         for path in sorted(self.storage.voices.iterdir()):
+            if jobs:
+                jobs.checkpoint()
             if path.suffix.lower() not in AUDIO_EXTENSIONS or path.is_symlink():
                 continue
             try:
-                seconds, _ = audio.duration(path)
+                seconds, _ = audio.duration(path, jobs) if jobs else audio.duration(path)
             except (ValueError, RuntimeError, OSError):
                 log.warning("Skipping unreadable voice %s", path.name)
                 continue
             saved = registry.get(path.name, {})
             voice_id = f"custom:{path.stem}" if saved else f"file:{path.name}"
-            self.voice_paths[voice_id] = path
+            paths[voice_id] = path
             transcript = saved.get("transcript")
             if transcript:
-                self.voice_transcripts[voice_id] = transcript
+                transcripts[voice_id] = transcript
             result.append(
-                {
-                    "id": voice_id,
-                    "label": saved.get("label") or path.stem,
-                    "kind": "custom" if saved else "external",
-                    "description": "Saved reference recording."
-                    if saved
-                    else "Recording in your voice folder.",
-                    "duration": seconds,
-                    "previewAvailable": True,
-                    "hasTranscript": voice_id in self.voice_transcripts,
-                    "available": True,
-                }
+                self.voice_definition(
+                    voice_id,
+                    saved.get("label") or path.stem,
+                    seconds,
+                    custom=bool(saved),
+                    has_transcript=bool(transcript),
+                )
             )
+        return result, paths, transcripts
+
+    def voices(self) -> list[dict]:
+        result, self.voice_paths, self.voice_transcripts = self.scan_voices()
         return result
 
     def save_voice(self, reference: Path | None, label: str, transcript: str) -> str:

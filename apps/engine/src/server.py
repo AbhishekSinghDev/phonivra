@@ -16,13 +16,16 @@ log = logging.getLogger(__name__)
 
 
 def create_app(root: Path, secret: str, ready) -> FastAPI:
-    studio = Studio(root)
+    studio = Studio(root, defer_discovery=True)
 
     @asynccontextmanager
     async def lifespan(_app: FastAPI):
         ready()
-        yield
-        studio.close()
+        studio.start_discovery()
+        try:
+            yield
+        finally:
+            studio.close()
 
     app = FastAPI(lifespan=lifespan, docs_url=None, redoc_url=None, openapi_url=None)
 

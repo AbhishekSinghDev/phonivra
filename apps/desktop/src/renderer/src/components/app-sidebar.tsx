@@ -55,6 +55,7 @@ export function AppSidebar(): React.JSX.Element {
     batch: '/batch',
     download: '/models',
     watermark: '/library',
+    maintenance: '/narrate',
     narration: '/narrate',
     preview: '/narrate'
   } as const

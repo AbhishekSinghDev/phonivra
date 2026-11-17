@@ -104,6 +104,7 @@ export function validateCommand(raw: unknown): raw is StudioCommand {
     case 'script.inspect':
     case 'status.dismiss':
     case 'job.cancel':
+    case 'maintenance.cancel':
     case 'reference.clear':
     case 'voices.refresh':
     case 'outputs.refresh':

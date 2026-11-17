@@ -15,8 +15,13 @@ class Cancelled(Exception):
 
 
 class Jobs:
-    def __init__(self, update: Callable[..., None]):
+    def __init__(
+        self,
+        update: Callable[..., None],
+        stopped_message: str = "Stopped. Unfinished audio was discarded.",
+    ):
         self.update = update
+        self.stopped_message = stopped_message
         self.cancelled = threading.Event()
         self.resumed = threading.Event()
         self.resumed.set()
@@ -78,9 +83,7 @@ class Jobs:
             work()
             self.progress("complete", 100, "Finished.")
         except Cancelled:
-            self.update(
-                phase="stopped", message="Stopped. Unfinished audio was discarded.", paused=False
-            )
+            self.update(phase="stopped", message=self.stopped_message, paused=False)
         except Exception as error:
             log.exception("Local engine job failed")
             self.update(phase="error", message=str(error) or type(error).__name__, paused=False)

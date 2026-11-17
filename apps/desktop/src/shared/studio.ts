@@ -144,7 +144,7 @@ export type JobPhase =
   | 'complete'
 export interface JobState {
   id: string
-  kind: 'narration' | 'preview' | 'batch' | 'download' | 'watermark'
+  kind: 'narration' | 'preview' | 'batch' | 'download' | 'watermark' | 'maintenance'
   phase: JobPhase
   progress: number
   title: string
@@ -238,6 +238,7 @@ export interface StudioSnapshot {
   dictionary: string
   reference: ReferenceState
   job: JobState
+  maintenance: JobState | null
   voices: VoiceDefinition[]
   models: InstalledModel[]
   outputs: OutputRecord[]
@@ -265,6 +266,7 @@ export type StudioCommand =
   | { type: 'dictionary.save'; text: string }
   | { type: 'job.start'; kind: 'narration' | 'preview' | 'batch' }
   | { type: 'job.cancel' }
+  | { type: 'maintenance.cancel' }
   | { type: 'batch.source'; source: 'files' | 'text' }
   | { type: 'batch.text'; text: string }
   | { type: 'batch.split'; enabled: boolean }

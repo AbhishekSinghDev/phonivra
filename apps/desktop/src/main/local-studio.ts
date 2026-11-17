@@ -7,6 +7,7 @@ import type { StudioCommand, StudioSnapshot } from '../shared/studio'
 
 const scriptFilters = [{ name: 'Scripts', extensions: scriptExtensions }]
 const audioFilters = [{ name: 'Audio', extensions: audioExtensions }]
+const settledPhases = new Set(['idle', 'complete', 'error', 'stopped'])
 
 /** Native dialogs and transport adaptation, without any synthesis or filesystem business logic. */
 export class LocalStudio {
@@ -77,7 +78,9 @@ export class LocalStudio {
           }
         })()
       },
-      this.state && ['idle', 'complete', 'error', 'stopped'].includes(this.state.job.phase)
+      this.state &&
+        settledPhases.has(this.state.job.phase) &&
+        (!this.state.maintenance || settledPhases.has(this.state.maintenance.phase))
         ? 1500
         : 300
     )

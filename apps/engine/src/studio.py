@@ -5,7 +5,6 @@ import importlib.util
 import logging
 import shutil
 import threading
-import zipfile
 from collections import deque
 from pathlib import Path
 from uuid import uuid4
@@ -21,8 +20,8 @@ from .contract import (
     SCRIPT_EXTENSIONS,
 )
 from .inference import Narrator
-from .jobs import Jobs
-from .library import Library
+from .jobs import Cancelled, Jobs
+from .library import Library, export_files
 from .models import Models
 from .recording import Recorder
 from .schemas import Command, DesktopOperation, Settings, resolve_model
@@ -75,7 +74,7 @@ PREVIEW_TEXT = {
 
 
 class Studio:
-    def __init__(self, root: Path):
+    def __init__(self, root: Path, *, defer_discovery: bool = False):
         self.lock = threading.RLock()
         self.storage = Storage(root)
         saved = self.storage.saved
@@ -91,6 +90,7 @@ class Studio:
         self.preview = None
         self.reference_path: Path | None = None
         self.reference = {"status": "empty", "name": "", "duration": 0}
+        self.pre_recording_reference = self.reference
         self.job = {
             "id": "idle",
             "kind": "narration",
@@ -106,6 +106,8 @@ class Studio:
             "paused": False,
         }
         self.jobs = Jobs(self.update_job)
+        self.maintenance_job = None
+        self.maintenance = Jobs(self.update_maintenance, "Operation stopped.")
         self.models = Models(self.storage.model_root, self.jobs)
         mode = saved.get("device", "auto")
         self.models.mode = mode if mode in DEVICE_MODES else "auto"
@@ -116,29 +118,18 @@ class Studio:
                 self.models.mode = "cuda"
         self.device_info = self.models.device()
         self.library = Library(self.storage)
-        self.voices = self.library.voices()
-        self.outputs = self.library.refresh()
-        self.selected_output = self.outputs[0]["id"] if self.outputs else None
+        self.voices = [self.library.default_voice()]
+        self.outputs = []
+        self.selected_output = None
         self.setup_complete = saved.get("setupComplete") is True
         self.setup_resuming = saved.get("setupComplete") is False and self.settings.model != "auto"
         self.setup_model_sizes: dict[str, int | None] = {}
         self.setup_test: tuple[str, Settings] | None = None
-        if saved.keys() - {"version"} and "setupComplete" not in saved and self.setup_media_ready():
-            model = resolve_model(self.settings)
-            self.setup_complete = bool(
-                self.device_info["available"]
-                and (model != "turbo" or self.settings.language == "en")
-                and self.models.installed(model)
-                and (
-                    self.settings.voice == "default"
-                    or self.settings.voice in self.library.voice_paths
-                )
-            )
-            if self.setup_complete:
-                try:
-                    self.storage.save({**saved, "setupComplete": True})
-                except OSError:
-                    self.storage.warn("Could not save the recovered setup state.")
+        self.legacy_settings = (
+            self.settings.model_copy()
+            if saved.keys() - {"version"} and "setupComplete" not in saved
+            else None
+        )
         self.playback = {"playing": False, "position": 0, "outputId": None}
         self.batch = {
             "source": "files",
@@ -160,6 +151,81 @@ class Studio:
         self.events: deque[str] = deque(
             ["Local engine started. No remote inference or reporting."], maxlen=50
         )
+        if not defer_discovery:
+            self.discover()
+
+    def start_discovery(self) -> None:
+        with self.lock:
+            self.maintenance.start(
+                "maintenance", "Discover saved audio", lambda: self.discover(self.maintenance)
+            )
+
+    def discover(self, jobs: Jobs | None = None) -> None:
+        self.refresh_voices(jobs)
+        self.refresh_outputs(jobs, progress=50)
+
+    def refresh_voices(self, jobs: Jobs | None = None) -> None:
+        if jobs:
+            jobs.progress("preparing", 0, "Looking for voice recordings…")
+        warnings_before = len(self.storage.recovery_warnings)
+        voices, paths, transcripts = self.library.scan_voices(jobs)
+        legacy = self.legacy_settings
+        complete = False
+        if legacy and self.setup_media_ready():
+            model = resolve_model(legacy)
+            complete = bool(
+                self.device_info["available"]
+                and (model != "turbo" or legacy.language == "en")
+                and (legacy.voice == "default" or legacy.voice in paths)
+                and self.models.installed(model)
+            )
+        with self.lock:
+            if jobs:
+                jobs.checkpoint()
+            self.voices = voices
+            self.library.voice_paths = paths
+            self.library.voice_transcripts = transcripts
+            self.legacy_settings = None
+            if complete and not self.setup_complete:
+                self.setup_complete = True
+                try:
+                    self.persist()
+                except OSError:
+                    self.storage.warn("Could not save the recovered setup state.")
+            warnings = self.storage.recovery_warnings[warnings_before:]
+            earlier_warning = " ".join(self.storage.recovery_warnings[:warnings_before])
+            if warnings and self.status in (None, earlier_warning):
+                self.status = " ".join(self.storage.recovery_warnings)
+                self.status_is_error = True
+            self.changed()
+
+    def refresh_outputs(self, jobs: Jobs | None = None, *, progress: int = 0) -> None:
+        if jobs:
+            jobs.progress("preparing", progress, "Looking for saved narrations…")
+        with self.lock:
+            known = set(self.library.records)
+        records = self.library.scan_outputs(jobs)
+        with self.lock:
+            if jobs:
+                jobs.checkpoint()
+            # Generation can publish new outputs while the directory is being scanned.
+            records.update(
+                (key, value) for key, value in self.library.records.items() if key not in known
+            )
+            self.library.records = records
+            self.outputs = sorted(
+                records.values(), key=lambda record: record["created"], reverse=True
+            )
+            if self.selected_output not in records:
+                self.selected_output = self.outputs[0]["id"] if self.outputs else None
+            self.changed()
+
+    def update_maintenance(self, **fields) -> None:
+        with self.lock:
+            if "id" in fields:
+                self.maintenance_job = {}
+            self.maintenance_job.update(fields)
+            self.changed()
 
     def changed(self) -> None:
         self.revision += 1
@@ -234,6 +300,7 @@ class Studio:
                     "dictionary": self.dictionary,
                     "reference": self.reference,
                     "job": self.job,
+                    "maintenance": self.maintenance_job,
                     "voices": self.voices,
                     "models": models,
                     "outputs": self.outputs,
@@ -336,8 +403,23 @@ class Studio:
             self.start_job(command.kind if kind == "job.start" else "batch")
         elif kind == "job.cancel":
             self.jobs.cancel()
+        elif kind == "maintenance.cancel":
+            self.maintenance.cancel()
         elif kind == "setup.model-size":
-            self.setup_model_sizes[command.id] = self.models.download_size(command.id)
+            token, root = self.models.token, self.models.root
+
+            def estimate():
+                models = Models(root, self.maintenance)
+                models.token = token
+                self.maintenance.progress("preparing", 0, "Contacting the model host…")
+                size = models.download_size(command.id)
+                with self.lock:
+                    self.maintenance.checkpoint()
+                    if (root, token) == (self.models.root, self.models.token):
+                        self.setup_model_sizes[command.id] = size
+                        self.changed()
+
+            self.maintenance.start("maintenance", "Check model download size", estimate)
         elif kind == "setup.finish":
             if self.setup_complete:
                 return
@@ -386,18 +468,34 @@ class Studio:
             self.playback = {"playing": False, "position": 0, "outputId": None}
             self.status = "Temporary previews removed."
         elif kind == "diagnostics.refresh":
-            import httpx
+            self.maintenance.start("maintenance", "Refresh diagnostics", self.refresh_diagnostics)
+        else:
+            raise ValueError(f"Unsupported engine command: {kind}")
 
-            try:
-                self.online = httpx.head("https://huggingface.co", timeout=5).is_success
-            except httpx.HTTPError:
-                self.online = False
-            self.device_info = self.models.device()
+    def refresh_diagnostics(self) -> None:
+        import httpx
+
+        self.maintenance.progress("preparing", 0, "Checking the model host…")
+        with self.lock:
+            mode = self.models.mode
+            root = self.models.root
+        try:
+            online = httpx.head("https://huggingface.co", timeout=5).is_success
+        except httpx.HTTPError:
+            online = False
+        self.maintenance.checkpoint()
+        models = Models(root, self.maintenance)
+        models.mode = mode
+        device = models.device()
+        with self.lock:
+            self.maintenance.checkpoint()
+            self.online = online
+            if self.models.mode == mode:
+                self.device_info = device
             self.events.append(
                 f"Device: {self.device_info['label']}. Model host reachable: {self.online}."
             )
-        else:
-            raise ValueError(f"Unsupported engine command: {kind}")
+            self.changed()
 
     @staticmethod
     def load_settings(values: object) -> Settings:
@@ -411,7 +509,7 @@ class Studio:
 
     def start_job(self, kind: str) -> None:
         self.jobs.require_idle()
-        if self.reference["status"] in {"recording", "error", "missing"}:
+        if self.reference["status"] in {"recording", "validating", "error", "missing"}:
             raise ValueError("Finish or clear the voice reference before generating.")
         settings = self.settings.model_copy()
         dictionary = self.dictionary
@@ -563,29 +661,26 @@ class Studio:
         self.batch["reviewed"] = True
 
     def voice_command(self, command: Command) -> None:
+        if command.type == "voices.refresh":
+            self.maintenance.start(
+                "maintenance",
+                "Refresh voice collection",
+                lambda: self.refresh_voices(self.maintenance),
+            )
+            return
         self.jobs.require_idle()
+        if command.type.startswith("voice.") or self.reference["status"] == "validating":
+            self.maintenance.require_idle()
         if command.type == "reference.attach":
             if self.reference["status"] == "recording":
-                try:
-                    path = self.recorder.finish()
-                    try:
-                        self.attach_reference(path)
-                    finally:
-                        path.unlink(missing_ok=True)
-                except (ValueError, OSError) as error:
-                    self.reference = {
-                        "status": "error",
-                        "name": "Microphone recording",
-                        "duration": 0,
-                        "message": str(error),
-                    }
-                    raise
+                self.start_reference_import(self.recorder.path, recording=True)
             else:
                 if not self.recording_available:
                     raise ValueError(
                         "Microphone capture is unavailable. Upload a recording instead."
                     )
                 self.recorder.start()
+                self.pre_recording_reference = self.reference
                 self.reference = {
                     "status": "recording",
                     "name": "Microphone recording",
@@ -601,38 +696,87 @@ class Studio:
             voice_id = self.library.save_voice(
                 self.reference_path, command.label, command.transcript
             )
-            if command.transcript.strip():
+            path = self.storage.voices / f"{voice_id.removeprefix('custom:')}.wav"
+            transcript = command.transcript.strip()
+            self.library.voice_paths[voice_id] = path
+            if transcript:
+                self.library.voice_transcripts[voice_id] = transcript
+            definition = self.library.voice_definition(
+                voice_id,
+                command.label.strip(),
+                self.reference["duration"],
+                custom=True,
+                has_transcript=bool(transcript),
+            )
+            self.voices = [
+                self.voices[0],
+                *sorted(
+                    [*self.voices[1:], definition],
+                    key=lambda voice: self.library.voice_paths[voice["id"]],
+                ),
+            ]
+            if transcript:
                 self.reference_path.unlink(missing_ok=True)
                 self.reference_path = None
                 self.reference = {"status": "empty", "name": "", "duration": 0}
                 self.settings.voice = voice_id
                 self.persist()
-            self.voices = self.library.voices()
             self.status = "Voice preset saved."
         elif command.type == "voice.delete":
             if not command.confirmed:
                 raise ValueError("Confirm voice deletion first.")
             self.library.delete_voice(command.id)
+            self.library.voice_paths.pop(command.id, None)
+            self.library.voice_transcripts.pop(command.id, None)
+            self.voices = [voice for voice in self.voices if voice["id"] != command.id]
             if self.settings.voice == command.id:
                 self.settings.voice = "default"
                 self.persist()
-            self.voices = self.library.voices()
-        elif command.type == "voices.refresh":
-            self.voices = self.library.voices()
-            self.status = "Voice collection refreshed."
 
-    def attach_reference(self, path: Path) -> None:
+    def start_reference_import(self, path: Path, *, recording: bool = False) -> None:
+        previous_state = self.reference
+        name = "Microphone recording" if recording else path.name
         destination = self.storage.temporary / f"reference-{uuid4().hex}.wav"
-        try:
-            seconds = audio.reference_audio(path, destination)
-        except Exception:
-            destination.unlink(missing_ok=True)
-            raise
-        previous = self.reference_path
-        self.reference_path = destination
-        self.reference = {"status": "ready", "name": path.name, "duration": seconds}
-        if previous:
-            previous.unlink(missing_ok=True)
+
+        def convert():
+            try:
+                if recording:
+                    self.recorder.finish()
+                source = (
+                    path
+                    if recording
+                    else selected_file(str(path), AUDIO_EXTENSIONS, MAX_AUDIO_IMPORT_BYTES)
+                )
+                self.maintenance.progress("preparing", 20, "Converting reference audio…")
+                seconds = audio.reference_audio(source, destination, self.maintenance)
+                with self.lock:
+                    self.maintenance.checkpoint()
+                    if self.reference_path:
+                        self.reference_path.unlink(missing_ok=True)
+                    self.reference_path = destination
+                    self.reference = {"status": "ready", "name": name, "duration": seconds}
+                    self.changed()
+            except Exception as error:
+                destination.unlink(missing_ok=True)
+                with self.lock:
+                    self.reference = previous_state
+                    if recording and isinstance(error, Cancelled):
+                        self.reference = self.pre_recording_reference
+                    elif recording:
+                        self.reference = {
+                            "status": "error",
+                            "name": name,
+                            "duration": 0,
+                            "message": str(error),
+                        }
+                    self.changed()
+                raise
+            finally:
+                if recording:
+                    path.unlink(missing_ok=True)
+
+        self.maintenance.start("maintenance", "Check reference audio", convert)
+        self.reference = {"status": "validating", "name": name, "duration": 0}
 
     def output_command(self, command: Command) -> None:
         if command.type == "output.select":
@@ -640,6 +784,7 @@ class Studio:
             self.selected_output = command.id
         elif command.type == "output.delete":
             self.jobs.require_idle()
+            self.maintenance.require_idle()
             if not command.confirmed:
                 raise ValueError("Confirm narration deletion first.")
             self.library.delete(command.id)
@@ -649,11 +794,11 @@ class Studio:
             if self.playback["outputId"] == command.id:
                 self.playback = {"playing": False, "position": 0, "outputId": None}
         elif command.type == "outputs.refresh":
-            self.jobs.require_idle()
-            self.outputs = self.library.refresh()
-            if self.selected_output not in self.library.records:
-                self.selected_output = self.outputs[0]["id"] if self.outputs else None
-            self.status = "Library refreshed."
+            self.maintenance.start(
+                "maintenance",
+                "Refresh audio library",
+                lambda: self.refresh_outputs(self.maintenance),
+            )
         elif command.type == "output.watermark":
             path = self.library.output_path(command.id)
 
@@ -700,9 +845,9 @@ class Studio:
                     "Model folder changed. Existing downloads remain in the previous folder."
                 )
             elif kind == "reference.import":
-                self.attach_reference(
-                    selected_file(paths[0], AUDIO_EXTENSIONS, MAX_AUDIO_IMPORT_BYTES)
-                )
+                if self.reference["status"] == "recording":
+                    raise ValueError("Finish or clear the microphone capture before importing.")
+                self.start_reference_import(Path(paths[0]))
             elif kind == "script.import":
                 path = selected_file(paths[0], SCRIPT_EXTENSIONS)
                 self.script = text.read_script(path)
@@ -760,32 +905,40 @@ class Studio:
                 self.persist()
                 self.status = "Project opened."
             elif kind == "output.export":
-                if operation.id == "batch" and operation.format == "zip":
-                    completed = [
-                        unit["outputId"] for unit in self.units if unit["status"] == "complete"
-                    ]
-                    if not completed:
-                        raise ValueError("No completed batch items are available.")
-                    with zipfile.ZipFile(paths[0], "w", zipfile.ZIP_DEFLATED) as archive:
-                        for output_id in completed:
-                            audio_path = self.library.output_path(output_id)
-                            for file in [
-                                audio_path,
-                                *(
-                                    audio_path.with_suffix(f".{extension}")
-                                    for extension in ("srt", "vtt", "txt", "json")
-                                ),
-                            ]:
-                                if file.is_file():
-                                    archive.write(file, file.name)
-                else:
-                    self.library.export(operation.id, operation.format, Path(paths[0]))
-                self.status = "File exported."
+                self.start_export(operation, Path(paths[0]))
             if kind != "credential.restore":
                 self.status_is_error = False
             self.changed()
             return self.snapshot()
 
+    def start_export(self, operation: DesktopOperation, destination: Path) -> None:
+        archive = operation.format == "zip"
+        if operation.id == "batch" and archive:
+            ids = [unit["outputId"] for unit in self.units if unit["status"] == "complete"]
+            if not ids:
+                raise ValueError("No completed batch items are available.")
+        else:
+            ids = [operation.id]
+
+        def publish(staging: Path) -> None:
+            with self.lock:
+                self.maintenance.checkpoint()
+                staging.replace(destination)
+
+        def export():
+            self.maintenance.progress("preparing", 0, "Writing the export…")
+            sources = []
+            for output_id in ids:
+                self.maintenance.checkpoint()
+                sources.extend(self.library.export_sources(output_id, operation.format))
+            export_files(
+                sources, destination, archive=archive, jobs=self.maintenance, publish=publish
+            )
+
+        self.maintenance.start("maintenance", "Export audio files", export)
+
     def close(self) -> None:
-        self.recorder.close()
-        self.jobs.close()
+        with self.lock:
+            self.maintenance.close()
+            self.jobs.close()
+            self.recorder.close()

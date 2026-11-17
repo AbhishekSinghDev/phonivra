@@ -107,6 +107,7 @@ class SimpleCommand(Input):
         "script.inspect",
         "status.dismiss",
         "job.cancel",
+        "maintenance.cancel",
         "batch.prepare",
         "batch.start",
         "preferences.save",
