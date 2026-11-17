@@ -26,7 +26,14 @@ from .library import Library
 from .models import Models
 from .recording import Recorder
 from .schemas import Command, DesktopOperation, Settings, resolve_model
-from .storage import Storage, read_json, selected_file, write_json
+from .storage import (
+    Storage,
+    migrate_settings,
+    prepare_model_root,
+    read_json,
+    selected_file,
+    write_json,
+)
 
 log = logging.getLogger(__name__)
 
@@ -116,7 +123,7 @@ class Studio:
         self.setup_resuming = saved.get("setupComplete") is False and self.settings.model != "auto"
         self.setup_model_sizes: dict[str, int | None] = {}
         self.setup_test: tuple[str, Settings] | None = None
-        if saved and "setupComplete" not in saved and self.setup_media_ready():
+        if saved.keys() - {"version"} and "setupComplete" not in saved and self.setup_media_ready():
             model = resolve_model(self.settings)
             self.setup_complete = bool(
                 self.device_info["available"]
@@ -128,7 +135,10 @@ class Studio:
                 )
             )
             if self.setup_complete:
-                self.storage.save({**saved, "setupComplete": True})
+                try:
+                    self.storage.save({**saved, "setupComplete": True})
+                except OSError:
+                    self.storage.warn("Could not save the recovered setup state.")
         self.playback = {"playing": False, "position": 0, "outputId": None}
         self.batch = {
             "source": "files",
@@ -144,8 +154,8 @@ class Studio:
         self.recorder = Recorder(self.storage.temporary)
         self.recording_available = self.recorder.available()
         self.watermark = None
-        self.status = None
-        self.status_is_error = False
+        self.status = " ".join(self.storage.recovery_warnings) or None
+        self.status_is_error = self.status is not None
         self.online = False
         self.events: deque[str] = deque(
             ["Local engine started. No remote inference or reporting."], maxlen=50
@@ -171,7 +181,12 @@ class Studio:
     def setup_media_ready() -> bool:
         return bool(audio.media_binary("ffmpeg") and audio.media_binary("ffprobe"))
 
-    def persist(self, *, setup_complete: bool | None = None) -> None:
+    def persist(
+        self, *, setup_complete: bool | None = None, cache_path: Path | None = None
+    ) -> None:
+        cache_preference = (
+            str(cache_path) if cache_path else self.storage.saved.get("cachePath", "")
+        )
         self.storage.save(
             {
                 "version": 1,
@@ -181,7 +196,7 @@ class Studio:
                 "script": self.script,
                 "dictionary": self.dictionary,
                 "batchText": self.batch["text"],
-                "cachePath": str(self.models.root),
+                "cachePath": cache_preference,
                 "device": self.models.mode,
             }
         )
@@ -231,7 +246,7 @@ class Studio:
                             "tokenConfigured": bool(self.models.token)
                             or (self.storage.root / "download-credential.bin").is_file(),
                             "previewBytes": preview_bytes,
-                            "logs": list(self.events),
+                            "logs": [*self.storage.recovery_warnings, *self.events],
                         },
                     },
                     "watermark": self.watermark,
@@ -386,9 +401,7 @@ class Studio:
 
     @staticmethod
     def load_settings(values: object) -> Settings:
-        if isinstance(values, dict) and values.get("model") in ("nano", "original"):
-            values = {**values, "model": "auto"}
-        return Settings.model_validate(values)
+        return Settings.model_validate(migrate_settings(values))
 
     def effective_settings(self, script: str, settings: Settings | None = None) -> Settings:
         value = (settings or self.settings).model_copy()
@@ -672,13 +685,15 @@ class Studio:
             if kind == "credential.restore":
                 self.models.token = operation.token
             elif kind == "storage.choose":
-                path = Path(paths[0]).resolve()
-                path.mkdir(parents=True, exist_ok=True)
+                try:
+                    path = prepare_model_root(Path(paths[0]))
+                except (OSError, ValueError, RuntimeError) as error:
+                    raise ValueError("Choose a writable model folder.") from error
+                self.persist(cache_path=path)
                 self.models.release()
                 # Selecting a folder switches caches; it never moves or deletes the old one.
                 self.models.root = path
                 self.storage.model_root = path
-                self.persist()
                 self.status = (
                     "Model folder changed. Existing downloads remain in the previous folder."
                 )
@@ -764,7 +779,8 @@ class Studio:
                 else:
                     self.library.export(operation.id, operation.format, Path(paths[0]))
                 self.status = "File exported."
-            self.status_is_error = False
+            if kind != "credential.restore":
+                self.status_is_error = False
             self.changed()
             return self.snapshot()
 

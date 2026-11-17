@@ -11,8 +11,8 @@ from uuid import uuid4
 
 from . import audio
 from .contract import AUDIO_EXTENSIONS
-from .schemas import OutputRecord
-from .storage import Storage, read_json, write_json
+from .schemas import Input, OutputRecord
+from .storage import Storage, Utf8Text, read_json, recover_fields, write_json
 
 log = logging.getLogger(__name__)
 
@@ -21,9 +21,45 @@ def filename(title: str) -> str:
     return re.sub(r"[^\w.-]+", "-", title, flags=re.UNICODE).strip(".-")[:80] or "narration"
 
 
+class VoiceMetadata(Input):
+    label: Utf8Text = ""
+    transcript: Utf8Text = ""
+
+
+def normalize_registry(data: object) -> tuple[dict, bool]:
+    if not isinstance(data, dict):
+        return {"version": 1, "voices": {}}, True
+    if "version" in data:
+        if type(data["version"]) is not int or data["version"] != 1:
+            raise ValueError("Unsupported voice registry version.")
+        data = data.get("voices")
+        if not isinstance(data, dict):
+            raise ValueError("Expected voice entries.")
+
+    voices = {}
+    repaired = False
+    for name, entry in data.items():
+        try:
+            name.encode("utf-8")
+        except UnicodeEncodeError:
+            repaired = True
+            continue
+        if isinstance(entry, str):
+            entry = {"label": entry} if entry else {}
+        if not isinstance(entry, dict):
+            repaired = True
+            continue
+        metadata, damaged = recover_fields(VoiceMetadata, entry)
+        repaired |= damaged
+        if metadata:
+            voices[name] = metadata
+    return {"version": 1, "voices": voices}, repaired
+
+
 class Library:
     def __init__(self, storage: Storage):
         self.storage = storage
+        self.registry_file = storage.voices / "registry.json"
         self.records: dict[str, dict] = {}
         self.voice_transcripts: dict[str, str] = {}
         self.voice_paths: dict[str, Path] = {}
@@ -121,8 +157,14 @@ class Library:
             file.unlink(missing_ok=True)
         self.records.pop(output_id, None)
 
+    def read_registry(self) -> dict:
+        return self.storage.load_document(self.registry_file, normalize_registry).get("voices", {})
+
+    def save_registry(self, registry: dict) -> None:
+        self.storage.save_document(self.registry_file, {"version": 1, "voices": registry})
+
     def voices(self) -> list[dict]:
-        registry = read_json(self.storage.voices / "registry.json", {})
+        registry = self.read_registry()
         result = [
             {
                 "id": "default",
@@ -144,17 +186,16 @@ class Library:
             except (ValueError, RuntimeError, OSError):
                 log.warning("Skipping unreadable voice %s", path.name)
                 continue
-            saved = registry.get(path.name)
-            label = saved.get("label") if isinstance(saved, dict) else saved
+            saved = registry.get(path.name, {})
             voice_id = f"custom:{path.stem}" if saved else f"file:{path.name}"
             self.voice_paths[voice_id] = path
-            transcript = saved.get("transcript") if isinstance(saved, dict) else None
-            if isinstance(transcript, str) and transcript:
+            transcript = saved.get("transcript")
+            if transcript:
                 self.voice_transcripts[voice_id] = transcript
             result.append(
                 {
                     "id": voice_id,
-                    "label": label or path.stem,
+                    "label": saved.get("label") or path.stem,
                     "kind": "custom" if saved else "external",
                     "description": "Saved reference recording."
                     if saved
@@ -173,12 +214,12 @@ class Library:
         label = label.strip()
         if not label:
             raise ValueError("Give the voice a name.")
-        registry = read_json(self.storage.voices / "registry.json", {})
+        registry = self.read_registry()
         path = self.storage.voices / f"{uuid4().hex}.wav"
         registry[path.name] = {"label": label, "transcript": transcript.strip()}
         try:
             shutil.copyfile(reference, path)
-            write_json(self.storage.voices / "registry.json", registry)
+            self.save_registry(registry)
         except OSError:
             path.unlink(missing_ok=True)
             raise
@@ -186,12 +227,12 @@ class Library:
 
     def delete_voice(self, voice_id: str) -> None:
         path = self.voice_paths.get(voice_id)
-        registry = read_json(self.storage.voices / "registry.json", {})
+        registry = self.read_registry()
         if not path or not voice_id.startswith("custom:") or path.name not in registry:
             raise ValueError("Only your saved presets can be deleted here.")
-        path.unlink(missing_ok=True)
         del registry[path.name]
-        write_json(self.storage.voices / "registry.json", registry)
+        self.save_registry(registry)
+        path.unlink(missing_ok=True)
 
 
 def companions(path: Path, record: dict, text: str) -> None:
