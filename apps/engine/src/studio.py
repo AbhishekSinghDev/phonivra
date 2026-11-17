@@ -249,7 +249,12 @@ class Studio:
         return bool(audio.media_binary("ffmpeg") and audio.media_binary("ffprobe"))
 
     def persist(
-        self, *, setup_complete: bool | None = None, cache_path: Path | None = None
+        self,
+        *,
+        setup_complete: bool | None = None,
+        cache_path: Path | None = None,
+        script: str | None = None,
+        batch_text: str | None = None,
     ) -> None:
         cache_preference = (
             str(cache_path) if cache_path else self.storage.saved.get("cachePath", "")
@@ -260,9 +265,9 @@ class Studio:
                 "setupComplete": self.setup_complete if setup_complete is None else setup_complete,
                 "settings": self.settings.model_dump(),
                 "savedSettings": self.saved_settings.model_dump(),
-                "script": self.script,
+                "script": self.script if script is None else script,
                 "dictionary": self.dictionary,
-                "batchText": self.batch["text"],
+                "batchText": self.batch["text"] if batch_text is None else batch_text,
                 "cachePath": cache_preference,
                 "device": self.models.mode,
             }
@@ -350,8 +355,8 @@ class Studio:
             self.batch["reviewed"] = False
             self.persist()
         elif kind == "script.update":
+            self.persist(script=command.text)
             self.script, self.inspection = command.text, None
-            self.persist()
         elif kind == "dictionary.save":
             text.dictionary_rules(command.text)
             self.dictionary, self.inspection = command.text, None
@@ -625,8 +630,8 @@ class Studio:
         if command.type == "batch.source":
             self.batch["source"] = command.source
         elif command.type == "batch.text":
+            self.persist(batch_text=command.text)
             self.batch["text"] = command.text
-            self.persist()
         elif command.type == "batch.split":
             self.batch["splitChapters"] = command.enabled
         elif command.type == "batch.remove-file":

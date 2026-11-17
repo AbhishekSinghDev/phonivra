@@ -1,6 +1,7 @@
 import { notify, notifyError } from '@/lib/notify'
 import { useStudioStore } from '@/stores/studio-store'
 import { controlPlayback, reconcilePlayback } from '@/lib/playback'
+import { maxTextLength } from '../../../shared/contract'
 import type { GenerationSettings, StudioCommand, StudioUpdate } from '../../../shared/studio'
 
 function dispatch(command: StudioCommand): Promise<StudioUpdate> {
@@ -38,43 +39,54 @@ async function receive(request: Promise<StudioUpdate>, reportStatus = false): Pr
     return false
   }
 }
-let pendingScript: string | null = null
-let pendingBatchText: string | null = null
-let scriptTimer: ReturnType<typeof setTimeout> | null = null
-let scriptWrite: Promise<boolean> | null = null
+type DraftCommand = 'script.update' | 'batch.text'
+type PendingDraft = {
+  value: { text: string } | null
+  timer: ReturnType<typeof setTimeout> | null
+  write: Promise<boolean> | null
+}
+const drafts: Record<DraftCommand, PendingDraft> = {
+  'script.update': { value: null, timer: null, write: null },
+  'batch.text': { value: null, timer: null, write: null }
+}
+export const draftLimitMessage = `Shorten this draft to ${maxTextLength.toLocaleString()} characters to save it.`
 
-async function writeDrafts(): Promise<boolean> {
-  while (pendingScript !== null || pendingBatchText !== null) {
-    const script = pendingScript
-    const batch = pendingBatchText
-    if (script !== null) {
-      if (!(await receive(dispatch({ type: 'script.update', text: script }), true))) return false
-      if (pendingScript === script) pendingScript = null
-    }
-    if (batch !== null) {
-      if (!(await receive(dispatch({ type: 'batch.text', text: batch }), true))) return false
-      if (pendingBatchText === batch) pendingBatchText = null
-    }
+async function writeDraft(type: DraftCommand, draft: PendingDraft): Promise<boolean> {
+  while (draft.value) {
+    const value = draft.value
+    if (value.text.length > maxTextLength) return false
+    const saved = await receive(dispatch({ type, text: value.text }), true)
+    if (draft.value !== value) continue
+    if (!saved) return false
+    draft.value = null
   }
   return true
 }
 
-export function flushScriptDraft(): Promise<boolean> {
-  if (scriptTimer) clearTimeout(scriptTimer)
-  scriptTimer = null
-  if (!scriptWrite) {
-    scriptWrite = writeDrafts().finally(() => {
-      scriptWrite = null
+function flushDraft(type: DraftCommand): Promise<boolean> {
+  const draft = drafts[type]
+  if (draft.timer) clearTimeout(draft.timer)
+  draft.timer = null
+  if (!draft.write) {
+    draft.write = writeDraft(type, draft).finally(() => {
+      draft.write = null
     })
   }
-  return scriptWrite
+  return draft.write
+}
+
+export function flushScriptDraft(): Promise<boolean> {
+  return flushDraft('script.update')
+}
+
+function editDraft(type: DraftCommand, text: string): void {
+  const draft = drafts[type]
+  draft.value = { text }
+  if (draft.timer) clearTimeout(draft.timer)
+  draft.timer = setTimeout(() => void flushDraft(type), 200)
 }
 export function editBatchText(text: string): void {
-  pendingBatchText = text
-  if (scriptTimer) clearTimeout(scriptTimer)
-  scriptTimer = setTimeout(() => {
-    void flushScriptDraft()
-  }, 200)
+  editDraft('batch.text', text)
 }
 export function act(label: string, command: StudioCommand): Promise<void> {
   if (command.type === 'playback.toggle' || command.type === 'playback.seek') {
@@ -86,19 +98,38 @@ export function act(label: string, command: StudioCommand): Promise<void> {
 }
 
 export async function dispatchStudioCommand(command: StudioCommand): Promise<boolean> {
-  if (command.type !== 'job.cancel' && command.type !== 'maintenance.cancel') {
-    await flushScriptDraft()
+  const draft = requiredDraft(command)
+  if (draft && !(await flushDraft(draft))) {
+    if ((drafts[draft].value?.text.length ?? 0) > maxTextLength) notifyError(draftLimitMessage)
+    return false
   }
   return receive(dispatch(command), true)
 }
+
+function requiredDraft(command: StudioCommand): DraftCommand | null {
+  switch (command.type) {
+    case 'script.inspect':
+    case 'script.import':
+    case 'project.open':
+    case 'project.save':
+      return 'script.update'
+    case 'batch.prepare':
+    case 'batch.start':
+    case 'batch.import':
+      return 'batch.text'
+    case 'job.start':
+      if (command.kind === 'batch') return 'batch.text'
+      if (command.kind === 'narration') return 'script.update'
+      return null
+    default:
+      return null
+  }
+}
+
 // Keep typing synchronous locally, and coalesce IPC snapshots. Actions flush the
 // latest draft before generating, inspecting, importing or saving a project.
 export function editScript(text: string): void {
-  pendingScript = text
-  if (scriptTimer) clearTimeout(scriptTimer)
-  scriptTimer = setTimeout(() => {
-    void flushScriptDraft()
-  }, 200)
+  editDraft('script.update', text)
 }
 export function updateSettings<K extends keyof GenerationSettings>(
   key: K,
@@ -118,10 +149,11 @@ export async function retryStudioConnection(): Promise<void> {
 
 export function registerDraftClose(): void {
   window.api.studio.onDraftClose(
-    () => {
+    async () => {
       if (document.activeElement instanceof HTMLElement) document.activeElement.blur()
       document.body.inert = true
-      return flushScriptDraft()
+      const saved = await Promise.all([flushScriptDraft(), flushDraft('batch.text')])
+      return saved.every(Boolean)
     },
     () => {
       document.body.inert = false

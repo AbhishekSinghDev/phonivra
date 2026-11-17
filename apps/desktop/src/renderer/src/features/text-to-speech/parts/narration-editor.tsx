@@ -11,7 +11,13 @@ import {
   TimerIcon
 } from '@hugeicons/core-free-icons'
 import { Button } from '@phonivra/ui/components/button'
-import { Field, FieldDescription, FieldGroup, FieldLabel } from '@phonivra/ui/components/field'
+import {
+  Field,
+  FieldDescription,
+  FieldError,
+  FieldGroup,
+  FieldLabel
+} from '@phonivra/ui/components/field'
 import { Textarea } from '@phonivra/ui/components/textarea'
 import { Input } from '@phonivra/ui/components/input'
 import {
@@ -23,7 +29,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger
 } from '@phonivra/ui/components/dropdown-menu'
-import { act, editScript, flushScriptDraft, updateSettings } from '@/lib/actions'
+import { act, draftLimitMessage, editScript, flushScriptDraft, updateSettings } from '@/lib/actions'
 import { RestoreDefaults } from '@/components/studio/restore-defaults'
 import {
   AlertDialog,
@@ -36,6 +42,7 @@ import {
   AlertDialogTitle
 } from '@phonivra/ui/components/alert-dialog'
 import { reactionTags } from '../../../../../shared/data/catalog'
+import { maxTextLength } from '../../../../../shared/contract'
 
 interface EditorProps {
   initialText: string
@@ -52,6 +59,7 @@ export const NarrationEditor = memo(function NarrationEditor({
   onGenerate
 }: EditorProps): React.JSX.Element {
   const [draft, setDraft] = useState(initialText)
+  const tooLong = draft.length > maxTextLength
   const [replacement, setReplacement] = useState<'script.import' | 'project.open' | null>(null)
   const modifier = window.api.platform === 'darwin' ? '⌘' : 'Ctrl'
   function replaceDocument(type: 'script.import' | 'project.open'): void {
@@ -214,7 +222,10 @@ export const NarrationEditor = memo(function NarrationEditor({
             value={draft}
             className="h-72 min-h-64 resize-y px-6 py-5 xl:h-80"
             placeholder="Write or paste the words you want to bring to life…"
-            aria-describedby="narrate-script-help"
+            aria-describedby={
+              tooLong ? 'narrate-script-help narrate-script-error' : 'narrate-script-help'
+            }
+            aria-invalid={tooLong || undefined}
             onChange={(event) => changeText(event.target.value)}
             onSelect={() => {
               if (editor.current)
@@ -230,6 +241,11 @@ export const NarrationEditor = memo(function NarrationEditor({
               }
             }}
           />
+          {tooLong && (
+            <div className="px-6">
+              <FieldError id="narrate-script-error">{draftLimitMessage}</FieldError>
+            </div>
+          )}
           <div className="flex flex-wrap items-center justify-between gap-3 px-6 py-4">
             <p className="text-xs tabular-nums text-muted-foreground">
               {draft.length.toLocaleString()} characters <span aria-hidden="true">·</span>{' '}
