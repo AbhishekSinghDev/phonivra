@@ -73,7 +73,10 @@ class Library:
             try:
                 data = read_json(path.with_suffix(".json"))
                 if isinstance(data, dict) and data.get("phonivraVersion") == 1:
-                    record = OutputRecord.model_validate(data["output"]).model_dump()
+                    output = OutputRecord.model_validate(data["output"])
+                    record = output.model_dump(
+                        exclude={"backend"} if output.backend is None else None
+                    )
                     if record.get("filename") != path.name:
                         raise ValueError("Sidecar filename does not match audio.")
                 else:

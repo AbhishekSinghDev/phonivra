@@ -20,7 +20,7 @@ from .directml import DirectMLError
 from .jobs import Jobs
 from .library import companions, filename
 from .models import Models
-from .schemas import Settings, resolve_model
+from .schemas import OutputRecord, Settings, resolve_model
 from .text import prepare, split_chunks
 
 log = logging.getLogger(__name__)
@@ -268,30 +268,32 @@ class Narrator:
                 removed_gap = min(remaining_trim, part["pause"])
                 part["pause"] = (part["pause"] - removed_gap) / settings.speed
                 remaining_trim -= removed_gap
-            record = {
-                "id": output_id,
-                "title": settings.title or "Narration",
-                "filename": name,
-                "duration": frames / rate / settings.speed,
-                "created": datetime.now(UTC).isoformat(),
-                "format": settings.format,
-                "sampleRate": settings.sample_rate,
-                "language": settings.language,
-                "model": model_id,
-                "backend": self.models.active_backend,
-                "voice": voice_label,
-                "seed": seed,
-                "loudnessGain": gain,
-                "requestedModel": settings.model,
-                "sourceCharacters": source_characters,
-                "speed": settings.speed,
-                "trimStart": trim,
-                "settingsSnapshot": settings.model_dump(),
-                "metadataAvailable": True,
-                "external": False,
-                "companions": ["srt", "vtt", "txt", "json"],
-                "parts": parts,
-            }
+            record = OutputRecord.model_validate(
+                {
+                    "id": output_id,
+                    "title": settings.title or "Narration",
+                    "filename": name,
+                    "duration": frames / rate / settings.speed,
+                    "created": datetime.now(UTC).isoformat(),
+                    "format": settings.format,
+                    "sampleRate": settings.sample_rate,
+                    "language": settings.language,
+                    "model": model_id,
+                    "backend": self.models.active_backend,
+                    "voice": voice_label,
+                    "seed": seed,
+                    "loudnessGain": gain,
+                    "requestedModel": settings.model,
+                    "sourceCharacters": source_characters,
+                    "speed": settings.speed,
+                    "trimStart": trim,
+                    "settingsSnapshot": settings.model_dump(),
+                    "metadataAvailable": True,
+                    "external": False,
+                    "companions": ["srt", "vtt", "txt", "json"],
+                    "parts": parts,
+                }
+            ).model_dump()
             self.jobs.progress("companions", 98, "Writing subtitles and metadata…")
             from .text import PAUSE
 
