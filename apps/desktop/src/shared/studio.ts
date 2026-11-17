@@ -320,4 +320,5 @@ export interface StudioAPI {
   onChange: (callback: (update: StudioUpdate) => void) => () => void
   waveform: (id: string) => Promise<number[]>
   outputDetails: (id: string) => Promise<OutputDetailsData>
+  onDraftClose: (flush: () => Promise<boolean>, resume: () => void) => void
 }

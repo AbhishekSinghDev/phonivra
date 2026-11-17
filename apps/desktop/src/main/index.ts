@@ -5,7 +5,17 @@ import { LocalStudio } from './local-studio'
 import appIcon from '../../public/logos/phonivra-icon.png?asset'
 import { validateCommand } from '../shared/validation'
 import { studioUpdate } from '../shared/studio'
-import { app, BrowserWindow, ipcMain, nativeTheme, shell, net, protocol, session } from 'electron'
+import {
+  app,
+  BrowserWindow,
+  dialog,
+  ipcMain,
+  nativeTheme,
+  shell,
+  net,
+  protocol,
+  session
+} from 'electron'
 import { readFileSync, writeFileSync, mkdirSync } from 'node:fs'
 import { join, dirname, resolve, relative, isAbsolute, sep } from 'node:path'
 import { realpath } from 'node:fs/promises'
@@ -178,7 +188,7 @@ void app.whenReady().then(() => {
     nativeTheme.themeSource = 'dark'
   }
 
-  function assertTrusted(event: Electron.IpcMainInvokeEvent): void {
+  function assertTrusted(event: Electron.IpcMainInvokeEvent): BrowserWindow {
     const window = BrowserWindow.fromWebContents(event.sender)
     const frame = event.senderFrame
     if (
@@ -189,6 +199,7 @@ void app.whenReady().then(() => {
       frame.origin !== (devURL ? devRendererOrigin : appOrigin)
     )
       throw new Error('Untrusted IPC sender')
+    return window
   }
 
   const studio = new LocalStudio((state) => {
@@ -203,15 +214,104 @@ void app.whenReady().then(() => {
   })
   let quitting = false
   let engineStopped = false
+  let closeRequestId = 0
+  const closeRequests = new Map<BrowserWindow, { id: number; complete: (saved: boolean) => void }>()
+  const closeChecks = new Map<BrowserWindow, Promise<boolean>>()
+  const closeAllowed = new WeakSet<BrowserWindow>()
+
+  function flushWindowDrafts(window: BrowserWindow): Promise<boolean> {
+    if (
+      window.isDestroyed() ||
+      window.webContents.mainFrame.origin !== (devURL ? devRendererOrigin : appOrigin)
+    )
+      return Promise.resolve(true)
+    return new Promise((resolve) => {
+      const id = ++closeRequestId
+      const complete = (saved: boolean): void => {
+        clearTimeout(timeout)
+        closeRequests.delete(window)
+        resolve(saved)
+      }
+      const timeout = setTimeout(() => complete(false), 15_000)
+      closeRequests.set(window, { id, complete })
+      window.webContents.send('studio:flush-on-close', id)
+    })
+  }
+
+  function checkBeforeClose(window: BrowserWindow): Promise<boolean> {
+    const pending = closeChecks.get(window)
+    if (pending) return pending
+    const check = (async () => {
+      while (!(await flushWindowDrafts(window))) {
+        if (window.isDestroyed()) return true
+        const answer = await dialog.showMessageBox(window, {
+          type: 'warning',
+          title: 'Unsaved draft',
+          message: 'Phonivra could not save the latest draft.',
+          detail: 'Retry saving, or keep editing so you can recover your text before closing.',
+          buttons: ['Keep editing', 'Retry save'],
+          defaultId: 0,
+          cancelId: 0
+        })
+        if (answer.response === 0) return false
+      }
+      return true
+    })()
+      .catch((error: unknown) => {
+        console.error('Could not flush drafts before closing', error)
+        return false
+      })
+      .finally(() => {
+        closeChecks.delete(window)
+      })
+    closeChecks.set(window, check)
+    return check
+  }
+
+  function resumeEditing(window: BrowserWindow): void {
+    if (!window.isDestroyed()) window.webContents.send('studio:resume-editing')
+  }
+
+  function openStudioWindow(): void {
+    const window = createWindow()
+    window.on('close', (event) => {
+      if (engineStopped || closeAllowed.has(window)) return
+      event.preventDefault()
+      if (quitting || closeChecks.has(window)) return
+      void checkBeforeClose(window).then((saved) => {
+        if (quitting || window.isDestroyed()) return
+        if (!saved) {
+          resumeEditing(window)
+          return
+        }
+        closeAllowed.add(window)
+        window.close()
+        closeAllowed.delete(window)
+      })
+    })
+    window.once('closed', () => closeRequests.get(window)?.complete(true))
+  }
+
   app.on('before-quit', (event) => {
     if (engineStopped) return
     event.preventDefault()
     if (quitting) return
     quitting = true
-    void studio.dispose().finally(() => {
-      engineStopped = true
-      app.quit()
-    })
+    void (async () => {
+      const windows = [...studioWindows]
+      const saved = await Promise.all(windows.map(checkBeforeClose))
+      if (saved.some((result) => !result)) {
+        quitting = false
+        windows.forEach(resumeEditing)
+        return
+      }
+      try {
+        await studio.dispose()
+      } finally {
+        engineStopped = true
+        app.quit()
+      }
+    })().catch((error: unknown) => console.error('Could not shut down the studio', error))
   })
   session
     .fromPartition(rendererPartition)
@@ -226,6 +326,13 @@ void app.whenReady().then(() => {
   ipcMain.handle('studio:snapshot', (event) => {
     assertTrusted(event)
     return studio.snapshot()
+  })
+  ipcMain.handle('studio:close-acknowledged', (event, requestId: unknown, saved: unknown) => {
+    const window = assertTrusted(event)
+    const pending = closeRequests.get(window)
+    if (pending && requestId === pending.id && typeof saved === 'boolean') {
+      pending.complete(saved)
+    }
   })
   ipcMain.handle('studio:dispatch', async (event, command: unknown, outputsAfter?: unknown) => {
     assertTrusted(event)
@@ -269,9 +376,9 @@ void app.whenReady().then(() => {
     for (const window of BrowserWindow.getAllWindows()) updateAppearance(window)
   })
 
-  createWindow()
+  openStudioWindow()
   app.on('activate', () => {
-    if (BrowserWindow.getAllWindows().length === 0) createWindow()
+    if (!quitting && BrowserWindow.getAllWindows().length === 0) openStudioWindow()
   })
 })
 

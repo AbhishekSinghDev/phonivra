@@ -4,6 +4,7 @@ import App from './App'
 import { AppErrorBoundary } from '@/components/app-error-boundary'
 import { StartupError } from '@/components/startup-error'
 import { ThemeProvider, applyTheme } from '@/components/theme-provider'
+import { registerDraftClose } from '@/lib/actions'
 import './assets/main.css'
 
 // Prevent file drops from navigating the renderer and Ctrl/trackpad pinch zoom.
@@ -34,6 +35,7 @@ try {
     )
   const initial = await window.api.theme.get()
   applyTheme(initial)
+  registerDraftClose()
   root.render(
     <StrictMode>
       <AppErrorBoundary>

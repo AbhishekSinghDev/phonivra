@@ -41,23 +41,30 @@ async function receive(request: Promise<StudioUpdate>, reportStatus = false): Pr
 let pendingScript: string | null = null
 let pendingBatchText: string | null = null
 let scriptTimer: ReturnType<typeof setTimeout> | null = null
-let scriptWrite: Promise<void> = Promise.resolve()
+let scriptWrite: Promise<boolean> | null = null
 
-export function flushScriptDraft(): Promise<void> {
+async function writeDrafts(): Promise<boolean> {
+  while (pendingScript !== null || pendingBatchText !== null) {
+    const script = pendingScript
+    const batch = pendingBatchText
+    if (script !== null) {
+      if (!(await receive(dispatch({ type: 'script.update', text: script }), true))) return false
+      if (pendingScript === script) pendingScript = null
+    }
+    if (batch !== null) {
+      if (!(await receive(dispatch({ type: 'batch.text', text: batch }), true))) return false
+      if (pendingBatchText === batch) pendingBatchText = null
+    }
+  }
+  return true
+}
+
+export function flushScriptDraft(): Promise<boolean> {
   if (scriptTimer) clearTimeout(scriptTimer)
   scriptTimer = null
-  if (pendingScript !== null) {
-    const text = pendingScript
-    pendingScript = null
-    scriptWrite = scriptWrite.then(async () => {
-      await receive(dispatch({ type: 'script.update', text }))
-    })
-  }
-  if (pendingBatchText !== null) {
-    const text = pendingBatchText
-    pendingBatchText = null
-    scriptWrite = scriptWrite.then(async () => {
-      await receive(dispatch({ type: 'batch.text', text }))
+  if (!scriptWrite) {
+    scriptWrite = writeDrafts().finally(() => {
+      scriptWrite = null
     })
   }
   return scriptWrite
@@ -107,6 +114,19 @@ export function updateSettings<K extends keyof GenerationSettings>(
 export async function retryStudioConnection(): Promise<void> {
   useStudioStore.getState().setError(null)
   await receive(window.api.studio.getSnapshot())
+}
+
+export function registerDraftClose(): void {
+  window.api.studio.onDraftClose(
+    () => {
+      if (document.activeElement instanceof HTMLElement) document.activeElement.blur()
+      document.body.inert = true
+      return flushScriptDraft()
+    },
+    () => {
+      document.body.inert = false
+    }
+  )
 }
 
 export function connectStudio(): () => void {
