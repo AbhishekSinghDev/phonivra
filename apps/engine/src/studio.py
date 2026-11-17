@@ -150,7 +150,8 @@ class Studio:
         self.watermark = None
         self.status = " ".join(self.storage.recovery_warnings) or None
         self.status_is_error = self.status is not None
-        self.online = False
+        self.online: bool | None = None
+        self.model_download_errors: dict[str, str] = {}
         self.events: deque[str] = deque(
             ["Local engine started. No remote inference or reporting."], maxlen=50
         )
@@ -283,6 +284,10 @@ class Studio:
             for model in models:
                 if model["id"] == self.jobs.download_id:
                     model["progress"] = self.job["progress"]
+                elif model["status"] == "not-installed" and (
+                    failure := self.model_download_errors.get(model["id"])
+                ):
+                    model.update(status="error", message=failure)
             preview_bytes = sum(
                 p.stat().st_size for p in self.storage.previews.iterdir() if p.is_file()
             )
@@ -431,6 +436,8 @@ class Studio:
                     self.maintenance.checkpoint()
                     if (root, token) == (self.models.root, self.models.token):
                         self.setup_model_sizes[command.id] = size
+                        if size is not None:
+                            self.online = True
                         self.changed()
 
             self.maintenance.start("maintenance", "Check model download size", estimate)
@@ -451,14 +458,16 @@ class Studio:
             self.setup_complete = True
         elif kind == "model.download":
             self.jobs.start(
-                "download", f"Download {command.id}", lambda: self.models.download(command.id)
+                "download", f"Download {command.id}", lambda: self.download_model(command.id)
             )
+            self.model_download_errors.pop(command.id, None)
         elif kind == "model.pause":
             self.jobs.pause(command.id, command.paused)
         elif kind == "model.remove":
             if not command.confirmed:
                 raise ValueError("Confirm model removal first.")
             self.models.remove(command.id)
+            self.model_download_errors.pop(command.id, None)
             self.status = "Model removed. Other installed models were preserved."
         elif kind.startswith("batch."):
             self.batch_command(command)
@@ -509,6 +518,17 @@ class Studio:
                 f"Device: {self.device_info['label']}. Model host reachable: {self.online}."
             )
             self.changed()
+
+    def download_model(self, model_id: str) -> None:
+        try:
+            self.models.download(model_id)
+        except Cancelled:
+            raise
+        except Exception as error:
+            with self.lock:
+                self.model_download_errors[model_id] = str(error) or type(error).__name__
+                self.changed()
+            raise
 
     @staticmethod
     def load_settings(values: object) -> Settings:
@@ -916,6 +936,7 @@ class Studio:
                 # Selecting a folder switches caches; it never moves or deletes the old one.
                 self.models.root = path
                 self.storage.model_root = path
+                self.model_download_errors.clear()
                 self.status = (
                     "Model folder changed. Existing downloads remain in the previous folder."
                 )

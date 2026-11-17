@@ -63,9 +63,13 @@ export default function ModelsPage(): React.JSX.Element {
         </>
       }
     >
-      {!snapshot.dependencies.online && (
+      {snapshot.dependencies.online === false && (
         <p role="status" className="text-sm text-muted-foreground">
-          You are offline. Installed models remain usable; connect to download another model.
+          The last check couldn’t reach the model host. You can try a download again or{' '}
+          <Link className="underline" to="/settings?tab=diagnostics">
+            refresh diagnostics
+          </Link>
+          .
         </p>
       )}
       <div className="flex flex-wrap items-center justify-between gap-4">
@@ -238,7 +242,6 @@ export default function ModelsPage(): React.JSX.Element {
                       size="sm"
                       disabled={
                         active ||
-                        !snapshot.dependencies.online ||
                         (id === 'indicf5' && !snapshot.configuration.preferences.tokenConfigured)
                       }
                       onClick={() =>

@@ -1,5 +1,5 @@
 {
-  "protocolVersion": 5,
+  "protocolVersion": 6,
   "loopbackHost": "127.0.0.1",
   "maxTextLength": 2000000,
   "maxReferenceTranscriptLength": 2000,

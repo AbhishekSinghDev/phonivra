@@ -258,7 +258,7 @@ export interface StudioSnapshot {
     vram: string | null
     available: boolean
   }
-  dependencies: { ffmpeg: boolean; recording: boolean; perth: boolean; online: boolean }
+  dependencies: { ffmpeg: boolean; recording: boolean; perth: boolean; online: boolean | null }
   status: string | null
   selectedOutput: string | null
 }

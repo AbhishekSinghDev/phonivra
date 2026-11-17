@@ -31,7 +31,7 @@ function isSnapshot(value: unknown): value is StudioUpdate {
     !!state.configuration &&
     !!state.batch &&
     !!state.device &&
-    !!state.dependencies &&
+    (state.dependencies?.online === null || typeof state.dependencies?.online === 'boolean') &&
     Array.isArray(state.voices) &&
     (state.outputs === undefined || Array.isArray(state.outputs)) &&
     Array.isArray(state.models) &&
