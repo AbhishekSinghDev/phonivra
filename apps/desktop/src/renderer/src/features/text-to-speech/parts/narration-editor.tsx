@@ -1,4 +1,4 @@
-import { memo, useDeferredValue, useEffect, useMemo, useRef, useState } from 'react'
+import { memo, useDeferredValue, useMemo, useRef, useState } from 'react'
 import { HugeiconsIcon } from '@hugeicons/react'
 import {
   ChevronDownIcon,
@@ -29,7 +29,8 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger
 } from '@phonivra/ui/components/dropdown-menu'
-import { act, draftLimitMessage, editScript, flushScriptDraft, updateSettings } from '@/lib/actions'
+import { act, draftLimitMessage, editScript, updateSettings } from '@/lib/actions'
+import { useDraftStore } from '@/stores/draft-store'
 import { RestoreDefaults } from '@/components/studio/restore-defaults'
 import {
   AlertDialog,
@@ -58,7 +59,7 @@ export const NarrationEditor = memo(function NarrationEditor({
   inspect,
   onGenerate
 }: EditorProps): React.JSX.Element {
-  const [draft, setDraft] = useState(initialText)
+  const draft = useDraftStore((state) => state['script.update']?.text ?? initialText)
   const tooLong = draft.length > maxTextLength
   const [replacement, setReplacement] = useState<'script.import' | 'project.open' | null>(null)
   const modifier = window.api.platform === 'darwin' ? '⌘' : 'Ctrl'
@@ -67,26 +68,16 @@ export const NarrationEditor = memo(function NarrationEditor({
     else void act('Import script', { type })
   }
   const editor = useRef<HTMLTextAreaElement>(null)
-  const selection = useRef({ start: initialText.length, end: initialText.length })
+  const selection = useRef({ start: draft.length, end: draft.length })
   const deferred = useDeferredValue(draft)
   const words = useMemo(
     () => (deferred.trim() ? deferred.trim().split(/\s+/u).length : 0),
     [deferred]
   )
-  useEffect(
-    () => () => {
-      void flushScriptDraft()
-    },
-    []
-  )
-  function changeText(text: string): void {
-    setDraft(text)
-    editScript(text)
-  }
   function insert(text: string): void {
     const { start, end } = selection.current
     const next = `${draft.slice(0, start)}${text}${draft.slice(end)}`
-    changeText(next)
+    editScript(next)
     requestAnimationFrame(() => {
       editor.current?.focus()
       editor.current?.setSelectionRange(start + text.length, start + text.length)
@@ -226,7 +217,7 @@ export const NarrationEditor = memo(function NarrationEditor({
               tooLong ? 'narrate-script-help narrate-script-error' : 'narrate-script-help'
             }
             aria-invalid={tooLong || undefined}
-            onChange={(event) => changeText(event.target.value)}
+            onChange={(event) => editScript(event.target.value)}
             onSelect={() => {
               if (editor.current)
                 selection.current = {

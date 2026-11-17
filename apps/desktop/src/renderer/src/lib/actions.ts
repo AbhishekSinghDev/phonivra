@@ -1,5 +1,6 @@
 import { notify, notifyError } from '@/lib/notify'
 import { useStudioStore } from '@/stores/studio-store'
+import { useDraftStore, type DraftCommand } from '@/stores/draft-store'
 import { controlPlayback, reconcilePlayback } from '@/lib/playback'
 import { maxTextLength } from '../../../shared/contract'
 import type { GenerationSettings, StudioCommand, StudioUpdate } from '../../../shared/studio'
@@ -39,51 +40,44 @@ async function receive(request: Promise<StudioUpdate>, reportStatus = false): Pr
     return false
   }
 }
-type DraftCommand = 'script.update' | 'batch.text'
-type PendingDraft = {
-  value: { text: string } | null
+type DraftWriter = {
   timer: ReturnType<typeof setTimeout> | null
   write: Promise<boolean> | null
 }
-const drafts: Record<DraftCommand, PendingDraft> = {
-  'script.update': { value: null, timer: null, write: null },
-  'batch.text': { value: null, timer: null, write: null }
+const writers: Record<DraftCommand, DraftWriter> = {
+  'script.update': { timer: null, write: null },
+  'batch.text': { timer: null, write: null }
 }
 export const draftLimitMessage = `Shorten this draft to ${maxTextLength.toLocaleString()} characters to save it.`
 
-async function writeDraft(type: DraftCommand, draft: PendingDraft): Promise<boolean> {
-  while (draft.value) {
-    const value = draft.value
+async function writeDraft(type: DraftCommand): Promise<boolean> {
+  for (let value = useDraftStore.getState()[type]; value; value = useDraftStore.getState()[type]) {
     if (value.text.length > maxTextLength) return false
     const saved = await receive(dispatch({ type, text: value.text }), true)
-    if (draft.value !== value) continue
+    if (useDraftStore.getState()[type] !== value) continue
     if (!saved) return false
-    draft.value = null
+    useDraftStore.setState({ [type]: null })
   }
   return true
 }
 
 function flushDraft(type: DraftCommand): Promise<boolean> {
-  const draft = drafts[type]
-  if (draft.timer) clearTimeout(draft.timer)
-  draft.timer = null
-  if (!draft.write) {
-    draft.write = writeDraft(type, draft).finally(() => {
-      draft.write = null
+  const writer = writers[type]
+  if (writer.timer) clearTimeout(writer.timer)
+  writer.timer = null
+  if (!writer.write) {
+    writer.write = writeDraft(type).finally(() => {
+      writer.write = null
     })
   }
-  return draft.write
-}
-
-export function flushScriptDraft(): Promise<boolean> {
-  return flushDraft('script.update')
+  return writer.write
 }
 
 function editDraft(type: DraftCommand, text: string): void {
-  const draft = drafts[type]
-  draft.value = { text }
-  if (draft.timer) clearTimeout(draft.timer)
-  draft.timer = setTimeout(() => void flushDraft(type), 200)
+  useDraftStore.setState({ [type]: { text } })
+  const writer = writers[type]
+  if (writer.timer) clearTimeout(writer.timer)
+  writer.timer = setTimeout(() => void flushDraft(type), 200)
 }
 export function editBatchText(text: string): void {
   editDraft('batch.text', text)
@@ -100,7 +94,8 @@ export function act(label: string, command: StudioCommand): Promise<void> {
 export async function dispatchStudioCommand(command: StudioCommand): Promise<boolean> {
   const draft = requiredDraft(command)
   if (draft && !(await flushDraft(draft))) {
-    if ((drafts[draft].value?.text.length ?? 0) > maxTextLength) notifyError(draftLimitMessage)
+    if ((useDraftStore.getState()[draft]?.text.length ?? 0) > maxTextLength)
+      notifyError(draftLimitMessage)
     return false
   }
   return receive(dispatch(command), true)
@@ -152,7 +147,7 @@ export function registerDraftClose(): void {
     async () => {
       if (document.activeElement instanceof HTMLElement) document.activeElement.blur()
       document.body.inert = true
-      const saved = await Promise.all([flushScriptDraft(), flushDraft('batch.text')])
+      const saved = await Promise.all([flushDraft('script.update'), flushDraft('batch.text')])
       return saved.every(Boolean)
     },
     () => {

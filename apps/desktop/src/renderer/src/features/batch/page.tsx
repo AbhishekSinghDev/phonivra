@@ -39,6 +39,7 @@ import { JobStatus, activePhases } from '@/components/studio/job-status'
 import { OutputDetails } from '@/components/studio/output-details'
 import { act, draftLimitMessage, editBatchText } from '@/lib/actions'
 import { useStudioStore } from '@/stores/studio-store'
+import { useDraftStore } from '@/stores/draft-store'
 import { languages } from '../../../../shared/data/catalog'
 import { maxTextLength } from '../../../../shared/contract'
 
@@ -49,7 +50,7 @@ function BatchText({
   initial: string
   disabled: boolean
 }): React.JSX.Element {
-  const [draft, setDraft] = useState(initial)
+  const draft = useDraftStore((state) => state['batch.text']?.text ?? initial)
   const tooLong = draft.length > maxTextLength
   return (
     <FieldGroup>
@@ -64,10 +65,7 @@ function BatchText({
           placeholder={
             'An opening paragraph…\n\n# Chapter one\nYour first chapter…\n\n# Chapter two\nYour next chapter…'
           }
-          onChange={(event) => {
-            setDraft(event.target.value)
-            editBatchText(event.target.value)
-          }}
+          onChange={(event) => editBatchText(event.target.value)}
           aria-describedby={tooLong ? 'batch-text-help batch-text-error' : 'batch-text-help'}
           aria-invalid={tooLong || undefined}
         />
