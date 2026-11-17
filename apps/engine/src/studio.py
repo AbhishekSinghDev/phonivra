@@ -867,12 +867,17 @@ class Studio:
                 self.persist()
                 self.status = f"Loaded {path.name}."
             elif kind == "batch.import":
+                new_files = []
+                new_scripts = {}
                 for raw in paths:
                     path = selected_file(raw, SCRIPT_EXTENSIONS)
-                    content = text.read_script(path)
+                    try:
+                        content = text.read_script(path)
+                    except UnicodeDecodeError:
+                        raise ValueError(f"{path.name} is not a UTF-8 script.") from None
                     unit_id = uuid4().hex
-                    self.batch_files[unit_id] = (path.stem, content)
-                    self.batch["files"].append(
+                    new_scripts[unit_id] = (path.stem, content)
+                    new_files.append(
                         {
                             "id": unit_id,
                             "name": path.name,
@@ -880,8 +885,11 @@ class Studio:
                             "readable": True,
                         }
                     )
+                self.batch_files.update(new_scripts)
+                self.batch["files"].extend(new_files)
                 self.batch["reviewed"] = False
                 self.units = []
+                self.unit_texts = {}
             elif kind == "project.save":
                 write_json(
                     Path(paths[0]),
