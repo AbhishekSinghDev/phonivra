@@ -95,6 +95,7 @@ class Studio:
         self.reference = {"status": "empty", "name": "", "duration": 0}
         self.pre_recording_reference = self.reference
         self.closed = False
+        self.cleaning_stale_audio = False
         self.job = {
             "id": "idle",
             "kind": "narration",
@@ -158,11 +159,21 @@ class Studio:
         if not defer_discovery:
             self.discover()
 
-    def start_discovery(self) -> None:
+    def start_discovery(self, *, clean_stale_audio: bool = False) -> None:
+        def discover():
+            if clean_stale_audio:
+                try:
+                    self.maintenance.progress("preparing", 0, "Removing stale temporary audio…")
+                    self.storage.cleanup_stale_audio(self.maintenance.checkpoint)
+                finally:
+                    with self.lock:
+                        self.cleaning_stale_audio = False
+                        self.changed()
+            self.discover(self.maintenance)
+
         with self.lock:
-            self.maintenance.start(
-                "maintenance", "Discover saved audio", lambda: self.discover(self.maintenance)
-            )
+            self.maintenance.start("maintenance", "Discover saved audio", discover)
+            self.cleaning_stale_audio = clean_stale_audio
 
     def discover(self, jobs: Jobs | None = None) -> None:
         self.refresh_voices(jobs)
@@ -542,6 +553,8 @@ class Studio:
 
     def start_job(self, kind: str) -> None:
         self.jobs.require_idle()
+        if self.cleaning_stale_audio:
+            raise ValueError("Wait for temporary audio cleanup to finish.")
         if self.reference["status"] in {"recording", "validating", "error", "missing"}:
             raise ValueError("Finish or clear the voice reference before generating.")
         settings = self.settings.model_copy()
@@ -725,6 +738,8 @@ class Studio:
             if self.reference["status"] == "recording":
                 self.finish_recording(self.recorder.process)
             else:
+                if self.cleaning_stale_audio:
+                    raise ValueError("Wait for temporary audio cleanup to finish.")
                 if not self.recording_available:
                     raise ValueError(
                         "Microphone capture is unavailable. Upload a recording instead."
@@ -802,12 +817,14 @@ class Studio:
         try:
             path = self.recorder.finish()
         except (OSError, ValueError) as error:
-            try:
-                self.recorder.path.unlink(missing_ok=True)
-            except OSError:
-                log.warning("Could not remove the failed microphone recording.", exc_info=True)
             with self.lock:
                 if not self.closed:
+                    try:
+                        self.recorder.path.unlink(missing_ok=True)
+                    except OSError:
+                        log.warning(
+                            "Could not remove the failed microphone recording.", exc_info=True
+                        )
                     self.reference = {
                         "status": "error",
                         "name": "Microphone recording",
@@ -820,7 +837,6 @@ class Studio:
         while True:
             with self.lock:
                 if self.closed:
-                    path.unlink(missing_ok=True)
                     return
                 if not self.maintenance.busy:
                     self.start_reference_import(path, recording=True)
@@ -1046,4 +1062,21 @@ class Studio:
             self.closed = True
             self.maintenance.close()
             self.jobs.close()
-            self.recorder.close()
+            try:
+                self.recorder.close()
+            except OSError:
+                log.warning("Could not remove temporary microphone audio.", exc_info=True)
+            for jobs in (self.jobs, self.maintenance):
+                if jobs.busy:
+                    jobs.future.add_done_callback(lambda _: self.remove_closed_reference())
+            self.remove_closed_reference()
+
+    def remove_closed_reference(self) -> None:
+        with self.lock:
+            if self.jobs.busy or self.maintenance.busy or not self.reference_path:
+                return
+            try:
+                self.reference_path.unlink(missing_ok=True)
+                self.reference_path = None
+            except OSError:
+                log.warning("Could not remove the temporary voice reference.", exc_info=True)

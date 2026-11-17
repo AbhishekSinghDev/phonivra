@@ -15,13 +15,13 @@ from .studio import Studio
 log = logging.getLogger(__name__)
 
 
-def create_app(root: Path, secret: str, ready) -> FastAPI:
+def create_app(root: Path, secret: str, ready, *, clean_stale_audio: bool = False) -> FastAPI:
     studio = Studio(root, defer_discovery=True)
 
     @asynccontextmanager
     async def lifespan(_app: FastAPI):
         ready()
-        studio.start_discovery()
+        studio.start_discovery(clean_stale_audio=clean_stale_audio)
         try:
             yield
         finally:

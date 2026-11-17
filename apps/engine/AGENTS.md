@@ -8,6 +8,7 @@ The Python engine owns synthesis, model downloads, jobs, recording, and workspac
 - Keep shared protocol constants in [contract.json](src/contract.json) and Python command validation in [schemas.py](src/schemas.py). For wire changes, check the [desktop guide](../desktop/AGENTS.md) and update the affected desktop client and validators together.
 - Preserve the single compute worker, job-start input snapshots, and cooperative cancellation. Discard unfinished narration on cancellation and retain completed batch items. Use [storage.py](src/storage.py) for app-owned paths and atomic JSON writes.
 - Start voice and output discovery after the ready handshake. Run media scans, reference conversions, network diagnostics, and audio exports on the separate maintenance worker so control requests can continue during those operations.
+- Hold the engine's exclusive workspace lock through worker shutdown. Only sweep abandoned temporary audio while that lock is held.
 - Load verified local model assets using the pinned revisions and checksums in [model-assets.json](src/model-assets.json). Keep Python dependencies in `pyproject.toml` and regenerate `uv.lock` with uv when dependencies change.
 
 ## Run and verify

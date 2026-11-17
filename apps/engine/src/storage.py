@@ -3,10 +3,13 @@
 import json
 import logging
 import os
+import re
+import shutil
+import sys
 import tempfile
 from collections.abc import Callable
 from pathlib import Path
-from typing import Annotated, Any, Literal
+from typing import Annotated, Any, BinaryIO, Literal
 
 from pydantic import AfterValidator, Field, ValidationError
 
@@ -14,6 +17,32 @@ from .contract import DEVICE_MODES, MAX_TEXT_LENGTH
 from .schemas import Input, Settings
 
 log = logging.getLogger(__name__)
+REFERENCE_NAME = re.compile(r"reference-[0-9a-f]{32}\.wav")
+RENDER_DIRECTORY = re.compile(r"\.render-[a-z0-9_]{8}")
+
+
+def lock_workspace(root: Path) -> BinaryIO:
+    """Hold exclusive ownership until the returned handle closes."""
+    path = root / "engine.lock"
+    if path.is_symlink():
+        raise ValueError("The workspace lock must not be redirected by a link.")
+    lock = path.open("a+b")
+    try:
+        if sys.platform == "win32":
+            import msvcrt
+
+            lock.seek(0)
+            msvcrt.locking(lock.fileno(), msvcrt.LK_NBLCK, 1)
+        else:
+            import fcntl
+
+            fcntl.flock(lock, fcntl.LOCK_EX | fcntl.LOCK_NB)
+    except OSError as error:
+        lock.close()
+        raise OSError(
+            "Could not lock the workspace. Another engine may already be using it."
+        ) from error
+    return lock
 
 
 def validate_utf8(value: str) -> str:
@@ -122,6 +151,33 @@ class Storage:
             directory.mkdir(parents=True, exist_ok=True)
         self.saved = self.load_document(self.state_file, normalize_workspace)
         self.model_root = self.load_model_root()
+
+    def cleanup_stale_audio(self, checkpoint: Callable[[], None]) -> None:
+        """Remove abandoned app artifacts while the engine owns the workspace lock."""
+        for directory in (self.temporary, self.outputs, self.previews):
+            try:
+                if directory.resolve() != directory:
+                    continue
+                for path in directory.iterdir():
+                    checkpoint()
+                    try:
+                        if path.is_symlink():
+                            continue
+                        if directory == self.temporary:
+                            if (
+                                path.name == "microphone.wav" or REFERENCE_NAME.fullmatch(path.name)
+                            ) and path.is_file():
+                                path.unlink(missing_ok=True)
+                        elif (
+                            RENDER_DIRECTORY.fullmatch(path.name)
+                            and path.is_dir()
+                            and path.resolve() == path
+                        ):
+                            shutil.rmtree(path)
+                    except OSError:
+                        log.warning("Could not remove stale audio artifact %s.", path.name)
+            except OSError:
+                log.warning("Could not check %s for stale audio.", directory.name)
 
     def warn(self, message: str) -> None:
         if message not in self.recovery_warnings:
