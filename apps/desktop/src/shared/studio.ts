@@ -144,7 +144,7 @@ export type JobPhase =
   | 'complete'
 export interface JobState {
   id: string
-  kind: 'narration' | 'preview' | 'batch' | 'download'
+  kind: 'narration' | 'preview' | 'batch' | 'download' | 'watermark'
   phase: JobPhase
   progress: number
   title: string

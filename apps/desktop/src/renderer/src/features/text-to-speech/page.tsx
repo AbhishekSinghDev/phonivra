@@ -117,8 +117,18 @@ export function TextToSpeechPage(): React.JSX.Element {
               ) : (
                 <>
                   Another job is running.{' '}
-                  <Link to={job.kind === 'batch' ? '/batch' : '/models'}>View current job</Link> to
-                  check progress or stop it.
+                  <Link
+                    to={
+                      job.kind === 'batch'
+                        ? '/batch'
+                        : job.kind === 'watermark'
+                          ? '/library'
+                          : '/models'
+                    }
+                  >
+                    View current job
+                  </Link>{' '}
+                  to check progress or stop it.
                 </>
               )}
             </p>

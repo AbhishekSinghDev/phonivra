@@ -23,7 +23,7 @@ import { Separator } from '@phonivra/ui/components/separator'
 import { ScreenFrame, ScreenLoading } from '@/components/studio/screen-frame'
 import { WindowedList } from '@/components/studio/windowed-list'
 import { OutputDetails } from '@/components/studio/output-details'
-import { formatTime } from '@/components/studio/job-status'
+import { activePhases, formatTime, JobStatus } from '@/components/studio/job-status'
 import { act } from '@/lib/actions'
 import { useStudioStore } from '@/stores/studio-store'
 
@@ -36,6 +36,7 @@ export function HistoryPage(): React.JSX.Element {
   )
   const selected = filtered.find((output) => output.id === snapshot.selectedOutput) ?? filtered[0]
   const watermark = snapshot.watermark?.outputId === selected?.id ? snapshot.watermark : null
+  const verification = snapshot.job.kind === 'watermark' ? snapshot.job : null
   return (
     <ScreenFrame
       title="Audio library"
@@ -162,6 +163,9 @@ export function HistoryPage(): React.JSX.Element {
                 <OutputDetails output={selected} playback={snapshot.playback} />
                 <Separator />
                 <section aria-label="Watermark result" className="flex flex-col gap-3">
+                  {verification && verification.phase !== 'complete' && (
+                    <JobStatus job={verification} compact />
+                  )}
                   <div className="flex items-center gap-2">
                     <HugeiconsIcon
                       icon={ShieldCheckIcon}
@@ -174,16 +178,16 @@ export function HistoryPage(): React.JSX.Element {
                     <div role="status" className="flex flex-col gap-1 text-sm">
                       <p className="font-medium">
                         {watermark.state === 'detected'
-                          ? 'Watermark detected'
+                          ? 'Watermark detected in excerpt'
                           : watermark.state === 'not-detected'
-                            ? 'Watermark not detected'
+                            ? 'No watermark detected in excerpt'
                             : 'Watermark check unavailable'}
                       </p>
                       <p className="text-muted-foreground">{watermark.message}</p>
                     </div>
-                  ) : (
+                  ) : verification && activePhases.has(verification.phase) ? null : (
                     <p className="text-sm text-muted-foreground">
-                      Use Verify watermark to check the selected file. A label in generation
+                      Use Verify watermark to check the opening excerpt. A label in generation
                       metadata is not a detection result.
                     </p>
                   )}

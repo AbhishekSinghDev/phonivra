@@ -51,6 +51,13 @@ export function AppSidebar(): React.JSX.Element {
   const phase = useStudioStore((state) => state.snapshot?.job.phase ?? 'idle')
   const jobKind = useStudioStore((state) => state.snapshot?.job.kind)
   const outputs = useStudioStore((state) => state.snapshot?.outputs.length ?? 0)
+  const jobRoute = {
+    batch: '/batch',
+    download: '/models',
+    watermark: '/library',
+    narration: '/narrate',
+    preview: '/narrate'
+  } as const
 
   return (
     <Sidebar
@@ -132,11 +139,7 @@ export function AppSidebar(): React.JSX.Element {
               asChild
               tooltip={`${device}: ${phase}`}
             >
-              <NavLink
-                to={
-                  jobKind === 'batch' ? '/batch' : jobKind === 'download' ? '/models' : '/narrate'
-                }
-              >
+              <NavLink to={jobRoute[jobKind ?? 'narration']}>
                 <HugeiconsIcon icon={CpuIcon} aria-hidden="true" />
                 <span className="flex min-w-0 flex-1 flex-col gap-1">
                   <span className="text-xs font-medium">On-device studio</span>

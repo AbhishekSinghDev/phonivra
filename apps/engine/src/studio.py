@@ -12,7 +12,7 @@ from uuid import uuid4
 
 from pydantic import ValidationError
 
-from . import audio, text
+from . import audio, text, watermark
 from .contract import (
     AUDIO_EXTENSIONS,
     DEVICE_MODES,
@@ -658,23 +658,25 @@ class Studio:
             path = self.library.output_path(command.id)
 
             def check():
-                import librosa
-                import perth
-
-                samples, rate = librosa.load(path, sr=None, mono=True)
-                score = float(
-                    perth.PerthImplicitWatermarker().get_watermark(samples, sample_rate=rate)
-                )
+                self.jobs.progress("preparing", 0, "Preparing the opening audio excerpt…")
+                if self.models.model is not None:
+                    self.models.release()
+                score = watermark.verify(path, self.storage.temporary, self.jobs)
                 with self.lock:
+                    self.jobs.checkpoint()
                     self.watermark = {
                         "outputId": command.id,
                         "state": "detected" if score >= 0.5 else "not-detected",
                         "score": score,
-                        "message": f"Watermark score: {score:.3f}. Re-encoding may affect detection.",
+                        "message": (
+                            f"Checked up to the first {watermark.WINDOW_SECONDS} seconds. "
+                            f"Score: {score:.3f}. Re-encoding may affect detection."
+                        ),
                     }
                     self.changed()
 
-            self.jobs.start("preview", "Check audio watermark", check)
+            self.jobs.start("watermark", "Check audio watermark", check)
+            self.watermark = None
 
     def desktop(self, operation: DesktopOperation) -> dict:
         with self.lock:
