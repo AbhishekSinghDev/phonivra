@@ -1,8 +1,10 @@
 """Deterministic script preparation, sentence chunks, and subtitle input parsing."""
 
+import math
 import re
 import unicodedata
 from dataclasses import dataclass
+from itertools import chain
 from pathlib import Path
 from typing import get_args
 
@@ -11,6 +13,7 @@ from .schemas import Language, Settings
 
 LANGUAGES = get_args(Language)
 PAUSE = re.compile(r"\[pause(?:=(\d+(?:\.\d+)?))?\]", re.IGNORECASE)
+MAX_PAUSE_SECONDS = 60
 
 
 @dataclass(frozen=True)
@@ -121,7 +124,7 @@ def prepare(text: str, settings: Settings, dictionary: str) -> str:
 def split_chunks(text: str, limit: int, gap: float) -> list[Chunk]:
     chunks: list[Chunk] = []
     cursor = 0
-    for pause in [*PAUSE.finditer(text), None]:
+    for pause in chain(PAUSE.finditer(text), (None,)):
         section = text[cursor : pause.start() if pause else len(text)]
         sentences = re.split(r"(?<=[.!?।॥。！？])\s*|\n+", section)
         current = ""
@@ -145,12 +148,18 @@ def split_chunks(text: str, limit: int, gap: float) -> list[Chunk]:
             chunks.append(Chunk(current, gap))
         if pause:
             seconds = float(pause[1]) if pause[1] else gap
-            if seconds > 60:
-                raise ValueError("An explicit pause cannot exceed 60 seconds.")
+            if seconds > MAX_PAUSE_SECONDS:
+                raise ValueError(f"An explicit pause cannot exceed {MAX_PAUSE_SECONDS} seconds.")
+            if chunks and not section.strip():
+                seconds += chunks[-1].pause
+                if seconds > MAX_PAUSE_SECONDS and not math.isclose(
+                    seconds, MAX_PAUSE_SECONDS, rel_tol=0, abs_tol=1e-9
+                ):
+                    raise ValueError(
+                        f"Consecutive pause tags cannot exceed {MAX_PAUSE_SECONDS} seconds combined."
+                    )
             if chunks:
-                chunks[-1] = Chunk(
-                    chunks[-1].text, chunks[-1].pause + seconds if not section.strip() else seconds
-                )
+                chunks[-1] = Chunk(chunks[-1].text, seconds)
             else:
                 chunks.append(Chunk("", seconds))
             cursor = pause.end()

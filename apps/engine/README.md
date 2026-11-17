@@ -144,7 +144,13 @@ IndicF5 also snapshots the selected voice preset’s transcript and loads its pi
 before cleanup, and records per-item failures while preserving completed items. The completed
 batch ZIP includes each finished audio file and its available companions.
 
-Cancellation checks speech-transformer steps, chunk boundaries, downloads and FFmpeg encoding.
+Consecutive pause tags may add up to 60 seconds. Each narration or batch item has a four-hour
+duration budget for temporary audio and the export. Before loading the model, the engine
+estimates speech plus pauses and accounts for the selected playback speed. It also checks the
+actual duration as it writes audio. For longer scripts, split the narration into chapters.
+
+Cancellation checks speech-transformer steps, chunk boundaries, silence writes, downloads
+and FFmpeg encoding.
 An in-flight model load or decoder operation may finish before cancellation is observed.
 Unfinished narration is discarded; completed batch items remain. Jobs are not resumed after
 application shutdown. Only one model is resident at a time. Multilingual V3 uses half precision for the text transformer on CUDA. Turbo and CPU inference use default precision.

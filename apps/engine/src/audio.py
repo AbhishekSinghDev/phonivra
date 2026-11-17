@@ -42,6 +42,13 @@ BLOCK_FRAMES = 65_536
 MAX_WAVEFORM_SECONDS = 4 * 60 * 60
 
 
+def write_silence(file: sf.SoundFile, frames: int, jobs: Jobs) -> None:
+    block = np.zeros(min(frames, BLOCK_FRAMES), dtype=np.float32)
+    for remaining in range(frames, 0, -BLOCK_FRAMES):
+        jobs.checkpoint()
+        file.write(block[:remaining])
+
+
 def input_options(path: Path) -> list[str]:
     demuxer = DEMUXERS.get(path.suffix.lower())
     if demuxer is None:
