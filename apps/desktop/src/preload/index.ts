@@ -1,15 +1,16 @@
 import { contextBridge, ipcRenderer } from 'electron'
-import type { StudioSnapshot } from '../shared/studio'
+import type { StudioUpdate } from '../shared/studio'
 import type { DesktopAPI, ThemeState } from '../shared/api'
 
 const api: DesktopAPI = {
   studio: {
     getSnapshot: () => ipcRenderer.invoke('studio:snapshot'),
-    dispatch: (command) => ipcRenderer.invoke('studio:dispatch', command),
+    dispatch: (command, outputsAfter) =>
+      ipcRenderer.invoke('studio:dispatch', command, outputsAfter),
     waveform: (id) => ipcRenderer.invoke('studio:waveform', id),
-    reportPlayback: (playback) => ipcRenderer.invoke('studio:playback', playback),
+    outputDetails: (id) => ipcRenderer.invoke('studio:output-details', id),
     onChange: (callback) => {
-      const listener = (_event: Electron.IpcRendererEvent, state: StudioSnapshot): void =>
+      const listener = (_event: Electron.IpcRendererEvent, state: StudioUpdate): void =>
         callback(state)
       ipcRenderer.on('studio:changed', listener)
       return () => ipcRenderer.removeListener('studio:changed', listener)

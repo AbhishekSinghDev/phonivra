@@ -5,6 +5,7 @@ from tempfile import TemporaryDirectory
 
 import numpy as np
 from phonivra_engine.contract import NATIVE_SAMPLE_RATE
+from phonivra_engine.library import Library
 from phonivra_engine.schemas import Settings, SimpleCommand
 from phonivra_engine.storage import read_json, write_json
 from phonivra_engine.studio import Studio
@@ -45,10 +46,11 @@ class OutputPersistenceTests(unittest.TestCase):
                 self.assertEqual(record["backend"], "cpu")
                 studio.accept_output(record)
                 refreshed = studio.dispatch(SimpleCommand(type="outputs.refresh"))
-                self.assertEqual(refreshed["outputs"], [record])
+                self.assertEqual(refreshed["outputs"], [Library.summarize(record)])
+                studio.maintenance.future.result(timeout=2)
 
             with closing(Studio(root)) as restarted:
-                self.assertEqual(restarted.snapshot()["outputs"], [record])
+                self.assertEqual(restarted.snapshot()["outputs"], [Library.summarize(record)])
                 path = restarted.library.media_path(record["id"])
                 self.assertEqual(path.name, record["filename"])
                 exported = root / "export.wav"
@@ -63,8 +65,30 @@ class OutputPersistenceTests(unittest.TestCase):
             del sidecar["output"]["backend"]
             write_json(path, sidecar)
 
-            self.assertEqual(studio.library.refresh(), [sidecar["output"]])
+            self.assertEqual(studio.library.refresh(), [Library.summarize(sidecar["output"])])
             self.assertEqual(studio.library.output_path(record["id"]).name, record["filename"])
+
+    def test_library_revision_omits_unchanged_summaries_and_fetches_details_separately(self):
+        with TemporaryDirectory() as directory, closing(Studio(Path(directory))) as studio:
+            baseline = studio.snapshot()
+            record = self.render(studio, "cpu")
+            path = studio.storage.outputs / record["filename"]
+            record["parts"][0]["text"] = "x" * 100_000
+            write_json(path.with_suffix(".json"), {"phonivraVersion": 1, "output": record})
+            studio.accept_output(record)
+
+            updated = studio.snapshot(baseline["outputsRevision"])
+            (summary,) = updated["outputs"]
+            self.assertEqual(summary["partCount"], 1)
+            self.assertNotIn("parts", summary)
+            self.assertNotIn("settingsSnapshot", summary)
+            update = studio.dispatch(
+                SimpleCommand(type="status.dismiss"), updated["outputsRevision"]
+            )
+            self.assertNotIn("outputs", update)
+            self.assertEqual(update["outputsRevision"], updated["outputsRevision"])
+            self.assertEqual(studio.library.output_details(path, summary)["parts"], record["parts"])
+            self.assertEqual(studio.library.records[record["id"]], summary)
 
     def test_invalid_record_does_not_publish_audio_or_companions(self):
         with TemporaryDirectory() as directory, closing(Studio(Path(directory))) as studio:

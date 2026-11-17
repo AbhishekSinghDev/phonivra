@@ -4,6 +4,7 @@ import { appOrigin, devRendererOrigin, mediaOrigin } from '../shared/contract'
 import { LocalStudio } from './local-studio'
 import appIcon from '../../public/logos/phonivra-icon.png?asset'
 import { validateCommand } from '../shared/validation'
+import { studioUpdate } from '../shared/studio'
 import { app, BrowserWindow, ipcMain, nativeTheme, shell, net, protocol, session } from 'electron'
 import { readFileSync, writeFileSync, mkdirSync } from 'node:fs'
 import { join, dirname, resolve, relative, isAbsolute, sep } from 'node:path'
@@ -226,10 +227,11 @@ void app.whenReady().then(() => {
     assertTrusted(event)
     return studio.snapshot()
   })
-  ipcMain.handle('studio:dispatch', (event, command: unknown) => {
+  ipcMain.handle('studio:dispatch', async (event, command: unknown, outputsAfter?: unknown) => {
     assertTrusted(event)
     if (!validateCommand(command)) throw new Error('Invalid studio request')
-    return studio.dispatch(command)
+    const snapshot = await studio.dispatch(command)
+    return studioUpdate(snapshot, typeof outputsAfter === 'number' ? outputsAfter : undefined)
   })
   ipcMain.handle('studio:waveform', (event, id: unknown) => {
     assertTrusted(event)
@@ -237,26 +239,11 @@ void app.whenReady().then(() => {
       throw new Error('Invalid audio identifier')
     return studio.waveform(id)
   })
-  ipcMain.handle('studio:playback', (event, value: unknown) => {
+  ipcMain.handle('studio:output-details', (event, id: unknown) => {
     assertTrusted(event)
-    if (!value || typeof value !== 'object') throw new Error('Invalid playback state')
-    const playback = value as { playing: unknown; position: unknown; outputId: unknown }
-    if (
-      typeof playback.playing !== 'boolean' ||
-      typeof playback.position !== 'number' ||
-      !Number.isFinite(playback.position) ||
-      playback.position < 0 ||
-      !(
-        playback.outputId === null ||
-        (typeof playback.outputId === 'string' && playback.outputId.length <= 256)
-      )
-    )
-      throw new Error('Invalid playback state')
-    studio.reportPlayback({
-      playing: playback.playing,
-      position: playback.position,
-      outputId: playback.outputId
-    })
+    if (typeof id !== 'string' || !id || id.length > 256)
+      throw new Error('Invalid narration identifier')
+    return studio.outputDetails(id)
   })
 
   ipcMain.handle('theme:get', (event) => {

@@ -1,12 +1,31 @@
 import { notify, notifyError } from '@/lib/notify'
 import { useStudioStore } from '@/stores/studio-store'
 import { controlPlayback, reconcilePlayback } from '@/lib/playback'
-import type { GenerationSettings, StudioCommand, StudioSnapshot } from '../../../shared/studio'
+import type { GenerationSettings, StudioCommand, StudioUpdate } from '../../../shared/studio'
 
-async function receive(request: Promise<StudioSnapshot>, reportStatus = false): Promise<boolean> {
+function dispatch(command: StudioCommand): Promise<StudioUpdate> {
+  return window.api.studio.dispatch(command, useStudioStore.getState().snapshot?.outputsRevision)
+}
+
+function acceptStudioUpdate(snapshot: StudioUpdate): boolean {
+  const previous = useStudioStore.getState().snapshot
+  useStudioStore.getState().accept(snapshot)
+  const accepted = useStudioStore.getState().snapshot
+  if (!accepted || accepted === previous) return false
+  if (
+    accepted.outputs !== previous?.outputs ||
+    accepted.voices !== previous?.voices ||
+    accepted.preview?.id !== previous?.preview?.id
+  ) {
+    reconcilePlayback()
+  }
+  return true
+}
+
+async function receive(request: Promise<StudioUpdate>, reportStatus = false): Promise<boolean> {
   try {
     const snapshot = await request
-    useStudioStore.getState().accept(snapshot)
+    acceptStudioUpdate(snapshot)
     if (reportStatus && snapshot.status) {
       if (snapshot.statusIsError) notifyError(snapshot.status)
       else notify(snapshot.status)
@@ -31,14 +50,14 @@ export function flushScriptDraft(): Promise<void> {
     const text = pendingScript
     pendingScript = null
     scriptWrite = scriptWrite.then(async () => {
-      await receive(window.api.studio.dispatch({ type: 'script.update', text }))
+      await receive(dispatch({ type: 'script.update', text }))
     })
   }
   if (pendingBatchText !== null) {
     const text = pendingBatchText
     pendingBatchText = null
     scriptWrite = scriptWrite.then(async () => {
-      await receive(window.api.studio.dispatch({ type: 'batch.text', text }))
+      await receive(dispatch({ type: 'batch.text', text }))
     })
   }
   return scriptWrite
@@ -63,7 +82,7 @@ export async function dispatchStudioCommand(command: StudioCommand): Promise<boo
   if (command.type !== 'job.cancel' && command.type !== 'maintenance.cancel') {
     await flushScriptDraft()
   }
-  return receive(window.api.studio.dispatch(command), true)
+  return receive(dispatch(command), true)
 }
 // Keep typing synchronous locally, and coalesce IPC snapshots. Actions flush the
 // latest draft before generating, inspecting, importing or saving a project.
@@ -93,9 +112,7 @@ export async function retryStudioConnection(): Promise<void> {
 export function connectStudio(): () => void {
   const unsubscribe = window.api.studio.onChange((snapshot) => {
     const previous = useStudioStore.getState().snapshot
-    if (previous && previous.revision >= snapshot.revision) return
-    useStudioStore.getState().accept(snapshot)
-    reconcilePlayback()
+    if (!acceptStudioUpdate(snapshot)) return
     if (snapshot.statusIsError && snapshot.status && snapshot.status !== previous?.status)
       notifyError(snapshot.status)
     if (snapshot.job.phase === 'error' && previous?.job.phase !== 'error')

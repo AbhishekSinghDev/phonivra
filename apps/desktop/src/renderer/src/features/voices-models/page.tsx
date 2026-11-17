@@ -207,14 +207,6 @@ export function VoicesModelsPage(): React.JSX.Element {
                   id={`voice:${voice.id}`}
                   title={voice.previewAvailable ? 'Voice audition' : 'Reference recording'}
                   duration={voice.duration ?? 12}
-                  playing={
-                    snapshot.playback.outputId === `voice:${voice.id}` && snapshot.playback.playing
-                  }
-                  position={
-                    snapshot.playback.outputId === `voice:${voice.id}`
-                      ? snapshot.playback.position
-                      : 0
-                  }
                   state={voice.available && voice.duration !== null ? 'ready' : 'unavailable'}
                 />
                 <dl className="grid grid-cols-2 gap-4">
@@ -322,14 +314,6 @@ export function VoicesModelsPage(): React.JSX.Element {
                   id={snapshot.preview.id}
                   title="Generated voice preview"
                   duration={snapshot.preview.duration}
-                  playing={
-                    snapshot.playback.outputId === snapshot.preview.id && snapshot.playback.playing
-                  }
-                  position={
-                    snapshot.playback.outputId === snapshot.preview.id
-                      ? snapshot.playback.position
-                      : 0
-                  }
                 />
               )}
               <p className="text-xs leading-relaxed text-muted-foreground">

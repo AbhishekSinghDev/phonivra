@@ -194,10 +194,14 @@ export interface OutputRecord {
   sourceCharacters: number | null
   speed: number | null
   trimStart: number | null
-  settingsSnapshot: (Omit<GenerationSettings, 'model'> & { model: RecordedModelId }) | null
   metadataAvailable: boolean
   external: boolean
   companions: readonly ('srt' | 'vtt' | 'txt' | 'json')[]
+  partCount: number
+  hasSettingsSnapshot: boolean
+}
+export interface OutputDetailsData {
+  settingsSnapshot: (Omit<GenerationSettings, 'model'> & { model: RecordedModelId }) | null
   parts: PartDetail[]
 }
 export interface BatchUnit {
@@ -242,6 +246,7 @@ export interface StudioSnapshot {
   voices: VoiceDefinition[]
   models: InstalledModel[]
   outputs: OutputRecord[]
+  outputsRevision: number
   units: BatchUnit[]
   batch: BatchWorkspace
   configuration: SettingsWorkspace
@@ -255,8 +260,14 @@ export interface StudioSnapshot {
   }
   dependencies: { ffmpeg: boolean; recording: boolean; perth: boolean; online: boolean }
   status: string | null
-  playback: { playing: boolean; position: number; outputId: string | null }
   selectedOutput: string | null
+}
+export type StudioUpdate = Omit<StudioSnapshot, 'outputs'> & { outputs?: OutputRecord[] }
+
+export function studioUpdate(snapshot: StudioSnapshot, outputsAfter?: number): StudioUpdate {
+  if (outputsAfter !== snapshot.outputsRevision) return snapshot
+  const { outputs: _outputs, ...update } = snapshot
+  return update
 }
 export type StudioCommand =
   | { type: 'settings.update'; settings: GenerationSettings }
@@ -305,8 +316,8 @@ export type StudioCommand =
   | { type: 'playback.seek'; seconds: number; id?: string }
 export interface StudioAPI {
   getSnapshot: () => Promise<StudioSnapshot>
-  dispatch: (command: StudioCommand) => Promise<StudioSnapshot>
-  onChange: (callback: (snapshot: StudioSnapshot) => void) => () => void
+  dispatch: (command: StudioCommand, outputsAfter?: number) => Promise<StudioUpdate>
+  onChange: (callback: (update: StudioUpdate) => void) => () => void
   waveform: (id: string) => Promise<number[]>
-  reportPlayback: (playback: StudioSnapshot['playback']) => Promise<void>
+  outputDetails: (id: string) => Promise<OutputDetailsData>
 }

@@ -5,15 +5,16 @@ import { existsSync, mkdirSync, createWriteStream } from 'node:fs'
 import { dirname, isAbsolute, join, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { loopbackHost, protocolVersion } from '../shared/contract'
-import type { StudioSnapshot } from '../shared/studio'
+import type { StudioUpdate } from '../shared/studio'
 
 const here = dirname(fileURLToPath(import.meta.url))
 
-function isSnapshot(value: unknown): value is StudioSnapshot {
+function isSnapshot(value: unknown): value is StudioUpdate {
   if (!value || typeof value !== 'object') return false
-  const state = value as Partial<StudioSnapshot>
+  const state = value as Partial<StudioUpdate>
   return (
     Number.isInteger(state.revision) &&
+    Number.isInteger(state.outputsRevision) &&
     typeof state.setup?.complete === 'boolean' &&
     typeof state.setup.resuming === 'boolean' &&
     typeof state.setup.mediaReady === 'boolean' &&
@@ -29,11 +30,10 @@ function isSnapshot(value: unknown): value is StudioSnapshot {
     !!state.reference &&
     !!state.configuration &&
     !!state.batch &&
-    !!state.playback &&
     !!state.device &&
     !!state.dependencies &&
     Array.isArray(state.voices) &&
-    Array.isArray(state.outputs) &&
+    (state.outputs === undefined || Array.isArray(state.outputs)) &&
     Array.isArray(state.models) &&
     Array.isArray(state.units)
   )
@@ -215,8 +215,16 @@ export class EngineClient {
     return response
   }
 
-  async snapshot(path = '/snapshot', body?: unknown): Promise<StudioSnapshot | null> {
-    const response = await this.request(path, body)
+  async snapshot(
+    path = '/snapshot',
+    body?: unknown,
+    outputsAfter = -1
+  ): Promise<StudioUpdate | null> {
+    const generation = this.generation
+    const separator = path.includes('?') ? '&' : '?'
+    const response = await this.request(`${path}${separator}outputs_after=${outputsAfter}`, body)
+    if (generation !== this.generation)
+      throw new Error('The local engine restarted. Retry the action.')
     if (response.status === 204) return null
     const value: unknown = await response.json()
     if (!isSnapshot(value))

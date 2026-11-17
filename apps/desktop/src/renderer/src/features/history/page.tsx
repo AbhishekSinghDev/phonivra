@@ -160,7 +160,7 @@ export function HistoryPage(): React.JSX.Element {
                   <h2 className="break-words text-lg font-semibold">{selected.title}</h2>
                   {selected.external && <Badge variant="outline">External audio</Badge>}
                 </div>
-                <OutputDetails output={selected} playback={snapshot.playback} />
+                <OutputDetails output={selected} />
                 <Separator />
                 <section aria-label="Watermark result" className="flex flex-col gap-3">
                   {verification && verification.phase !== 'complete' && (

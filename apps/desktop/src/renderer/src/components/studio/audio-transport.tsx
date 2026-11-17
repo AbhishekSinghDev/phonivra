@@ -4,7 +4,7 @@ import { Button } from '@phonivra/ui/components/button'
 import { AudioPlayer, AudioPlayerPlay, AudioPlayerTime } from '@phonivra/ui/components/audio-player'
 import { Waveform } from '@phonivra/ui/components/waveform'
 import { useAudioPlayer } from '@phonivra/ui/hooks/use-audio-player'
-import { useStudioStore } from '@/stores/studio-store'
+import { usePlaybackStore } from '@/stores/playback-store'
 import { Badge } from '@phonivra/ui/components/badge'
 import { Skeleton } from '@phonivra/ui/components/skeleton'
 import { act } from '@/lib/actions'
@@ -14,18 +14,18 @@ export function AudioTransport({
   id,
   title,
   duration,
-  position = 0,
-  playing = false,
   state = 'ready'
 }: {
   id: string
   title: string
   duration: number
-  position?: number
-  playing?: boolean
   state?: 'loading' | 'ready' | 'unavailable' | 'provisional'
 }): React.JSX.Element {
   const basePlayer = useAudioPlayer()
+  const playing = usePlaybackStore((playback) => playback.outputId === id && playback.playing)
+  const position = usePlaybackStore((playback) =>
+    playback.outputId === id ? playback.position : 0
+  )
   const [waveform, setWaveform] = useState<{ id: string; peaks: number[] } | null>(null)
   useEffect(() => {
     let cancelled = false
@@ -57,9 +57,10 @@ export function AudioTransport({
     time: {
       subscribe: (listener: (time: number) => void) => {
         listener(position)
-        return useStudioStore.subscribe((store) => {
-          const playback = store.snapshot?.playback
-          listener(playback?.outputId === id ? playback.position : 0)
+        return usePlaybackStore.subscribe((playback, previous) => {
+          const time = playback.outputId === id ? playback.position : 0
+          const previousTime = previous.outputId === id ? previous.position : 0
+          if (time !== previousTime) listener(time)
         })
       }
     }

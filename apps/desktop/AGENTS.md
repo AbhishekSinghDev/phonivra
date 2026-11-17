@@ -8,6 +8,7 @@ Electron owns native dialogs, clipboard and filesystem integration, theme state,
 - Keep the CommonJS preload output and BrowserWindow preload path aligned. Production uses the `phonivra://app` origin. Preserve hash routing and the explicit loopback development origin defined in [contract.ts](src/shared/contract.ts).
 - For studio command or snapshot changes, check [shared types](src/shared/studio.ts), [IPC validation](src/shared/validation.ts), and the preload bridge. For engine-facing changes, also read the [engine guide](../engine/AGENTS.md).
 - Route studio actions through [actions.ts](src/renderer/src/lib/actions.ts). Preserve the draft flush before actions that read or replace editor content and the snapshot store's stale-revision guard. Keep playback coordinated through [playback.ts](src/renderer/src/lib/playback.ts).
+- Keep playback time in the renderer. Studio updates can omit output summaries when their library revision matches the receiver's last accepted revision. Load part timings and recorded settings through the output details bridge when opened.
 
 ## Run and verify
 

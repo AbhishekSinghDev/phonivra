@@ -1,6 +1,7 @@
 import { mediaOrigin } from '../../../shared/contract'
 import { notifyError } from '@/lib/notify'
 import { useStudioStore } from '@/stores/studio-store'
+import { usePlaybackStore } from '@/stores/playback-store'
 import type { StudioCommand } from '../../../shared/studio'
 
 // One audio element survives route changes and prevents overlapping voice/output playback.
@@ -10,15 +11,11 @@ let lastReport = 0
 
 function report(): void {
   if (!audio) return
-  void window.api.studio
-    .reportPlayback({
-      outputId: currentId,
-      playing: !audio.paused && !audio.ended,
-      position: Number.isFinite(audio.currentTime) ? audio.currentTime : 0
-    })
-    .catch((error: unknown) =>
-      notifyError(error instanceof Error ? error.message : 'Playback status could not be updated.')
-    )
+  usePlaybackStore.setState({
+    outputId: currentId,
+    playing: !audio.paused && !audio.ended,
+    position: Number.isFinite(audio.currentTime) ? audio.currentTime : 0
+  })
 }
 
 function player(): HTMLAudioElement {

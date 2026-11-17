@@ -121,6 +121,18 @@ class Library:
         self.voice_paths: dict[str, Path] = {}
         self.preview_paths: dict[str, Path] = {}
 
+    @staticmethod
+    def summarize(record: dict) -> dict:
+        return {
+            **{
+                name: value
+                for name, value in record.items()
+                if name not in ("parts", "settingsSnapshot")
+            },
+            "partCount": len(record["parts"]),
+            "hasSettingsSnapshot": record["settingsSnapshot"] is not None,
+        }
+
     def scan_outputs(self, jobs: Jobs | None = None) -> dict[str, dict]:
         records = {}
         for path in self.storage.outputs.iterdir():
@@ -166,7 +178,7 @@ class Library:
                     for extension in COMPANION_EXTENSIONS
                     if path.with_suffix(f".{extension}").is_file()
                 ]
-                records[record["id"]] = record
+                records[record["id"]] = self.summarize(record)
             except (ValueError, KeyError, OSError, RuntimeError):
                 log.warning("Skipping unreadable library entry %s", path.name, exc_info=True)
         return records
@@ -192,6 +204,18 @@ class Library:
         if path and path.is_file():
             return path
         return self.output_path(media_id)
+
+    @staticmethod
+    def output_details(path: Path, record: dict) -> dict:
+        if record["external"]:
+            return {"parts": [], "settingsSnapshot": None}
+        data = read_json(path.with_suffix(".json"))
+        if not isinstance(data, dict) or data.get("phonivraVersion") != 1:
+            raise ValueError("Generation details are unavailable for this file.")
+        output = OutputRecord.model_validate(data.get("output"))
+        if output.id != record["id"] or output.filename != path.name:
+            raise ValueError("Generation details have changed. Refresh the library.")
+        return output.model_dump(include={"parts", "settingsSnapshot"})
 
     def export_sources(self, output_id: str, kind: str) -> list[Path]:
         path = self.output_path(output_id)

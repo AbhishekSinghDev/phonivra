@@ -362,12 +362,7 @@ export default function BatchPage(): React.JSX.Element {
                 Close details
               </Button>
             </div>
-            <OutputDetails
-              output={selectedOutput}
-              playback={snapshot.playback}
-              showManagement={false}
-              exportVariant="outline"
-            />
+            <OutputDetails output={selectedOutput} showManagement={false} exportVariant="outline" />
           </section>
         </>
       )}

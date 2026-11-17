@@ -1,3 +1,4 @@
+import { usePlaybackStore } from '@/stores/playback-store'
 import { useEffect, useRef, useState } from 'react'
 import { useNavigate } from 'react-router'
 import { Button } from '@phonivra/ui/components/button'
@@ -80,6 +81,10 @@ export function SetupPage(): React.JSX.Element {
     job.phase === 'complete'
       ? snapshot?.preview
       : null
+
+  const previewPlaying = usePlaybackStore(
+    (playback) => playback.playing && playback.outputId === preview?.id
+  )
 
   async function chooseLanguage(): Promise<void> {
     if (!snapshot) return
@@ -408,9 +413,7 @@ export function SetupPage(): React.JSX.Element {
                       void act('Play test clip', { type: 'playback.toggle', id: preview.id })
                     }
                   >
-                    {snapshot?.playback.playing && snapshot.playback.outputId === preview.id
-                      ? 'Pause test clip'
-                      : 'Play test clip'}
+                    {previewPlaying ? 'Pause test clip' : 'Play test clip'}
                   </Button>
                 </div>
               )}

@@ -85,6 +85,7 @@ class Studio:
         self.script = saved.get("script", "")
         self.dictionary = saved.get("dictionary", "")
         self.revision = 0
+        self.outputs_revision = 0
         self.document_revision = 0
         self.inspection = None
         self.preview = None
@@ -130,7 +131,6 @@ class Studio:
             if saved.keys() - {"version"} and "setupComplete" not in saved
             else None
         )
-        self.playback = {"playing": False, "position": 0, "outputId": None}
         self.batch = {
             "source": "files",
             "files": [],
@@ -216,6 +216,7 @@ class Studio:
             self.outputs = sorted(
                 records.values(), key=lambda record: record["created"], reverse=True
             )
+            self.outputs_revision += 1
             if self.selected_output not in records:
                 self.selected_output = self.outputs[0]["id"] if self.outputs else None
             self.changed()
@@ -267,7 +268,7 @@ class Studio:
             }
         )
 
-    def snapshot(self) -> dict:
+    def snapshot(self, outputs_after: int = -1) -> dict:
         with self.lock:
             models = self.models.catalog()
             for model in models:
@@ -303,7 +304,8 @@ class Studio:
                     "maintenance": self.maintenance_job,
                     "voices": self.voices,
                     "models": models,
-                    "outputs": self.outputs,
+                    "outputsRevision": self.outputs_revision,
+                    **({"outputs": self.outputs} if outputs_after != self.outputs_revision else {}),
                     "units": self.units,
                     "batch": self.batch,
                     "configuration": {
@@ -326,12 +328,11 @@ class Studio:
                         "online": self.online,
                     },
                     "status": self.status,
-                    "playback": self.playback,
                     "selectedOutput": self.selected_output,
                 }
             )
 
-    def dispatch(self, command: Command) -> dict:
+    def dispatch(self, command: Command, outputs_after: int = -1) -> dict:
         with self.lock:
             self.status, self.status_is_error = None, False
             try:
@@ -339,7 +340,7 @@ class Studio:
             except (ValueError, OSError, ValidationError) as error:
                 self.status, self.status_is_error = str(error), True
             self.changed()
-            return self.snapshot()
+            return self.snapshot(outputs_after)
 
     def _dispatch(self, command: Command) -> None:
         kind = command.type
@@ -465,7 +466,6 @@ class Studio:
                     file.unlink()
             self.preview = None
             self.library.preview_paths.clear()
-            self.playback = {"playing": False, "position": 0, "outputId": None}
             self.status = "Temporary previews removed."
         elif kind == "diagnostics.refresh":
             self.maintenance.start("maintenance", "Refresh diagnostics", self.refresh_diagnostics)
@@ -613,8 +613,10 @@ class Studio:
         self.jobs.start(kind, settings.title or kind.title(), work)
 
     def accept_output(self, record: dict) -> None:
-        self.library.records[record["id"]] = record
-        self.outputs.insert(0, record)
+        summary = self.library.summarize(record)
+        self.library.records[record["id"]] = summary
+        self.outputs.insert(0, summary)
+        self.outputs_revision += 1
         self.selected_output = record["id"]
         self.changed()
 
@@ -789,10 +791,9 @@ class Studio:
                 raise ValueError("Confirm narration deletion first.")
             self.library.delete(command.id)
             self.outputs = [record for record in self.outputs if record["id"] != command.id]
+            self.outputs_revision += 1
             if self.selected_output == command.id:
                 self.selected_output = self.outputs[0]["id"] if self.outputs else None
-            if self.playback["outputId"] == command.id:
-                self.playback = {"playing": False, "position": 0, "outputId": None}
         elif command.type == "outputs.refresh":
             self.maintenance.start(
                 "maintenance",
@@ -823,7 +824,7 @@ class Studio:
             self.jobs.start("watermark", "Check audio watermark", check)
             self.watermark = None
 
-    def desktop(self, operation: DesktopOperation) -> dict:
+    def desktop(self, operation: DesktopOperation, outputs_after: int = -1) -> dict:
         with self.lock:
             kind = operation.operation
             if kind in {"storage.choose", "reference.import", "project.open", "batch.import"}:
@@ -909,7 +910,7 @@ class Studio:
             if kind != "credential.restore":
                 self.status_is_error = False
             self.changed()
-            return self.snapshot()
+            return self.snapshot(outputs_after)
 
     def start_export(self, operation: DesktopOperation, destination: Path) -> None:
         archive = operation.format == "zip"
