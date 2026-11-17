@@ -4,6 +4,7 @@ import background from '@/assets/background.svg'
 import { Backdrop } from '@/components/backdrop'
 import { TitleBar } from '@/components/title-bar'
 import { AppSidebar } from '@/components/app-sidebar'
+import { activePhases, JobStatus } from '@/components/studio/job-status'
 import { Toaster } from '@phonivra/ui/components/sonner'
 import { SidebarProvider } from '@phonivra/ui/components/sidebar'
 import { TooltipProvider } from '@phonivra/ui/components/tooltip'
@@ -34,6 +35,7 @@ export default function App(): React.JSX.Element {
   const collapsed = useShellStore((state) => state.collapsed)
   const toggleSidebar = useShellStore((state) => state.toggleSidebar)
   const setupComplete = useStudioStore((state) => state.snapshot?.setup.complete === true)
+  const maintenance = useStudioStore((state) => state.snapshot?.maintenance)
   useEffect(connectStudio, [])
   return (
     <HashRouter>
@@ -63,6 +65,11 @@ export default function App(): React.JSX.Element {
                   className="content-area h-full overflow-auto p-6 sm:p-12"
                   tabIndex={-1}
                 >
+                  {maintenance && activePhases.has(maintenance.phase) && (
+                    <div className="mx-auto mb-6 w-full max-w-6xl rounded-xl border border-card-edge bg-card p-4">
+                      <JobStatus job={maintenance} compact />
+                    </div>
+                  )}
                   {!setupComplete ? (
                     <SetupPage />
                   ) : (

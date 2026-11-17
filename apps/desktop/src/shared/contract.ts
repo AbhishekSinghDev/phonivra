@@ -10,7 +10,8 @@ export const {
   deviceModes,
   indicLanguages,
   sampleRates,
-  nativeSampleRate
+  nativeSampleRate,
+  maxRecordingSeconds
 } = contract
 
 export const devRendererPort = 5173

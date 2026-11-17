@@ -399,8 +399,12 @@ export function SettingsPage(): React.JSX.Element {
               <DetailValue label="Perth detector">
                 {snapshot.dependencies.perth ? 'Available' : 'Unavailable'}
               </DetailValue>
-              <DetailValue label="Network">
-                {snapshot.dependencies.online ? 'Online' : 'Offline'}
+              <DetailValue label="Model host">
+                {snapshot.dependencies.online === null
+                  ? 'Not checked'
+                  : snapshot.dependencies.online
+                    ? 'Reachable'
+                    : 'Unreachable at last check'}
               </DetailValue>
               <DetailValue label="Current job">{snapshot.job.phase}</DetailValue>
               <DetailValue label="Loaded models">

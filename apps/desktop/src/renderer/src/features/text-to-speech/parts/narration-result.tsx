@@ -33,9 +33,8 @@ import { useStudioStore } from '@/stores/studio-store'
 export function NarrationResult(): React.JSX.Element | null {
   const job = useStudioStore((state) => state.snapshot?.job)
   const outputs = useStudioStore((state) => state.snapshot?.outputs)
-  const playback = useStudioStore((state) => state.snapshot?.playback)
   const preview = useStudioStore((state) => state.snapshot?.preview)
-  if (!job || !outputs || !playback) return null
+  if (!job || !outputs) return null
   const narrationJob = job.kind === 'narration' || job.kind === 'preview'
   const active = narrationJob && activePhases.has(job.phase)
   const output = outputs[0]
@@ -63,20 +62,12 @@ export function NarrationResult(): React.JSX.Element | null {
           id={`stream:${job.id}`}
           title="Listen while generating"
           duration={Math.max(1, job.part * 4)}
-          position={playback.outputId === `stream:${job.id}` ? playback.position : 0}
-          playing={playback.outputId === `stream:${job.id}` && playback.playing}
           state={job.streaming === 'buffering' ? 'loading' : 'provisional'}
         />
       )}
       {job.kind === 'preview' && preview && !active && (
         <>
-          <AudioTransport
-            id={preview.id}
-            title="Voice preview"
-            duration={preview.duration}
-            playing={playback.outputId === preview.id && playback.playing}
-            position={playback.outputId === preview.id ? playback.position : 0}
-          />
+          <AudioTransport id={preview.id} title="Voice preview" duration={preview.duration} />
           <p className="text-xs text-muted-foreground">
             Voice previews do not include subtitles or transcripts and are not added to the Library.
           </p>
@@ -95,13 +86,7 @@ export function NarrationResult(): React.JSX.Element | null {
               Saved in Library
             </Badge>
           </div>
-          <AudioTransport
-            id={output.id}
-            title={output.title}
-            duration={output.duration}
-            playing={playback.outputId === output.id && playback.playing}
-            position={playback.outputId === output.id ? playback.position : 0}
-          />
+          <AudioTransport id={output.id} title={output.title} duration={output.duration} />
           <div className="flex flex-wrap items-center justify-between gap-3">
             <span className="text-xs text-muted-foreground">
               {output.format.toUpperCase()} audio · {output.sampleRate / 1000} kHz
@@ -121,12 +106,7 @@ export function NarrationResult(): React.JSX.Element | null {
                     </DialogDescription>
                   </DialogHeader>
                   <ScrollArea className="min-h-0 flex-1 pr-4">
-                    <OutputDetails
-                      output={output}
-                      playback={playback}
-                      showManagement={false}
-                      exportVariant="outline"
-                    />
+                    <OutputDetails output={output} showManagement={false} exportVariant="outline" />
                   </ScrollArea>
                 </DialogContent>
               </Dialog>

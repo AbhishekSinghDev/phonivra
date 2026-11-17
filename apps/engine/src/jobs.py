@@ -15,8 +15,13 @@ class Cancelled(Exception):
 
 
 class Jobs:
-    def __init__(self, update: Callable[..., None]):
+    def __init__(
+        self,
+        update: Callable[..., None],
+        stopped_message: str = "Stopped. Unfinished audio was discarded.",
+    ):
         self.update = update
+        self.stopped_message = stopped_message
         self.cancelled = threading.Event()
         self.resumed = threading.Event()
         self.resumed.set()
@@ -24,6 +29,7 @@ class Jobs:
         self.future = None
         self.started = 0.0
         self.lock = threading.Lock()
+        self._committing = False
         self.download_id: str | None = None
 
     @property
@@ -56,6 +62,7 @@ class Jobs:
             self.require_idle()
             self.cancelled.clear()
             self.resumed.set()
+            self._committing = False
             self.started = time.monotonic()
             self.update(
                 id=uuid4().hex,
@@ -78,22 +85,27 @@ class Jobs:
             work()
             self.progress("complete", 100, "Finished.")
         except Cancelled:
-            self.update(
-                phase="stopped", message="Stopped. Unfinished audio was discarded.", paused=False
-            )
+            self.update(phase="stopped", message=self.stopped_message, paused=False)
         except Exception as error:
             log.exception("Local engine job failed")
             self.update(phase="error", message=str(error) or type(error).__name__, paused=False)
         finally:
             self.download_id = None
 
+    def begin_commit(self) -> None:
+        """Choose between honoring Stop and committing the finished result."""
+        with self.lock:
+            if self.cancelled.is_set():
+                raise Cancelled()
+            self._committing = True
+
     def cancel(self) -> None:
-        if self.busy:
+        with self.lock:
+            if not self.busy or self._committing:
+                return
             self.cancelled.set()
             self.resumed.set()
-            self.update(
-                phase="stopping", message="Stopping after the current operation…", paused=False
-            )
+        self.update(phase="stopping", message="Stopping after the current operation…", paused=False)
 
     def pause(self, model_id: str, paused: bool) -> None:
         if not self.busy or self.download_id != model_id:

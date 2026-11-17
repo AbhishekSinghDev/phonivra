@@ -1,6 +1,7 @@
 """Model-independent narration orchestration; no transport or desktop UI code."""
 
 import logging
+import math
 import random
 import tempfile
 import time
@@ -19,10 +20,16 @@ from .directml import DirectMLError
 from .jobs import Jobs
 from .library import companions, filename
 from .models import Models
-from .schemas import Settings, resolve_model
+from .schemas import OutputRecord, Settings, resolve_model
 from .text import prepare, split_chunks
 
 log = logging.getLogger(__name__)
+MAX_NARRATION_HOURS = 4
+ESTIMATED_CHARACTERS_PER_SECOND = 12
+NARRATION_LIMIT_MESSAGE = (
+    f"the {MAX_NARRATION_HOURS}-hour limit. "
+    "Shorten the script or pauses, or split it into chapters."
+)
 
 
 class Narrator:
@@ -73,8 +80,6 @@ class Narrator:
         *,
         force_cpu: bool = False,
     ) -> dict:
-        import torch
-
         model_id = resolve_model(settings)
         if model_id == "turbo" and settings.language != "en":
             raise ValueError(f"{model_id.title()} is English-only. Select Multilingual V3 or Auto.")
@@ -87,6 +92,18 @@ class Narrator:
             raise ValueError("Choose IndicF5 or Auto for this language.")
         prepared = prepare(script, settings, dictionary)
         chunks = split_chunks(prepared, settings.chunk_limit, settings.gap)
+        # Bound both the native staging audio and the slower exports.
+        duration_limit = MAX_NARRATION_HOURS * 3600 * min(1.0, settings.speed)
+        spoken_characters = sum(len(chunk.text) for chunk in chunks)
+        estimated_seconds = spoken_characters / ESTIMATED_CHARACTERS_PER_SECOND + math.fsum(
+            chunk.pause for chunk in chunks
+        )
+        if estimated_seconds > duration_limit:
+            raise ValueError(f"Estimated narration duration exceeds {NARRATION_LIMIT_MESSAGE}")
+        self.jobs.checkpoint()
+
+        import torch
+
         random.seed(seed)
         np.random.seed(seed)
         torch.manual_seed(seed)
@@ -122,6 +139,7 @@ class Narrator:
                 directory,
                 len(script),
                 prompt,
+                duration_limit=duration_limit,
             )
 
     def _render(
@@ -136,8 +154,12 @@ class Narrator:
         directory,
         source_characters,
         prompt,
+        *,
+        duration_limit: float,
     ):
         rate = model.sr
+        frame_limit = int(duration_limit * rate)
+        frames_written = 0
         parts = []
         output_id = uuid4().hex
         name = f"{filename(settings.title)}-{output_id[:10]}.{settings.format}"
@@ -179,6 +201,7 @@ class Narrator:
                         ),
                         part=index + 1,
                     )
+                    wav = None
                     if chunk.text:
                         if model_id == "indicf5":
                             wav = model.generate(chunk.text, prompt, self.jobs)
@@ -211,18 +234,21 @@ class Narrator:
                             raise ValueError(
                                 "The model returned invalid audio. Try different settings."
                             )
+                    speech_frames = len(wav) if wav is not None else 0
+                    pause_frames = round(chunk.pause * rate)
+                    frames_written += speech_frames + pause_frames
+                    if frames_written > frame_limit:
+                        raise ValueError(f"Narration duration exceeds {NARRATION_LIMIT_MESSAGE}")
+                    if wav is not None:
                         file.write(wav)
-                        seconds = len(wav) / rate
-                    else:
-                        seconds = 0
-                    if chunk.pause:
-                        file.write(np.zeros(round(chunk.pause * rate), dtype=np.float32))
+                    if pause_frames:
+                        audio.write_silence(file, pause_frames, self.jobs)
                     parts.append(
                         {
                             "id": f"part-{index + 1}",
                             "index": index + 1,
                             "text": chunk.text,
-                            "duration": seconds,
+                            "duration": speech_frames / rate,
                             "pause": chunk.pause,
                         }
                     )
@@ -242,30 +268,32 @@ class Narrator:
                 removed_gap = min(remaining_trim, part["pause"])
                 part["pause"] = (part["pause"] - removed_gap) / settings.speed
                 remaining_trim -= removed_gap
-            record = {
-                "id": output_id,
-                "title": settings.title or "Narration",
-                "filename": name,
-                "duration": frames / rate / settings.speed,
-                "created": datetime.now(UTC).isoformat(),
-                "format": settings.format,
-                "sampleRate": settings.sample_rate,
-                "language": settings.language,
-                "model": model_id,
-                "backend": self.models.active_backend,
-                "voice": voice_label,
-                "seed": seed,
-                "loudnessGain": gain,
-                "requestedModel": settings.model,
-                "sourceCharacters": source_characters,
-                "speed": settings.speed,
-                "trimStart": trim,
-                "settingsSnapshot": settings.model_dump(),
-                "metadataAvailable": True,
-                "external": False,
-                "companions": ["srt", "vtt", "txt", "json"],
-                "parts": parts,
-            }
+            record = OutputRecord.model_validate(
+                {
+                    "id": output_id,
+                    "title": settings.title or "Narration",
+                    "filename": name,
+                    "duration": frames / rate / settings.speed,
+                    "created": datetime.now(UTC).isoformat(),
+                    "format": settings.format,
+                    "sampleRate": settings.sample_rate,
+                    "language": settings.language,
+                    "model": model_id,
+                    "backend": self.models.active_backend,
+                    "voice": voice_label,
+                    "seed": seed,
+                    "loudnessGain": gain,
+                    "requestedModel": settings.model,
+                    "sourceCharacters": source_characters,
+                    "speed": settings.speed,
+                    "trimStart": trim,
+                    "settingsSnapshot": settings.model_dump(),
+                    "metadataAvailable": True,
+                    "external": False,
+                    "companions": ["srt", "vtt", "txt", "json"],
+                    "parts": parts,
+                }
+            ).model_dump()
             self.jobs.progress("companions", 98, "Writing subtitles and metadata…")
             from .text import PAUSE
 

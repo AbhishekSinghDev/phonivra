@@ -137,6 +137,7 @@ class Models:
         total = 0
         try:
             for asset_id in asset_ids:
+                self.jobs.checkpoint()
                 spec = SPECS[asset_id]
                 url = f"https://huggingface.co/api/models/{spec.repository}/tree/{spec.revision}"
                 response = httpx.get(url, headers=headers, timeout=5, params={"recursive": "true"})

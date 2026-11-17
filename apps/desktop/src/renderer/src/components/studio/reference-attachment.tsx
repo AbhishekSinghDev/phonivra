@@ -6,6 +6,7 @@ import { Spinner } from '@phonivra/ui/components/spinner'
 import { useStudioStore } from '@/stores/studio-store'
 import { act } from '@/lib/actions'
 import type { ReferenceState } from '../../../../shared/studio'
+import { maxRecordingSeconds } from '../../../../shared/contract'
 
 export function ReferenceAttachment({
   reference
@@ -40,7 +41,7 @@ export function ReferenceAttachment({
             <p className="text-xs text-muted-foreground">
               {busy
                 ? reference.status === 'recording'
-                  ? 'Recording microphone…'
+                  ? `Recording microphone… Up to ${maxRecordingSeconds} seconds.`
                   : 'Checking audio…'
                 : `${reference.duration.toFixed(1)} seconds`}
             </p>
@@ -49,6 +50,7 @@ export function ReferenceAttachment({
             variant="ghost"
             size="icon"
             aria-label="Clear reference recording"
+            disabled={reference.status === 'validating'}
             onClick={() => act('Clear reference', { type: 'reference.clear' })}
           >
             <HugeiconsIcon icon={XIcon} aria-hidden="true" />

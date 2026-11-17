@@ -42,7 +42,7 @@ export function TextToSpeechPage(): React.JSX.Element {
     })
   }, [])
   if (!snapshot) return <ScreenLoading />
-  const { settings, job, dependencies } = snapshot
+  const { settings, job } = snapshot
   const active = activePhases.has(job.phase)
   const narrationActive = active && (job.kind === 'narration' || job.kind === 'preview')
   const model = resolvedModel(settings)
@@ -97,7 +97,7 @@ export function TextToSpeechPage(): React.JSX.Element {
                 </Button>
               ) : (
                 <Button className="studio-primary" size="lg" disabled={active} onClick={generate}>
-                  {installation?.status === 'not-installed' && dependencies.online
+                  {installation?.status === 'not-installed' || installation?.status === 'error'
                     ? 'Download and generate'
                     : 'Generate narration'}
                   <HugeiconsIcon
@@ -117,8 +117,18 @@ export function TextToSpeechPage(): React.JSX.Element {
               ) : (
                 <>
                   Another job is running.{' '}
-                  <Link to={job.kind === 'batch' ? '/batch' : '/models'}>View current job</Link> to
-                  check progress or stop it.
+                  <Link
+                    to={
+                      job.kind === 'batch'
+                        ? '/batch'
+                        : job.kind === 'watermark'
+                          ? '/library'
+                          : '/models'
+                    }
+                  >
+                    View current job
+                  </Link>{' '}
+                  to check progress or stop it.
                 </>
               )}
             </p>
@@ -168,7 +178,7 @@ export function TextToSpeechPage(): React.JSX.Element {
           <VoiceTools />
           <Separator />
           <SettingsInspector />
-          {installation?.status === 'not-installed' && (
+          {(installation?.status === 'not-installed' || installation?.status === 'error') && (
             <p className="text-xs leading-relaxed text-muted-foreground">
               This model downloads before first use. Installed models work offline.
             </p>

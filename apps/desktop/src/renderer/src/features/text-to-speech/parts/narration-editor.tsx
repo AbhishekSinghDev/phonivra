@@ -1,4 +1,4 @@
-import { memo, useDeferredValue, useEffect, useMemo, useRef, useState } from 'react'
+import { memo, useDeferredValue, useMemo, useRef, useState } from 'react'
 import { HugeiconsIcon } from '@hugeicons/react'
 import {
   ChevronDownIcon,
@@ -11,7 +11,13 @@ import {
   TimerIcon
 } from '@hugeicons/core-free-icons'
 import { Button } from '@phonivra/ui/components/button'
-import { Field, FieldDescription, FieldGroup, FieldLabel } from '@phonivra/ui/components/field'
+import {
+  Field,
+  FieldDescription,
+  FieldError,
+  FieldGroup,
+  FieldLabel
+} from '@phonivra/ui/components/field'
 import { Textarea } from '@phonivra/ui/components/textarea'
 import { Input } from '@phonivra/ui/components/input'
 import {
@@ -23,7 +29,8 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger
 } from '@phonivra/ui/components/dropdown-menu'
-import { act, editScript, flushScriptDraft, updateSettings } from '@/lib/actions'
+import { act, draftLimitMessage, editScript, updateSettings } from '@/lib/actions'
+import { useDraftStore } from '@/stores/draft-store'
 import { RestoreDefaults } from '@/components/studio/restore-defaults'
 import {
   AlertDialog,
@@ -36,6 +43,7 @@ import {
   AlertDialogTitle
 } from '@phonivra/ui/components/alert-dialog'
 import { reactionTags } from '../../../../../shared/data/catalog'
+import { maxTextLength } from '../../../../../shared/contract'
 
 interface EditorProps {
   initialText: string
@@ -51,7 +59,9 @@ export const NarrationEditor = memo(function NarrationEditor({
   inspect,
   onGenerate
 }: EditorProps): React.JSX.Element {
-  const [draft, setDraft] = useState(initialText)
+  const draft = useDraftStore((state) => state['script.update']?.text ?? initialText)
+  const draftTitle = useDraftStore((state) => state.settings.title ?? title)
+  const tooLong = draft.length > maxTextLength
   const [replacement, setReplacement] = useState<'script.import' | 'project.open' | null>(null)
   const modifier = window.api.platform === 'darwin' ? '⌘' : 'Ctrl'
   function replaceDocument(type: 'script.import' | 'project.open'): void {
@@ -59,26 +69,16 @@ export const NarrationEditor = memo(function NarrationEditor({
     else void act('Import script', { type })
   }
   const editor = useRef<HTMLTextAreaElement>(null)
-  const selection = useRef({ start: initialText.length, end: initialText.length })
+  const selection = useRef({ start: draft.length, end: draft.length })
   const deferred = useDeferredValue(draft)
   const words = useMemo(
     () => (deferred.trim() ? deferred.trim().split(/\s+/u).length : 0),
     [deferred]
   )
-  useEffect(
-    () => () => {
-      void flushScriptDraft()
-    },
-    []
-  )
-  function changeText(text: string): void {
-    setDraft(text)
-    editScript(text)
-  }
   function insert(text: string): void {
     const { start, end } = selection.current
     const next = `${draft.slice(0, start)}${text}${draft.slice(end)}`
-    changeText(next)
+    editScript(next)
     requestAnimationFrame(() => {
       editor.current?.focus()
       editor.current?.setSelectionRange(start + text.length, start + text.length)
@@ -116,7 +116,7 @@ export const NarrationEditor = memo(function NarrationEditor({
             <Input
               className="h-10 min-w-0 flex-1 px-0"
               id="narrate-title"
-              value={title}
+              value={draftTitle}
               maxLength={120}
               placeholder="Untitled narration"
               onChange={(event) => updateSettings('title', event.target.value)}
@@ -214,8 +214,11 @@ export const NarrationEditor = memo(function NarrationEditor({
             value={draft}
             className="h-72 min-h-64 resize-y px-6 py-5 xl:h-80"
             placeholder="Write or paste the words you want to bring to life…"
-            aria-describedby="narrate-script-help"
-            onChange={(event) => changeText(event.target.value)}
+            aria-describedby={
+              tooLong ? 'narrate-script-help narrate-script-error' : 'narrate-script-help'
+            }
+            aria-invalid={tooLong || undefined}
+            onChange={(event) => editScript(event.target.value)}
             onSelect={() => {
               if (editor.current)
                 selection.current = {
@@ -230,6 +233,11 @@ export const NarrationEditor = memo(function NarrationEditor({
               }
             }}
           />
+          {tooLong && (
+            <div className="px-6">
+              <FieldError id="narrate-script-error">{draftLimitMessage}</FieldError>
+            </div>
+          )}
           <div className="flex flex-wrap items-center justify-between gap-3 px-6 py-4">
             <p className="text-xs tabular-nums text-muted-foreground">
               {draft.length.toLocaleString()} characters <span aria-hidden="true">·</span>{' '}

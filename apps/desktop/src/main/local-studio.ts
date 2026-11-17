@@ -3,31 +3,56 @@ import { basename, extname } from 'node:path'
 import { EngineClient } from './engine-client'
 import { readCredential, saveCredential, removeCredential } from './credentials'
 import { audioExtensions, scriptExtensions } from '../shared/contract'
-import type { StudioCommand, StudioSnapshot } from '../shared/studio'
+import {
+  studioUpdate,
+  type OutputDetailsData,
+  type StudioCommand,
+  type StudioSnapshot,
+  type StudioUpdate
+} from '../shared/studio'
 
 const scriptFilters = [{ name: 'Scripts', extensions: scriptExtensions }]
 const audioFilters = [{ name: 'Audio', extensions: audioExtensions }]
+const settledPhases = new Set(['idle', 'complete', 'error', 'stopped'])
 
 /** Native dialogs and transport adaptation, without any synthesis or filesystem business logic. */
 export class LocalStudio {
   private readonly engine = new EngineClient()
   private state: StudioSnapshot | null = null
   private engineRevision = -1
+  private engineOutputsRevision = -1
+  private outputsRevision = 0
   private revision = 0
   private timer: ReturnType<typeof setTimeout> | null = null
   private disposed = false
   private initialized = false
   private engineGeneration = 0
   private initializePromise: Promise<void> | null = null
-  private playback: StudioSnapshot['playback'] = { playing: false, position: 0, outputId: null }
-  constructor(private readonly publish: (snapshot: StudioSnapshot) => void) {}
+  constructor(private readonly publish: (snapshot: StudioUpdate) => void) {}
 
-  private accept(snapshot: StudioSnapshot): StudioSnapshot {
+  private accept(snapshot: StudioUpdate): StudioSnapshot {
     if (snapshot.revision <= this.engineRevision && this.state) return this.state
+    const knownOutputs = this.state?.outputsRevision
+    const outputsChanged = snapshot.outputsRevision !== this.engineOutputsRevision
+    const outputs = outputsChanged ? snapshot.outputs : this.state?.outputs
+    if (!outputs) throw new Error('The engine returned an incomplete library update.')
+    if (outputsChanged) this.outputsRevision += 1
+    this.engineOutputsRevision = snapshot.outputsRevision
     this.engineRevision = snapshot.revision
-    this.state = { ...snapshot, revision: ++this.revision, playback: this.playback }
-    this.publish(this.state)
+    this.state = {
+      ...snapshot,
+      outputs,
+      outputsRevision: this.outputsRevision,
+      revision: ++this.revision
+    }
+    this.publish(studioUpdate(this.state, knownOutputs))
     return this.state
+  }
+
+  private commandResult(snapshot: StudioUpdate): StudioSnapshot {
+    const state = this.accept(snapshot)
+    // The caller needs the outcome of this command even if a newer snapshot already arrived.
+    return { ...state, status: snapshot.status, statusIsError: snapshot.statusIsError }
   }
 
   private async initialize(): Promise<void> {
@@ -36,6 +61,7 @@ export class LocalStudio {
     if (!this.initializePromise) {
       this.initializePromise = (async () => {
         this.engineRevision = -1
+        this.engineOutputsRevision = -1
         this.engineGeneration = this.engine.generation
         let token: string | null = null
         let warning: unknown = null
@@ -68,7 +94,11 @@ export class LocalStudio {
         void (async () => {
           try {
             await this.initialize()
-            const snapshot = await this.engine.snapshot(`/snapshot?after=${this.engineRevision}`)
+            const snapshot = await this.engine.snapshot(
+              `/snapshot?after=${this.engineRevision}`,
+              undefined,
+              this.engineOutputsRevision
+            )
             if (snapshot) this.accept(snapshot)
           } catch (error) {
             this.fail(error)
@@ -77,7 +107,9 @@ export class LocalStudio {
           }
         })()
       },
-      this.state && ['idle', 'complete', 'error', 'stopped'].includes(this.state.job.phase)
+      this.state &&
+        settledPhases.has(this.state.job.phase) &&
+        (!this.state.maintenance || settledPhases.has(this.state.maintenance.phase))
         ? 1500
         : 300
     )
@@ -91,13 +123,13 @@ export class LocalStudio {
       statusIsError: true,
       status: error instanceof Error ? error.message : 'The action failed.'
     }
-    this.publish(this.state)
+    this.publish(studioUpdate(this.state, this.state.outputsRevision))
     return this.state
   }
 
   async snapshot(): Promise<StudioSnapshot> {
     await this.initialize()
-    const snapshot = await this.engine.snapshot()
+    const snapshot = await this.engine.snapshot('/snapshot', undefined, this.engineOutputsRevision)
     if (!snapshot) throw new Error('The engine returned an empty snapshot.')
     return this.accept(snapshot)
   }
@@ -107,18 +139,18 @@ export class LocalStudio {
     try {
       const native = await this.nativeCommand(command)
       if (native) return native
-      const snapshot = await this.engine.snapshot('/command', command)
+      const snapshot = await this.engine.snapshot('/command', command, this.engineOutputsRevision)
       if (!snapshot) throw new Error('The engine returned an empty command result.')
-      return this.accept(snapshot)
+      return this.commandResult(snapshot)
     } catch (error) {
       return this.fail(error)
     }
   }
 
   private async desktop(body: object): Promise<StudioSnapshot> {
-    const snapshot = await this.engine.snapshot('/desktop', body)
+    const snapshot = await this.engine.snapshot('/desktop', body, this.engineOutputsRevision)
     if (!snapshot) throw new Error('The engine returned an empty desktop result.')
-    return this.accept(snapshot)
+    return this.commandResult(snapshot)
   }
 
   private async nativeCommand(command: StudioCommand): Promise<StudioSnapshot | null> {
@@ -240,12 +272,13 @@ export class LocalStudio {
     }
   }
 
-  reportPlayback(playback: StudioSnapshot['playback']): void {
-    this.playback = playback
-    if (this.state) {
-      this.state = { ...this.state, revision: ++this.revision, playback }
-      this.publish(this.state)
-    }
+  async outputDetails(id: string): Promise<OutputDetailsData> {
+    await this.initialize()
+    const response = await this.engine.request(`/output?output_id=${encodeURIComponent(id)}`)
+    const data = (await response.json()) as OutputDetailsData
+    if (!data || !Array.isArray(data.parts) || !('settingsSnapshot' in data))
+      throw new Error('The engine returned invalid narration details.')
+    return data
   }
 
   async waveform(id: string): Promise<number[]> {

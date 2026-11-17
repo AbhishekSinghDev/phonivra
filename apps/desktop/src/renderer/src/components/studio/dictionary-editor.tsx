@@ -58,13 +58,14 @@ export function DictionaryEditor(): React.JSX.Element | null {
               aria-describedby={`${id}-hint`}
             />
             <FieldDescription id={`${id}-hint`}>
-              Use =, =&gt;, or -&gt; between a word and its pronunciation. # starts a comment.
-              Matches are case-insensitive, whole words or phrases, longest first.
+              Use = or =&gt; between a word or phrase and its pronunciation. Start a line with # to
+              add a comment. Matches are case-insensitive and prefer the longest whole word or
+              phrase.
             </FieldDescription>
           </Field>
           <p className="text-xs text-muted-foreground">
-            Rules can affect text produced by earlier rules. Empty content clears the saved
-            dictionary.
+            The dictionary makes one pass through the text. Each replacement is final for that pass.
+            Empty content clears the saved dictionary.
           </p>
           <Button
             className="self-start"

@@ -14,7 +14,13 @@ import {
 import { ScreenFrame, ScreenLoading } from '@/components/studio/screen-frame'
 import { Button } from '@phonivra/ui/components/button'
 import { Badge } from '@phonivra/ui/components/badge'
-import { Field, FieldDescription, FieldGroup, FieldLabel } from '@phonivra/ui/components/field'
+import {
+  Field,
+  FieldDescription,
+  FieldError,
+  FieldGroup,
+  FieldLabel
+} from '@phonivra/ui/components/field'
 import { Textarea } from '@phonivra/ui/components/textarea'
 import { ToggleGroup, ToggleGroupItem } from '@phonivra/ui/components/toggle-group'
 import {
@@ -31,9 +37,11 @@ import { VoiceTools } from '@/components/studio/voice-tools'
 import { WindowedList } from '@/components/studio/windowed-list'
 import { JobStatus, activePhases } from '@/components/studio/job-status'
 import { OutputDetails } from '@/components/studio/output-details'
-import { act, editBatchText } from '@/lib/actions'
+import { act, draftLimitMessage, editBatchText } from '@/lib/actions'
 import { useStudioStore } from '@/stores/studio-store'
+import { useDraftStore } from '@/stores/draft-store'
 import { languages } from '../../../../shared/data/catalog'
+import { maxTextLength } from '../../../../shared/contract'
 
 function BatchText({
   initial,
@@ -42,7 +50,8 @@ function BatchText({
   initial: string
   disabled: boolean
 }): React.JSX.Element {
-  const [draft, setDraft] = useState(initial)
+  const draft = useDraftStore((state) => state['batch.text']?.text ?? initial)
+  const tooLong = draft.length > maxTextLength
   return (
     <FieldGroup>
       <Field>
@@ -56,12 +65,11 @@ function BatchText({
           placeholder={
             'An opening paragraph…\n\n# Chapter one\nYour first chapter…\n\n# Chapter two\nYour next chapter…'
           }
-          onChange={(event) => {
-            setDraft(event.target.value)
-            editBatchText(event.target.value)
-          }}
-          aria-describedby="batch-text-help"
+          onChange={(event) => editBatchText(event.target.value)}
+          aria-describedby={tooLong ? 'batch-text-help batch-text-error' : 'batch-text-help'}
+          aria-invalid={tooLong || undefined}
         />
+        {tooLong && <FieldError id="batch-text-error">{draftLimitMessage}</FieldError>}
         <FieldDescription id="batch-text-help">
           Use #, ## or ### headings for chapter titles. Text before the first heading becomes
           Introduction.
@@ -362,12 +370,7 @@ export default function BatchPage(): React.JSX.Element {
                 Close details
               </Button>
             </div>
-            <OutputDetails
-              output={selectedOutput}
-              playback={snapshot.playback}
-              showManagement={false}
-              exportVariant="outline"
-            />
+            <OutputDetails output={selectedOutput} showManagement={false} exportVariant="outline" />
           </section>
         </>
       )}

@@ -5,43 +5,152 @@ import logging
 import re
 import shutil
 import zipfile
+from collections.abc import Callable
 from datetime import UTC, datetime
 from pathlib import Path
+from tempfile import NamedTemporaryFile
 from uuid import uuid4
 
 from . import audio
 from .contract import AUDIO_EXTENSIONS
-from .schemas import OutputRecord
-from .storage import Storage, read_json, write_json
+from .jobs import Jobs
+from .schemas import Input, OutputRecord
+from .storage import Storage, Utf8Text, read_json, recover_fields, write_json
 
 log = logging.getLogger(__name__)
+
+COMPANION_EXTENSIONS = ("srt", "vtt", "txt", "json")
+
+
+def companion_paths(path: Path) -> list[Path]:
+    return [path.with_suffix(f".{extension}") for extension in COMPANION_EXTENSIONS]
+
+
+def export_files(
+    sources: list[Path],
+    destination: Path,
+    *,
+    archive: bool,
+    jobs: Jobs | None = None,
+    publish: Callable[[Path], None] | None = None,
+) -> None:
+    def copy(source, target):
+        with source.open("rb") as file:
+            while block := file.read(1024 * 1024):
+                if jobs:
+                    jobs.checkpoint()
+                target.write(block)
+
+    if not archive:
+        source = sources[0]
+        if not source.is_file():
+            raise ValueError("That companion file is unavailable.")
+        if source.resolve() == destination.resolve():
+            return
+    elif any(source.resolve() == destination.resolve() for source in sources):
+        raise ValueError("Choose an export destination outside the source files.")
+
+    with NamedTemporaryFile(
+        dir=destination.parent, prefix=".phonivra-export-", delete=False
+    ) as file:
+        staging = Path(file.name)
+    try:
+        if archive:
+            with zipfile.ZipFile(staging, "w", zipfile.ZIP_DEFLATED) as output:
+                for source in sources:
+                    if jobs:
+                        jobs.checkpoint()
+                    with output.open(source.name, "w", force_zip64=True) as member:
+                        copy(source, member)
+        else:
+            with staging.open("wb") as file:
+                copy(source, file)
+        if publish:
+            publish(staging)
+        else:
+            staging.replace(destination)
+    finally:
+        staging.unlink(missing_ok=True)
 
 
 def filename(title: str) -> str:
     return re.sub(r"[^\w.-]+", "-", title, flags=re.UNICODE).strip(".-")[:80] or "narration"
 
 
+class VoiceMetadata(Input):
+    label: Utf8Text = ""
+    transcript: Utf8Text = ""
+
+
+def normalize_registry(data: object) -> tuple[dict, bool]:
+    if not isinstance(data, dict):
+        return {"version": 1, "voices": {}}, True
+    if "version" in data:
+        if type(data["version"]) is not int or data["version"] != 1:
+            raise ValueError("Unsupported voice registry version.")
+        data = data.get("voices")
+        if not isinstance(data, dict):
+            raise ValueError("Expected voice entries.")
+
+    voices = {}
+    repaired = False
+    for name, entry in data.items():
+        try:
+            name.encode("utf-8")
+        except UnicodeEncodeError:
+            repaired = True
+            continue
+        if isinstance(entry, str):
+            entry = {"label": entry} if entry else {}
+        if not isinstance(entry, dict):
+            repaired = True
+            continue
+        metadata, damaged = recover_fields(VoiceMetadata, entry)
+        repaired |= damaged
+        if metadata:
+            voices[name] = metadata
+    return {"version": 1, "voices": voices}, repaired
+
+
 class Library:
     def __init__(self, storage: Storage):
         self.storage = storage
+        self.registry_file = storage.voices / "registry.json"
         self.records: dict[str, dict] = {}
         self.voice_transcripts: dict[str, str] = {}
         self.voice_paths: dict[str, Path] = {}
         self.preview_paths: dict[str, Path] = {}
 
-    def refresh(self) -> list[dict]:
+    @staticmethod
+    def summarize(record: dict) -> dict:
+        return {
+            **{
+                name: value
+                for name, value in record.items()
+                if name not in ("parts", "settingsSnapshot")
+            },
+            "partCount": len(record["parts"]),
+            "hasSettingsSnapshot": record["settingsSnapshot"] is not None,
+        }
+
+    def scan_outputs(self, jobs: Jobs | None = None) -> dict[str, dict]:
         records = {}
         for path in self.storage.outputs.iterdir():
+            if jobs:
+                jobs.checkpoint()
             if path.suffix.lower() not in AUDIO_EXTENSIONS or path.is_symlink():
                 continue
             try:
                 data = read_json(path.with_suffix(".json"))
                 if isinstance(data, dict) and data.get("phonivraVersion") == 1:
-                    record = OutputRecord.model_validate(data["output"]).model_dump()
+                    output = OutputRecord.model_validate(data["output"])
+                    record = output.model_dump(
+                        exclude={"backend"} if output.backend is None else None
+                    )
                     if record.get("filename") != path.name:
                         raise ValueError("Sidecar filename does not match audio.")
                 else:
-                    seconds, rate = audio.duration(path)
+                    seconds, rate = audio.duration(path, jobs) if jobs else audio.duration(path)
                     record = {
                         "id": f"external:{hashlib.sha256(path.name.encode()).hexdigest()[:24]}",
                         "title": path.stem,
@@ -66,14 +175,17 @@ class Library:
                     }
                 record["companions"] = [
                     extension
-                    for extension in ("srt", "vtt", "txt", "json")
+                    for extension in COMPANION_EXTENSIONS
                     if path.with_suffix(f".{extension}").is_file()
                 ]
-                records[record["id"]] = record
+                records[record["id"]] = self.summarize(record)
             except (ValueError, KeyError, OSError, RuntimeError):
                 log.warning("Skipping unreadable library entry %s", path.name, exc_info=True)
-        self.records = records
-        return sorted(records.values(), key=lambda record: record["created"], reverse=True)
+        return records
+
+    def refresh(self) -> list[dict]:
+        self.records = self.scan_outputs()
+        return sorted(self.records.values(), key=lambda record: record["created"], reverse=True)
 
     def output_path(self, output_id: str) -> Path:
         record = self.records.get(output_id)
@@ -93,78 +205,103 @@ class Library:
             return path
         return self.output_path(media_id)
 
-    def export(self, output_id: str, kind: str, destination: Path) -> None:
+    @staticmethod
+    def output_details(path: Path, record: dict) -> dict:
+        if record["external"]:
+            return {"parts": [], "settingsSnapshot": None}
+        data = read_json(path.with_suffix(".json"))
+        if not isinstance(data, dict) or data.get("phonivraVersion") != 1:
+            raise ValueError("Generation details are unavailable for this file.")
+        output = OutputRecord.model_validate(data.get("output"))
+        if output.id != record["id"] or output.filename != path.name:
+            raise ValueError("Generation details have changed. Refresh the library.")
+        return output.model_dump(include={"parts", "settingsSnapshot"})
+
+    def export_sources(self, output_id: str, kind: str) -> list[Path]:
         path = self.output_path(output_id)
-        companions = [
-            path.with_suffix(f".{extension}")
-            for extension in ("srt", "vtt", "txt", "json")
-            if path.with_suffix(f".{extension}").is_file()
-        ]
         if kind == "zip":
-            with zipfile.ZipFile(destination, "w", zipfile.ZIP_DEFLATED) as archive:
-                for file in [path, *companions]:
-                    archive.write(file, file.name)
-        else:
-            source = path if kind == "audio" else path.with_suffix(f".{kind}")
-            if not source.is_file():
-                raise ValueError("That companion file is unavailable.")
-            if source.resolve() == destination.resolve():
-                return
-            shutil.copyfile(source, destination)
+            return [path, *(file for file in companion_paths(path) if file.is_file())]
+        return [path if kind == "audio" else path.with_suffix(f".{kind}")]
+
+    def export(self, output_id: str, kind: str, destination: Path) -> None:
+        export_files(self.export_sources(output_id, kind), destination, archive=kind == "zip")
 
     def delete(self, output_id: str) -> None:
         path = self.output_path(output_id)
-        for file in [
-            path,
-            *(path.with_suffix(f".{extension}") for extension in ("srt", "vtt", "txt", "json")),
-        ]:
+        for file in [path, *companion_paths(path)]:
             file.unlink(missing_ok=True)
         self.records.pop(output_id, None)
 
-    def voices(self) -> list[dict]:
-        registry = read_json(self.storage.voices / "registry.json", {})
-        result = [
-            {
-                "id": "default",
-                "label": "Original narrator",
-                "kind": "built-in",
-                "description": "Uses the model’s built-in voice when available.",
-                "duration": None,
-                "previewAvailable": False,
-                "available": True,
-            }
-        ]
-        self.voice_paths = {}
-        self.voice_transcripts = {}
+    def read_registry(self) -> dict:
+        return self.storage.load_document(self.registry_file, normalize_registry).get("voices", {})
+
+    def save_registry(self, registry: dict) -> None:
+        self.storage.save_document(self.registry_file, {"version": 1, "voices": registry})
+
+    @staticmethod
+    def default_voice() -> dict:
+        return {
+            "id": "default",
+            "label": "Original narrator",
+            "kind": "built-in",
+            "description": "Uses the model’s built-in voice when available.",
+            "duration": None,
+            "previewAvailable": False,
+            "available": True,
+        }
+
+    @staticmethod
+    def voice_definition(
+        voice_id: str, label: str, seconds: float, *, custom: bool, has_transcript: bool
+    ) -> dict:
+        return {
+            "id": voice_id,
+            "label": label,
+            "kind": "custom" if custom else "external",
+            "description": "Saved reference recording."
+            if custom
+            else "Recording in your voice folder.",
+            "duration": seconds,
+            "previewAvailable": True,
+            "hasTranscript": has_transcript,
+            "available": True,
+        }
+
+    def scan_voices(
+        self, jobs: Jobs | None = None
+    ) -> tuple[list[dict], dict[str, Path], dict[str, str]]:
+        registry = self.read_registry()
+        result = [self.default_voice()]
+        paths, transcripts = {}, {}
         for path in sorted(self.storage.voices.iterdir()):
+            if jobs:
+                jobs.checkpoint()
             if path.suffix.lower() not in AUDIO_EXTENSIONS or path.is_symlink():
                 continue
             try:
-                seconds, _ = audio.duration(path)
+                seconds, _ = audio.duration(path, jobs) if jobs else audio.duration(path)
             except (ValueError, RuntimeError, OSError):
                 log.warning("Skipping unreadable voice %s", path.name)
                 continue
-            saved = registry.get(path.name)
-            label = saved.get("label") if isinstance(saved, dict) else saved
+            saved = registry.get(path.name, {})
             voice_id = f"custom:{path.stem}" if saved else f"file:{path.name}"
-            self.voice_paths[voice_id] = path
-            transcript = saved.get("transcript") if isinstance(saved, dict) else None
-            if isinstance(transcript, str) and transcript:
-                self.voice_transcripts[voice_id] = transcript
+            paths[voice_id] = path
+            transcript = saved.get("transcript")
+            if transcript:
+                transcripts[voice_id] = transcript
             result.append(
-                {
-                    "id": voice_id,
-                    "label": label or path.stem,
-                    "kind": "custom" if saved else "external",
-                    "description": "Saved reference recording."
-                    if saved
-                    else "Recording in your voice folder.",
-                    "duration": seconds,
-                    "previewAvailable": True,
-                    "hasTranscript": voice_id in self.voice_transcripts,
-                    "available": True,
-                }
+                self.voice_definition(
+                    voice_id,
+                    saved.get("label") or path.stem,
+                    seconds,
+                    custom=bool(saved),
+                    has_transcript=bool(transcript),
+                )
             )
+        return result, paths, transcripts
+
+    def voices(self) -> list[dict]:
+        result, self.voice_paths, self.voice_transcripts = self.scan_voices()
         return result
 
     def save_voice(self, reference: Path | None, label: str, transcript: str) -> str:
@@ -173,12 +310,12 @@ class Library:
         label = label.strip()
         if not label:
             raise ValueError("Give the voice a name.")
-        registry = read_json(self.storage.voices / "registry.json", {})
+        registry = self.read_registry()
         path = self.storage.voices / f"{uuid4().hex}.wav"
         registry[path.name] = {"label": label, "transcript": transcript.strip()}
         try:
             shutil.copyfile(reference, path)
-            write_json(self.storage.voices / "registry.json", registry)
+            self.save_registry(registry)
         except OSError:
             path.unlink(missing_ok=True)
             raise
@@ -186,12 +323,12 @@ class Library:
 
     def delete_voice(self, voice_id: str) -> None:
         path = self.voice_paths.get(voice_id)
-        registry = read_json(self.storage.voices / "registry.json", {})
+        registry = self.read_registry()
         if not path or not voice_id.startswith("custom:") or path.name not in registry:
             raise ValueError("Only your saved presets can be deleted here.")
-        path.unlink(missing_ok=True)
         del registry[path.name]
-        write_json(self.storage.voices / "registry.json", registry)
+        self.save_registry(registry)
+        path.unlink(missing_ok=True)
 
 
 def companions(path: Path, record: dict, text: str) -> None:

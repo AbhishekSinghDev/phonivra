@@ -107,6 +107,7 @@ class SimpleCommand(Input):
         "script.inspect",
         "status.dismiss",
         "job.cancel",
+        "maintenance.cancel",
         "batch.prepare",
         "batch.start",
         "preferences.save",
@@ -251,7 +252,7 @@ class RecordedSettings(Settings):
 
 
 class OutputRecord(Input):
-    """Persisted output schema; validate sidecars before presenting them to the desktop."""
+    """Validate generated output records before writing or loading sidecars."""
 
     id: str = Field(min_length=1, max_length=256)
     title: str
@@ -262,6 +263,7 @@ class OutputRecord(Input):
     sampleRate: int = Field(gt=0)
     language: Language | None
     model: RecordedModel | None
+    backend: Literal["cpu", "cuda", "rocm", "mps", "directml"] | None = None
     voice: str | None
     seed: int | None
     loudnessGain: float | None

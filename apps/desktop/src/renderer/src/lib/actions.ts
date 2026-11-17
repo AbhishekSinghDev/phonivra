@@ -1,12 +1,33 @@
 import { notify, notifyError } from '@/lib/notify'
 import { useStudioStore } from '@/stores/studio-store'
+import { useDraftStore, type DraftCommand } from '@/stores/draft-store'
 import { controlPlayback, reconcilePlayback } from '@/lib/playback'
-import type { GenerationSettings, StudioCommand, StudioSnapshot } from '../../../shared/studio'
+import { maxTextLength } from '../../../shared/contract'
+import type { GenerationSettings, StudioCommand, StudioUpdate } from '../../../shared/studio'
 
-async function receive(request: Promise<StudioSnapshot>, reportStatus = false): Promise<boolean> {
+function dispatch(command: StudioCommand): Promise<StudioUpdate> {
+  return window.api.studio.dispatch(command, useStudioStore.getState().snapshot?.outputsRevision)
+}
+
+function acceptStudioUpdate(snapshot: StudioUpdate): boolean {
+  const previous = useStudioStore.getState().snapshot
+  useStudioStore.getState().accept(snapshot)
+  const accepted = useStudioStore.getState().snapshot
+  if (!accepted || accepted === previous) return false
+  if (
+    accepted.outputs !== previous?.outputs ||
+    accepted.voices !== previous?.voices ||
+    accepted.preview?.id !== previous?.preview?.id
+  ) {
+    reconcilePlayback()
+  }
+  return true
+}
+
+async function receive(request: Promise<StudioUpdate>, reportStatus = false): Promise<boolean> {
   try {
     const snapshot = await request
-    useStudioStore.getState().accept(snapshot)
+    acceptStudioUpdate(snapshot)
     if (reportStatus && snapshot.status) {
       if (snapshot.statusIsError) notifyError(snapshot.status)
       else notify(snapshot.status)
@@ -19,36 +40,59 @@ async function receive(request: Promise<StudioSnapshot>, reportStatus = false): 
     return false
   }
 }
-let pendingScript: string | null = null
-let pendingBatchText: string | null = null
-let scriptTimer: ReturnType<typeof setTimeout> | null = null
-let scriptWrite: Promise<void> = Promise.resolve()
+type DraftWriter = {
+  timer: ReturnType<typeof setTimeout> | null
+  write: Promise<boolean> | null
+}
+const writers: Record<DraftCommand, DraftWriter> = {
+  'script.update': { timer: null, write: null },
+  'batch.text': { timer: null, write: null }
+}
+const commandsUsingSettings = new Set([
+  'script.inspect',
+  'job.start',
+  'batch.start',
+  'batch.prepare',
+  'preferences.save',
+  'setup.finish',
+  'project.save',
+  'project.open',
+  'settings.restore'
+])
+let settingsWrite: Promise<boolean> | null = null
+export const draftLimitMessage = `Shorten this draft to ${maxTextLength.toLocaleString()} characters to save it.`
 
-export function flushScriptDraft(): Promise<void> {
-  if (scriptTimer) clearTimeout(scriptTimer)
-  scriptTimer = null
-  if (pendingScript !== null) {
-    const text = pendingScript
-    pendingScript = null
-    scriptWrite = scriptWrite.then(async () => {
-      await receive(window.api.studio.dispatch({ type: 'script.update', text }))
+async function writeDraft(type: DraftCommand): Promise<boolean> {
+  for (let value = useDraftStore.getState()[type]; value; value = useDraftStore.getState()[type]) {
+    if (value.text.length > maxTextLength) return false
+    const saved = await receive(dispatch({ type, text: value.text }), true)
+    if (useDraftStore.getState()[type] !== value) continue
+    if (!saved) return false
+    useDraftStore.setState({ [type]: null })
+  }
+  return true
+}
+
+function flushDraft(type: DraftCommand): Promise<boolean> {
+  const writer = writers[type]
+  if (writer.timer) clearTimeout(writer.timer)
+  writer.timer = null
+  if (!writer.write) {
+    writer.write = writeDraft(type).finally(() => {
+      writer.write = null
     })
   }
-  if (pendingBatchText !== null) {
-    const text = pendingBatchText
-    pendingBatchText = null
-    scriptWrite = scriptWrite.then(async () => {
-      await receive(window.api.studio.dispatch({ type: 'batch.text', text }))
-    })
-  }
-  return scriptWrite
+  return writer.write
+}
+
+function editDraft(type: DraftCommand, text: string): void {
+  useDraftStore.setState({ [type]: { text } })
+  const writer = writers[type]
+  if (writer.timer) clearTimeout(writer.timer)
+  writer.timer = setTimeout(() => void flushDraft(type), 200)
 }
 export function editBatchText(text: string): void {
-  pendingBatchText = text
-  if (scriptTimer) clearTimeout(scriptTimer)
-  scriptTimer = setTimeout(() => {
-    void flushScriptDraft()
-  }, 200)
+  editDraft('batch.text', text)
 }
 export function act(label: string, command: StudioCommand): Promise<void> {
   if (command.type === 'playback.toggle' || command.type === 'playback.seek') {
@@ -60,44 +104,116 @@ export function act(label: string, command: StudioCommand): Promise<void> {
 }
 
 export async function dispatchStudioCommand(command: StudioCommand): Promise<boolean> {
-  await flushScriptDraft()
-  return receive(window.api.studio.dispatch(command), true)
+  if (command.type === 'settings.update') {
+    useDraftStore.setState((state) => ({ settings: { ...state.settings, ...command.settings } }))
+    return flushSettings()
+  }
+  const draft = requiredDraft(command)
+  if (draft && !(await flushDraft(draft))) {
+    if ((useDraftStore.getState()[draft]?.text.length ?? 0) > maxTextLength)
+      notifyError(draftLimitMessage)
+    return false
+  }
+  if (commandsUsingSettings.has(command.type) && !(await flushSettings())) return false
+  return receive(dispatch(command), true)
 }
+
+function requiredDraft(command: StudioCommand): DraftCommand | null {
+  switch (command.type) {
+    case 'script.inspect':
+    case 'script.import':
+    case 'project.open':
+    case 'project.save':
+      return 'script.update'
+    case 'batch.prepare':
+    case 'batch.start':
+    case 'batch.import':
+      return 'batch.text'
+    case 'job.start':
+      if (command.kind === 'batch') return 'batch.text'
+      if (command.kind === 'narration') return 'script.update'
+      return null
+    default:
+      return null
+  }
+}
+
 // Keep typing synchronous locally, and coalesce IPC snapshots. Actions flush the
 // latest draft before generating, inspecting, importing or saving a project.
 export function editScript(text: string): void {
-  pendingScript = text
-  if (scriptTimer) clearTimeout(scriptTimer)
-  scriptTimer = setTimeout(() => {
-    void flushScriptDraft()
-  }, 200)
+  editDraft('script.update', text)
 }
 export function updateSettings<K extends keyof GenerationSettings>(
   key: K,
   value: GenerationSettings[K]
 ): void {
-  const state = useStudioStore.getState().snapshot
-  if (state)
-    act('Change setting', {
-      type: 'settings.update',
-      settings: { ...state.settings, [key]: value }
+  void dispatchStudioCommand({ type: 'settings.update', settings: { [key]: value } })
+}
+
+async function writeSettings(): Promise<boolean> {
+  while (true) {
+    const settings = useDraftStore.getState().settings
+    const keys = Object.keys(settings) as (keyof GenerationSettings)[]
+    if (!keys.length) return true
+    if (!(await receive(dispatch({ type: 'settings.update', settings }), true))) return false
+    useDraftStore.setState((state) => {
+      const pending = { ...state.settings }
+      for (const key of keys) {
+        if (pending[key] === settings[key]) delete pending[key]
+      }
+      return { settings: pending }
     })
+  }
+}
+
+function flushSettings(): Promise<boolean> {
+  if (!settingsWrite) {
+    if (!Object.keys(useDraftStore.getState().settings).length) return Promise.resolve(true)
+    settingsWrite = writeSettings().finally(() => {
+      settingsWrite = null
+    })
+  }
+  return settingsWrite
 }
 export async function retryStudioConnection(): Promise<void> {
   useStudioStore.getState().setError(null)
   await receive(window.api.studio.getSnapshot())
 }
 
+export function registerDraftClose(): void {
+  window.api.studio.onDraftClose(
+    async () => {
+      if (document.activeElement instanceof HTMLElement) document.activeElement.blur()
+      document.body.inert = true
+      const saved = await Promise.all([
+        flushDraft('script.update'),
+        flushDraft('batch.text'),
+        flushSettings()
+      ])
+      return saved.every(Boolean)
+    },
+    () => {
+      document.body.inert = false
+    }
+  )
+}
+
 export function connectStudio(): () => void {
   const unsubscribe = window.api.studio.onChange((snapshot) => {
     const previous = useStudioStore.getState().snapshot
-    if (previous && previous.revision >= snapshot.revision) return
-    useStudioStore.getState().accept(snapshot)
-    reconcilePlayback()
+    if (!acceptStudioUpdate(snapshot)) return
     if (snapshot.statusIsError && snapshot.status && snapshot.status !== previous?.status)
       notifyError(snapshot.status)
     if (snapshot.job.phase === 'error' && previous?.job.phase !== 'error')
       notifyError(snapshot.job.message)
+    const task = snapshot.maintenance
+    if (
+      task &&
+      (task.id !== previous?.maintenance?.id || task.phase !== previous.maintenance.phase)
+    ) {
+      if (task.phase === 'error') notifyError(task.message)
+      if (task.phase === 'complete' && task.title === 'Export audio files') notify('File exported.')
+    }
   })
   void receive(window.api.studio.getSnapshot())
   return unsubscribe

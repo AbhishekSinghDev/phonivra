@@ -15,14 +15,17 @@ from .studio import Studio
 log = logging.getLogger(__name__)
 
 
-def create_app(root: Path, secret: str, ready) -> FastAPI:
-    studio = Studio(root)
+def create_app(root: Path, secret: str, ready, *, clean_stale_audio: bool = False) -> FastAPI:
+    studio = Studio(root, defer_discovery=True)
 
     @asynccontextmanager
     async def lifespan(_app: FastAPI):
         ready()
-        yield
-        studio.close()
+        studio.start_discovery(clean_stale_audio=clean_stale_audio)
+        try:
+            yield
+        finally:
+            studio.close()
 
     app = FastAPI(lifespan=lifespan, docs_url=None, redoc_url=None, openapi_url=None)
 
@@ -57,21 +60,28 @@ def create_app(root: Path, secret: str, ready) -> FastAPI:
         return JSONResponse({"detail": str(error)}, status_code=400)
 
     @app.get("/snapshot")
-    def snapshot(after: int = -1):
+    def snapshot(after: int = -1, outputs_after: int = -1):
         with studio.lock:
             if studio.revision == after:
                 return Response(status_code=204)
-            return studio.snapshot()
+            return studio.snapshot(outputs_after)
 
     @app.post("/command")
-    def command(value: Command):
-        return studio.dispatch(value)
+    def command(value: Command, outputs_after: int = -1):
+        return studio.dispatch(value, outputs_after)
 
     @app.post("/desktop")
-    def desktop(value: DesktopOperation):
+    def desktop(value: DesktopOperation, outputs_after: int = -1):
         if value.operation != "credential.restore" and not value.paths:
             raise ValueError("A selected path is required.")
-        return studio.desktop(value)
+        return studio.desktop(value, outputs_after)
+
+    @app.get("/output")
+    def output_details(output_id: str):
+        with studio.lock:
+            path = studio.library.output_path(output_id)
+            record = studio.library.records[output_id]
+        return studio.library.output_details(path, record)
 
     @app.api_route("/media/{media_id:path}", methods=["GET", "HEAD"])
     def media(media_id: str):

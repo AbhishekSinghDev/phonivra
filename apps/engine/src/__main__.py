@@ -1,5 +1,6 @@
 """Electron owns this process; stdin EOF terminates orphaned engine processes."""
 
+import atexit
 import json
 import logging
 import os
@@ -11,6 +12,7 @@ from pathlib import Path
 
 def main() -> None:
     from .contract import LOOPBACK_HOST, PROTOCOL_VERSION
+    from .storage import lock_workspace
 
     bootstrap = json.loads(sys.stdin.readline())
     secret = bootstrap["secret"]
@@ -19,6 +21,10 @@ def main() -> None:
     root = Path(bootstrap["root"]).resolve()
     logs = root / "logs"
     os.umask(0o077)
+    root.mkdir(parents=True, exist_ok=True)
+    # Thread-pool workers finish before atexit runs. Keep the lock through their cleanup.
+    workspace = lock_workspace(root)
+    atexit.register(workspace.close)
     logs.mkdir(parents=True, exist_ok=True)
     os.environ["HF_HUB_DISABLE_TELEMETRY"] = "1"
     os.environ["HF_HUB_DISABLE_XET"] = "1"
@@ -51,7 +57,7 @@ def main() -> None:
     def ready():
         print(json.dumps({"phonivraEngine": PROTOCOL_VERSION, "port": port}), flush=True)
 
-    app = create_app(root, secret, ready)
+    app = create_app(root, secret, ready, clean_stale_audio=True)
     server = uvicorn.Server(
         uvicorn.Config(
             app, access_log=False, log_config=None, proxy_headers=False, timeout_graceful_shutdown=3

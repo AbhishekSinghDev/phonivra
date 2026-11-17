@@ -144,7 +144,7 @@ export type JobPhase =
   | 'complete'
 export interface JobState {
   id: string
-  kind: 'narration' | 'preview' | 'batch' | 'download'
+  kind: 'narration' | 'preview' | 'batch' | 'download' | 'watermark' | 'maintenance'
   phase: JobPhase
   progress: number
   title: string
@@ -194,10 +194,14 @@ export interface OutputRecord {
   sourceCharacters: number | null
   speed: number | null
   trimStart: number | null
-  settingsSnapshot: (Omit<GenerationSettings, 'model'> & { model: RecordedModelId }) | null
   metadataAvailable: boolean
   external: boolean
   companions: readonly ('srt' | 'vtt' | 'txt' | 'json')[]
+  partCount: number
+  hasSettingsSnapshot: boolean
+}
+export interface OutputDetailsData {
+  settingsSnapshot: (Omit<GenerationSettings, 'model'> & { model: RecordedModelId }) | null
   parts: PartDetail[]
 }
 export interface BatchUnit {
@@ -238,9 +242,11 @@ export interface StudioSnapshot {
   dictionary: string
   reference: ReferenceState
   job: JobState
+  maintenance: JobState | null
   voices: VoiceDefinition[]
   models: InstalledModel[]
   outputs: OutputRecord[]
+  outputsRevision: number
   units: BatchUnit[]
   batch: BatchWorkspace
   configuration: SettingsWorkspace
@@ -252,19 +258,26 @@ export interface StudioSnapshot {
     vram: string | null
     available: boolean
   }
-  dependencies: { ffmpeg: boolean; recording: boolean; perth: boolean; online: boolean }
+  dependencies: { ffmpeg: boolean; recording: boolean; perth: boolean; online: boolean | null }
   status: string | null
-  playback: { playing: boolean; position: number; outputId: string | null }
   selectedOutput: string | null
 }
+export type StudioUpdate = Omit<StudioSnapshot, 'outputs'> & { outputs?: OutputRecord[] }
+
+export function studioUpdate(snapshot: StudioSnapshot, outputsAfter?: number): StudioUpdate {
+  if (outputsAfter !== snapshot.outputsRevision) return snapshot
+  const { outputs: _outputs, ...update } = snapshot
+  return update
+}
 export type StudioCommand =
-  | { type: 'settings.update'; settings: GenerationSettings }
+  | { type: 'settings.update'; settings: Partial<GenerationSettings> }
   | { type: 'script.update'; text: string }
   | { type: 'script.inspect' }
   | { type: 'status.dismiss' }
   | { type: 'dictionary.save'; text: string }
   | { type: 'job.start'; kind: 'narration' | 'preview' | 'batch' }
   | { type: 'job.cancel' }
+  | { type: 'maintenance.cancel' }
   | { type: 'batch.source'; source: 'files' | 'text' }
   | { type: 'batch.text'; text: string }
   | { type: 'batch.split'; enabled: boolean }
@@ -303,8 +316,9 @@ export type StudioCommand =
   | { type: 'playback.seek'; seconds: number; id?: string }
 export interface StudioAPI {
   getSnapshot: () => Promise<StudioSnapshot>
-  dispatch: (command: StudioCommand) => Promise<StudioSnapshot>
-  onChange: (callback: (snapshot: StudioSnapshot) => void) => () => void
+  dispatch: (command: StudioCommand, outputsAfter?: number) => Promise<StudioUpdate>
+  onChange: (callback: (update: StudioUpdate) => void) => () => void
   waveform: (id: string) => Promise<number[]>
-  reportPlayback: (playback: StudioSnapshot['playback']) => Promise<void>
+  outputDetails: (id: string) => Promise<OutputDetailsData>
+  onDraftClose: (flush: () => Promise<boolean>, resume: () => void) => void
 }

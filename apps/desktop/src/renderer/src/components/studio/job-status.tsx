@@ -75,7 +75,7 @@ export function JobStatus({
           <Badge variant={job.phase === 'error' ? 'destructive' : 'secondary'}>{job.phase}</Badge>
         )}
       </div>
-      {active && (
+      {active && job.kind !== 'maintenance' && (
         <>
           <Progress value={job.progress} aria-label="Job progress" />
           <div className="flex flex-wrap items-center justify-between gap-2 text-xs text-muted-foreground">
@@ -102,7 +102,11 @@ export function JobStatus({
           size="sm"
           className="self-start"
           disabled={job.phase === 'stopping'}
-          onClick={() => act('Stop generation', { type: 'job.cancel' })}
+          onClick={() =>
+            act('Stop job', {
+              type: job.kind === 'maintenance' ? 'maintenance.cancel' : 'job.cancel'
+            })
+          }
         >
           <HugeiconsIcon icon={SquareIcon} data-icon="inline-start" aria-hidden="true" />
           {job.phase === 'stopping' ? 'Stopping…' : 'Stop'}

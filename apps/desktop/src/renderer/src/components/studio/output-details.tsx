@@ -1,3 +1,4 @@
+import { useEffect, useState } from 'react'
 import { HugeiconsIcon } from '@hugeicons/react'
 import {
   DownloadIcon,
@@ -21,28 +22,61 @@ import { act } from '@/lib/actions'
 import { languages, models, settingLabels } from '../../../../shared/data/catalog'
 import { Table, TableBody, TableCell, TableRow } from '@phonivra/ui/components/table'
 import { formatTime } from './job-status'
-import type { GenerationSettings, OutputRecord, StudioSnapshot } from '../../../../shared/studio'
+import type { GenerationSettings, OutputDetailsData, OutputRecord } from '../../../../shared/studio'
 
 export function OutputDetails({
   output,
-  playback,
   showManagement = true,
   exportVariant = 'default'
 }: {
   output: OutputRecord
-  playback: StudioSnapshot['playback']
   showManagement?: boolean
   exportVariant?: 'default' | 'outline'
 }): React.JSX.Element {
+  const [sections, setSections] = useState<string[]>([])
+  const [attempt, setAttempt] = useState(0)
+  const [result, setResult] = useState<{
+    output: OutputRecord
+    attempt: number
+    data: OutputDetailsData | null
+  } | null>(null)
+  const details = result?.output === output && result.attempt === attempt ? result : null
+  const wantsDetails =
+    (output.partCount > 0 && sections.includes('parts')) ||
+    (output.hasSettingsSnapshot && sections.includes('settings-used'))
+
+  useEffect(() => {
+    if (!wantsDetails || details) return
+    let active = true
+    void window.api.studio.outputDetails(output.id).then(
+      (data) => {
+        if (active) setResult({ output, attempt, data })
+      },
+      () => {
+        if (active) setResult({ output, attempt, data: null })
+      }
+    )
+    return () => {
+      active = false
+    }
+  }, [output, wantsDetails, details, attempt])
+
+  const detailStatus = details ? (
+    <div className="flex items-center gap-3" role="status">
+      Could not load generation details.
+      <Button size="sm" variant="outline" onClick={() => setAttempt(attempt + 1)}>
+        Retry
+      </Button>
+    </div>
+  ) : (
+    <p role="status" className="text-muted-foreground">
+      Loading generation details…
+    </p>
+  )
+
   return (
     <div className="flex min-w-0 flex-col gap-6">
-      <AudioTransport
-        id={output.id}
-        title={output.title}
-        duration={output.duration}
-        playing={playback.outputId === output.id && playback.playing}
-        position={playback.outputId === output.id ? playback.position : 0}
-      />
+      <AudioTransport id={output.id} title={output.title} duration={output.duration} />
       <div className="flex flex-wrap items-center gap-2">
         <Badge variant="secondary">{output.format.toUpperCase()}</Badge>
         <Badge variant="outline">{output.sampleRate / 1000} kHz · mono</Badge>
@@ -85,7 +119,7 @@ export function OutputDetails({
           are not inferred from its filename.
         </p>
       )}
-      <Accordion type="multiple">
+      <Accordion type="multiple" value={sections} onValueChange={setSections}>
         <AccordionItem value="details">
           <AccordionTrigger>Generation details</AccordionTrigger>
           <AccordionContent>
@@ -137,7 +171,7 @@ export function OutputDetails({
                   'Loudness gain',
                   output.loudnessGain === null ? 'Unavailable' : `${output.loudnessGain} dB`
                 ],
-                ['Parts', output.parts.length]
+                ['Parts', output.partCount]
               ].map(([label, value]) => (
                 <div key={String(label)}>
                   <dt className="text-muted-foreground">{label}</dt>
@@ -152,11 +186,11 @@ export function OutputDetails({
           </AccordionContent>
         </AccordionItem>
         <AccordionItem value="parts">
-          <AccordionTrigger>Part timings ({output.parts.length})</AccordionTrigger>
+          <AccordionTrigger>Part timings ({output.partCount})</AccordionTrigger>
           <AccordionContent>
-            {output.parts.length > 0 ? (
+            {details?.data ? (
               <WindowedList
-                items={output.parts}
+                items={details.data.parts}
                 itemKey={(part) => part.id}
                 label="Generated part timings"
                 renderItem={(part) => (
@@ -173,31 +207,37 @@ export function OutputDetails({
                   </div>
                 )}
               />
+            ) : output.partCount > 0 ? (
+              detailStatus
             ) : (
               <p className="text-sm text-muted-foreground">Part timings are unavailable.</p>
             )}
           </AccordionContent>
         </AccordionItem>
-        {output.metadataAvailable && output.settingsSnapshot && (
+        {output.hasSettingsSnapshot && (
           <AccordionItem value="settings-used">
             <AccordionTrigger>Settings used for this take</AccordionTrigger>
             <AccordionContent>
-              <Table>
-                <TableBody>
-                  {Object.entries(output.settingsSnapshot).map(([key, value]) => (
-                    <TableRow key={key}>
-                      <TableCell>{settingLabels[key as keyof GenerationSettings]}</TableCell>
-                      <TableCell className="text-right">
-                        {typeof value === 'boolean'
-                          ? value
-                            ? 'On'
-                            : 'Off'
-                          : String(value) || 'Untitled'}
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
+              {details?.data?.settingsSnapshot ? (
+                <Table>
+                  <TableBody>
+                    {Object.entries(details.data.settingsSnapshot).map(([key, value]) => (
+                      <TableRow key={key}>
+                        <TableCell>{settingLabels[key as keyof GenerationSettings]}</TableCell>
+                        <TableCell className="text-right">
+                          {typeof value === 'boolean'
+                            ? value
+                              ? 'On'
+                              : 'Off'
+                            : String(value) || 'Untitled'}
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              ) : (
+                detailStatus
+              )}
             </AccordionContent>
           </AccordionItem>
         )}

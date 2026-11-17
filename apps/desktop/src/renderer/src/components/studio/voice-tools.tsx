@@ -70,14 +70,6 @@ export function VoiceTools(): React.JSX.Element | null {
                   id={snapshot.preview.id}
                   title="Voice preview"
                   duration={snapshot.preview.duration}
-                  playing={
-                    snapshot.playback.outputId === snapshot.preview.id && snapshot.playback.playing
-                  }
-                  position={
-                    snapshot.playback.outputId === snapshot.preview.id
-                      ? snapshot.playback.position
-                      : 0
-                  }
                 />
               )}
             </div>

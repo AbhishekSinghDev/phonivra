@@ -1,15 +1,31 @@
 import { contextBridge, ipcRenderer } from 'electron'
-import type { StudioSnapshot } from '../shared/studio'
+import type { StudioUpdate } from '../shared/studio'
 import type { DesktopAPI, ThemeState } from '../shared/api'
+
+let draftClose: { flush: () => Promise<boolean>; resume: () => void } | null = null
+ipcRenderer.on('studio:flush-on-close', async (_event, requestId: number) => {
+  let saved = false
+  try {
+    saved = (await draftClose?.flush()) ?? true
+  } catch (error) {
+    console.error('Could not save drafts before closing', error)
+  }
+  void ipcRenderer.invoke('studio:close-acknowledged', requestId, saved).catch(() => {})
+})
+ipcRenderer.on('studio:resume-editing', () => draftClose?.resume())
 
 const api: DesktopAPI = {
   studio: {
     getSnapshot: () => ipcRenderer.invoke('studio:snapshot'),
-    dispatch: (command) => ipcRenderer.invoke('studio:dispatch', command),
+    dispatch: (command, outputsAfter) =>
+      ipcRenderer.invoke('studio:dispatch', command, outputsAfter),
     waveform: (id) => ipcRenderer.invoke('studio:waveform', id),
-    reportPlayback: (playback) => ipcRenderer.invoke('studio:playback', playback),
+    outputDetails: (id) => ipcRenderer.invoke('studio:output-details', id),
+    onDraftClose: (flush, resume) => {
+      draftClose = { flush, resume }
+    },
     onChange: (callback) => {
-      const listener = (_event: Electron.IpcRendererEvent, state: StudioSnapshot): void =>
+      const listener = (_event: Electron.IpcRendererEvent, state: StudioUpdate): void =>
         callback(state)
       ipcRenderer.on('studio:changed', listener)
       return () => ipcRenderer.removeListener('studio:changed', listener)

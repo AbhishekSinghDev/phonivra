@@ -1,10 +1,10 @@
 import { create } from 'zustand'
-import type { StudioSnapshot } from '../../../shared/studio'
+import type { StudioSnapshot, StudioUpdate } from '../../../shared/studio'
 
 interface StudioStore {
   snapshot: StudioSnapshot | null
   error: string | null
-  accept: (snapshot: StudioSnapshot) => void
+  accept: (snapshot: StudioUpdate) => void
   setError: (message: string | null) => void
 }
 export const useStudioStore = create<StudioStore>((set) => ({
@@ -14,7 +14,12 @@ export const useStudioStore = create<StudioStore>((set) => ({
     set((state) => {
       const previous = state.snapshot
       if (previous && previous.revision >= snapshot.revision) return {}
-      const accepted = { ...snapshot }
+      const outputs =
+        previous?.outputsRevision === snapshot.outputsRevision
+          ? previous?.outputs
+          : snapshot.outputs
+      if (!outputs) return {}
+      const accepted = { ...snapshot, outputs }
       if (!previous) return { snapshot: accepted, error: null }
       // IPC clones payloads. Preserve unchanged slice identities so progress does not
       // re-render script fields, catalog selectors, or large output lists.
@@ -34,13 +39,6 @@ export const useStudioStore = create<StudioStore>((set) => ({
         )
       )
         accepted.voices = previous.voices
-      if (
-        snapshot.outputs.length === previous.outputs.length &&
-        snapshot.outputs.every(
-          (output, index) => JSON.stringify(output) === JSON.stringify(previous.outputs[index])
-        )
-      )
-        accepted.outputs = previous.outputs
       if (
         snapshot.units.length === previous.units.length &&
         snapshot.units.every(

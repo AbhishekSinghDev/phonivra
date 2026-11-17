@@ -5,6 +5,7 @@ import os
 import shutil
 import subprocess
 import sys
+import tempfile
 import time
 from pathlib import Path
 
@@ -42,6 +43,13 @@ BLOCK_FRAMES = 65_536
 MAX_WAVEFORM_SECONDS = 4 * 60 * 60
 
 
+def write_silence(file: sf.SoundFile, frames: int, jobs: Jobs) -> None:
+    block = np.zeros(min(frames, BLOCK_FRAMES), dtype=np.float32)
+    for remaining in range(frames, 0, -BLOCK_FRAMES):
+        jobs.checkpoint()
+        file.write(block[:remaining])
+
+
 def input_options(path: Path) -> list[str]:
     demuxer = DEMUXERS.get(path.suffix.lower())
     if demuxer is None:
@@ -57,8 +65,6 @@ def ffmpeg(arguments: list[str], jobs: Jobs | None = None, timeout: int = 1800) 
     if not binary:
         raise ValueError("FFmpeg is required. Install it and restart Phonivra.")
     # A temporary stderr file avoids pipe deadlocks on long encodes.
-    import tempfile
-
     with tempfile.TemporaryFile() as errors:
         process = subprocess.Popen(
             [
@@ -101,7 +107,7 @@ def ffmpeg(arguments: list[str], jobs: Jobs | None = None, timeout: int = 1800) 
                     process.wait()
 
 
-def reference_audio(source: Path, destination: Path) -> float:
+def reference_audio(source: Path, destination: Path, jobs: Jobs | None = None) -> float:
     ffmpeg(
         [
             *input_options(source),
@@ -118,6 +124,7 @@ def reference_audio(source: Path, destination: Path) -> float:
             "pcm_s16le",
             str(destination),
         ],
+        jobs,
         timeout=60,
     )
     duration = sf.info(destination).duration
@@ -249,7 +256,7 @@ def encode(source: Path, destination: Path, settings: Settings, jobs: Jobs) -> N
     )
 
 
-def duration(path: Path) -> tuple[float, int]:
+def duration(path: Path, jobs: Jobs | None = None) -> tuple[float, int]:
     if not path.is_file() or path.is_symlink():
         raise ValueError("Choose a regular audio file.")
     try:
@@ -262,29 +269,45 @@ def duration(path: Path) -> tuple[float, int]:
         import json
 
         try:
-            result = subprocess.run(
-                [
-                    probe,
-                    "-v",
-                    "error",
-                    "-select_streams",
-                    "a:0",
-                    "-show_entries",
-                    "stream=sample_rate:format=duration",
-                    "-of",
-                    "json",
-                    "-max_alloc",
-                    "67108864",
-                    *input_options(path),
-                    str(path),
-                ],
-                capture_output=True,
-                text=True,
-                timeout=30,
-                creationflags=MEDIA_CREATION_FLAGS,
-                check=True,
-            )
-            info = json.loads(result.stdout)
+            with (
+                tempfile.TemporaryFile() as result,
+                subprocess.Popen(
+                    [
+                        probe,
+                        "-v",
+                        "error",
+                        "-select_streams",
+                        "a:0",
+                        "-show_entries",
+                        "stream=sample_rate:format=duration",
+                        "-of",
+                        "json",
+                        "-max_alloc",
+                        "67108864",
+                        *input_options(path),
+                        str(path),
+                    ],
+                    stdin=subprocess.DEVNULL,
+                    stdout=result,
+                    stderr=subprocess.DEVNULL,
+                    creationflags=MEDIA_CREATION_FLAGS,
+                ) as process,
+            ):
+                deadline = time.monotonic() + 30
+                try:
+                    while process.poll() is None:
+                        if jobs:
+                            jobs.checkpoint()
+                        if time.monotonic() >= deadline:
+                            raise ValueError("Audio inspection timed out.")
+                        time.sleep(0.1)
+                finally:
+                    if process.poll() is None:
+                        process.kill()
+                if process.returncode:
+                    raise ValueError("FFprobe failed.")
+                result.seek(0)
+                info = json.loads(result.read(4096))
             return float(info["format"]["duration"]), int(info["streams"][0]["sample_rate"])
         except (subprocess.SubprocessError, KeyError, IndexError, TypeError, ValueError):
             raise ValueError("Could not read this audio file.") from None
@@ -292,7 +315,6 @@ def duration(path: Path) -> tuple[float, int]:
 
 def waveform(path: Path, temporary: Path) -> list[float]:
     """Bound peak extraction memory even for long narrations."""
-    import tempfile
 
     def peaks(source: Path) -> list[float]:
         with sf.SoundFile(source) as file:
