@@ -24,26 +24,25 @@ export function DownloadSection(): React.JSX.Element {
             id="download-title"
             className="text-4xl leading-tight font-medium tracking-tight text-balance sm:text-5xl lg:text-6xl"
           >
-            Get <span className="highlight">Phonivra</span>
+            Install <span className="highlight">Phonivra</span>
           </h2>
           <p className="max-w-lg text-base leading-relaxed text-muted-foreground">
-            Follow the setup guide to run Phonivra from source, or visit GitHub Releases to check
-            for an installer.
+            Check GitHub Releases for an installer for your system, or run the desktop app from
+            source.
           </p>
           <div className="flex flex-wrap justify-center gap-3">
             <Button asChild size="lg" className="studio-primary">
-              <Link href={siteLinks.setup}>Run from source</Link>
+              <Link href="/docs/install#run-from-source">Run from source</Link>
             </Button>
             <Button asChild variant="outline" size="lg">
-              <Link href={siteLinks.releases}>View GitHub Releases</Link>
+              <Link href={siteLinks.releases}>Check for an installer</Link>
             </Button>
           </div>
         </div>
       </div>
 
       <p className="mx-auto max-w-xl py-8 text-center text-sm leading-relaxed text-muted-foreground">
-        Installer builds target Windows x64, Macs with Apple silicon, and Linux x64 with Debian
-        packages. Download your speech model inside the app.
+        Builds target Windows x64, Apple silicon Macs, and Debian-based Linux on x64.
       </p>
     </section>
   )

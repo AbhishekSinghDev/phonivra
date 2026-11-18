@@ -82,12 +82,12 @@ class Narrator:
     ) -> dict:
         model_id = resolve_model(settings)
         if model_id == "turbo" and settings.language != "en":
-            raise ValueError(f"{model_id.title()} is English-only. Select Multilingual V3 or Auto.")
+            raise ValueError("Chatterbox Turbo supports English only. Set Speech model to Auto.")
         if model_id == "indicf5":
             if settings.language not in INDIC_LANGUAGES:
-                raise ValueError("Choose an IndicF5 language or switch to Auto.")
+                raise ValueError("IndicF5 does not support this language. Set Speech model to Auto.")
             if reference is None or not transcript.strip():
-                raise ValueError("IndicF5 needs a saved voice preset with a reference transcript.")
+                raise ValueError("For IndicF5, choose a saved voice preset with a recording transcript. Clear any attached recording first.")
         elif settings.language in INDIC_LANGUAGES - {"hi"}:
             raise ValueError("Choose IndicF5 or Auto for this language.")
         prepared = prepare(script, settings, dictionary)

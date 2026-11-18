@@ -117,7 +117,7 @@ export const models: readonly ModelDefinition[] = [
     ...base,
     id: 'turbo',
     label: 'Chatterbox Turbo',
-    description: 'Fast English narration with native reactions.',
+    description: 'English narration with reaction tags such as [laugh].',
     parameters: '350M parameters',
     repository: 'ResembleAI/chatterbox-turbo',
     languages: english,
@@ -133,7 +133,7 @@ export const models: readonly ModelDefinition[] = [
     ...base,
     id: 'multilingual',
     label: 'Multilingual V3',
-    description: 'Narration and cross-language cloning in 23 languages.',
+    description: 'Narration in 23 languages with a built-in voice or a reference recording.',
     parameters: '500M parameters',
     repository: 'ResembleAI/chatterbox',
     languages: multilingual,
@@ -229,7 +229,7 @@ export const numericSettings: readonly NumericSetting[] = [
     min: 0,
     max: 1,
     step: 0.01,
-    description: 'Nucleus sampling threshold.',
+    description: 'Lower values limit generation to more likely speech patterns.',
     group: 'sampling'
   },
   {
@@ -238,7 +238,7 @@ export const numericSettings: readonly NumericSetting[] = [
     min: 0,
     max: 2000,
     step: 10,
-    description: 'Turbo only.',
+    description: 'Limits how many likely speech tokens Turbo can choose from at each step.',
     group: 'sampling'
   },
   {
@@ -247,7 +247,7 @@ export const numericSettings: readonly NumericSetting[] = [
     min: 0,
     max: 0.5,
     step: 0.01,
-    description: 'Multilingual V3 only.',
+    description: 'Higher values filter out more low-probability speech tokens.',
     group: 'sampling'
   },
   {
@@ -256,7 +256,7 @@ export const numericSettings: readonly NumericSetting[] = [
     min: 1,
     max: 2,
     step: 0.05,
-    description: 'Discourages repeated speech tokens.',
+    description: 'Higher values make repeated sounds less likely.',
     group: 'sampling'
   },
   {
@@ -265,7 +265,7 @@ export const numericSettings: readonly NumericSetting[] = [
     min: 0,
     max: 1,
     step: 0.05,
-    description: 'Expressiveness for Multilingual V3.',
+    description: 'Higher values make speech more expressive.',
     group: 'sampling'
   },
   {
@@ -274,7 +274,7 @@ export const numericSettings: readonly NumericSetting[] = [
     min: 0,
     max: 1,
     step: 0.05,
-    description: 'Guidance and pacing for Multilingual V3.',
+    description: 'Lower values can slow the pace.',
     group: 'sampling'
   },
   {
@@ -284,7 +284,7 @@ export const numericSettings: readonly NumericSetting[] = [
     max: 500,
     step: 10,
     unit: ' characters',
-    description: 'Shorter parts reduce the risk of the model token limit.',
+    description: 'Use shorter parts if the model cuts off long passages.',
     group: 'parts'
   },
   {
@@ -331,12 +331,12 @@ export const cleanupSettings = [
   {
     key: 'strip_markdown',
     label: 'Remove Markdown',
-    description: 'Keep readable text from formatting, links and headings.'
+    description: 'Remove Markdown formatting and keep the text of formatted links.'
   },
   {
     key: 'remove_emoji',
     label: 'Remove emoji',
-    description: 'Remove emoji and joiners before synthesis.'
+    description: 'Remove emoji before generating speech.'
   },
   {
     key: 'normalize_punct',

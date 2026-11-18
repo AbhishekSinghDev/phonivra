@@ -38,15 +38,7 @@ export function HistoryPage(): React.JSX.Element {
   const watermark = snapshot.watermark?.outputId === selected?.id ? snapshot.watermark : null
   const verification = snapshot.job.kind === 'watermark' ? snapshot.job : null
   return (
-    <ScreenFrame
-      title="Audio library"
-      description={
-        <>
-          Keep your <span className="highlight">Best takes close.</span> Listen, export and pick up
-          where you left off.
-        </>
-      }
-    >
+    <ScreenFrame title="Audio library">
       <div aria-label="Library actions" className="flex flex-wrap justify-end gap-2">
         <Button
           variant="outline"
@@ -62,7 +54,7 @@ export function HistoryPage(): React.JSX.Element {
           onClick={() => act('Open output folder', { type: 'folder.open' })}
         >
           <HugeiconsIcon icon={FolderOpenIcon} data-icon="inline-start" aria-hidden="true" />
-          Open folder
+          Open output folder
         </Button>
       </div>
       {!snapshot.outputs.length ? (
@@ -71,9 +63,9 @@ export function HistoryPage(): React.JSX.Element {
             <EmptyMedia variant="icon">
               <HugeiconsIcon icon={FileAudioIcon} aria-hidden="true" />
             </EmptyMedia>
-            <EmptyTitle>No saved narrations yet.</EmptyTitle>
+            <EmptyTitle>No saved narrations</EmptyTitle>
             <EmptyDescription>
-              Create a narration to keep its audio, subtitles, transcript and metadata here.
+              Generate a narration in Text to speech to add it to the library.
             </EmptyDescription>
           </EmptyHeader>
           <EmptyContent>
@@ -145,10 +137,6 @@ export function HistoryPage(): React.JSX.Element {
                 </EmptyContent>
               </Empty>
             )}
-            <p className="text-xs leading-relaxed text-muted-foreground">
-              The audio and SRT, VTT, TXT and JSON companions are managed together when deleting a
-              narration.
-            </p>
           </section>
           <section
             aria-label="Selected narration"
@@ -172,7 +160,7 @@ export function HistoryPage(): React.JSX.Element {
                       className="size-4 text-muted-foreground"
                       aria-hidden="true"
                     />
-                    <h3 className="text-sm font-medium">Perth watermark</h3>
+                    <h3 className="text-sm font-medium">PerTh watermark</h3>
                   </div>
                   {watermark ? (
                     <div role="status" className="flex flex-col gap-1 text-sm">
@@ -187,13 +175,13 @@ export function HistoryPage(): React.JSX.Element {
                     </div>
                   ) : verification && activePhases.has(verification.phase) ? null : (
                     <p className="text-sm text-muted-foreground">
-                      Use Verify watermark to check the opening excerpt. A label in generation
-                      metadata is not a detection result.
+                      Select Verify watermark to scan the start of the audio for the Chatterbox
+                      watermark.
                     </p>
                   )}
                   <p className="text-xs leading-relaxed text-muted-foreground">
-                    Heavy editing or re-encoding can weaken detection. Results below 0.5 are
-                    reported as not detected; a missing result does not establish the file’s origin.
+                    Editing or re-encoding can weaken the watermark. The check uses a detection
+                    threshold of 0.5.
                   </p>
                 </section>
               </>
@@ -203,16 +191,7 @@ export function HistoryPage(): React.JSX.Element {
                   <EmptyMedia variant="icon">
                     <HugeiconsIcon icon={FileAudioIcon} aria-hidden="true" />
                   </EmptyMedia>
-                  <EmptyTitle>
-                    {filtered.length
-                      ? 'Select a saved narration.'
-                      : 'No matching narration selected'}
-                  </EmptyTitle>
-                  <EmptyDescription>
-                    {filtered.length
-                      ? 'Choose a file to load its audio, exports and details.'
-                      : 'Clear your search to browse your saved audio.'}
-                  </EmptyDescription>
+                  <EmptyTitle>No narration to preview</EmptyTitle>
                 </EmptyHeader>
               </Empty>
             )}

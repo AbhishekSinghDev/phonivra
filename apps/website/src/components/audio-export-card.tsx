@@ -17,7 +17,7 @@ export function AudioExportCard(): React.JSX.Element {
           {[
             { format: 'SRT / VTT', description: 'Subtitles' },
             { format: 'TXT', description: 'Transcript' },
-            { format: 'JSON', description: 'Take metadata' }
+            { format: 'JSON', description: 'Generation metadata' }
           ].map((companion) => (
             <div
               key={companion.format}
@@ -31,10 +31,10 @@ export function AudioExportCard(): React.JSX.Element {
       </figure>
       <div className="mx-2 mb-3 sm:mx-4">
         <CardBody>
-          <CardTitle>Choose what to export</CardTitle>
+          <CardTitle>Export formats</CardTitle>
           <CardText>
-            Choose an audio format before you generate. Export the audio by itself or include the
-            other files in a ZIP. Subtitle timings are approximate.
+            Choose the audio format before generating. Batch exports bundle finished audio and its
+            files in one ZIP.
           </CardText>
         </CardBody>
       </div>

@@ -23,7 +23,7 @@ export function ReferenceAttachment({
       </div>
       {reference.status === 'empty' ? (
         <p className="text-sm text-muted-foreground">
-          Use the selected voice, or attach a clean recording. 6+ seconds recommended.
+          Record or import at least 6 seconds of clear speech from one speaker.
         </p>
       ) : (
         <div className="flex items-center gap-3">
@@ -41,7 +41,7 @@ export function ReferenceAttachment({
             <p className="text-xs text-muted-foreground">
               {busy
                 ? reference.status === 'recording'
-                  ? `Recording microphone… Up to ${maxRecordingSeconds} seconds.`
+                  ? `Recording… Up to ${maxRecordingSeconds} seconds.`
                   : 'Checking audio…'
                 : `${reference.duration.toFixed(1)} seconds`}
             </p>
@@ -59,7 +59,9 @@ export function ReferenceAttachment({
       )}
       {(reference.status === 'error' || reference.status === 'missing') && (
         <div role="alert" className="flex flex-col gap-1 text-sm text-destructive">
-          <p className="font-medium">Reference needs attention</p>
+          <p className="font-medium">
+            {reference.status === 'missing' ? 'Recording missing' : 'Could not use recording'}
+          </p>
           <div className="leading-relaxed">{reference.message}</div>
         </div>
       )}

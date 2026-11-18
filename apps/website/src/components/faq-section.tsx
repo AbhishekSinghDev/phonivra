@@ -1,6 +1,5 @@
 import Link from 'next/link'
 import { siteLinks } from '@/components/site-links'
-import { Button } from '@phonivra/ui/components/button'
 import {
   Accordion,
   AccordionContent,
@@ -10,20 +9,19 @@ import {
 
 const questions = [
   {
-    question: 'How do I get started?',
+    question: 'How do I install Phonivra?',
     answer:
-      'Follow the setup guide to run the desktop app from source. On first launch, choose a language, download a model, and generate a short test clip. Then open Text to speech to start your script.',
-    learnMore: { label: 'Read the source setup guide', href: siteLinks.setup }
+      'Check GitHub Releases for an installer for your system. The installation guide also covers running from source and downloading your first model.',
+    learnMore: { label: 'Read the installation guide', href: '/docs/install' }
   },
   {
     question: 'Will it work offline?',
-    answer:
-      'Yes. You need an internet connection to download a speech model. After that, you can use that model offline.'
+    answer: 'Yes. Download a speech model while connected, then use it offline.'
   },
   {
     question: 'How do custom voices work?',
     answer:
-      'Record a sample or import an audio file, then save it as a voice preset. Use your own voice or get the speaker’s permission to clone and use theirs.'
+      'Record or import a clip to use immediately or save it as a voice preset. IndicF5 requires a saved preset with the exact words spoken. Get the speaker’s permission before cloning their voice.'
   },
   {
     question: 'Which formats can I export?',
@@ -60,15 +58,12 @@ export function FaqSection(): React.JSX.Element {
         >
           Common <span className="highlight">questions</span>
         </h2>
-        <Button variant="outline" asChild>
-          <Link href="#download">Get started</Link>
-        </Button>
       </header>
       <div className="min-w-0 border-t border-card-edge lg:col-span-3">
         <Accordion
           type="single"
           collapsible
-          defaultValue="How do I get started?"
+          defaultValue="How do I install Phonivra?"
           aria-label="Questions about Phonivra"
         >
           {questions.map((item) => (

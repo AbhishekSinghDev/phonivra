@@ -16,23 +16,21 @@ const workspaces = [
   {
     id: 'voices',
     label: 'Voices',
-    title: 'Save a voice you can use again',
-    description:
-      'Create a voice preset from a recording. Listen to a short sample before you narrate the whole script.',
+    title: 'Create a reusable voice preset',
+    description: 'Preview a voice on a short sample before generating the full script.',
     details: [
       'Record from your microphone or import audio',
-      'Search and filter your voice collection',
-      'Save presets locally for future sessions'
+      'Search and filter built-in, external, and saved voices',
+      'Enter a recording transcript for IndicF5'
     ]
   },
   {
     id: 'batch',
     label: 'Batch',
-    title: 'Generate several scripts at once',
-    description:
-      'Import several scripts or split one script into chapters using Markdown headings. Review the list before you generate.',
+    title: 'Generate scripts in a batch',
+    description: 'Import multiple scripts or split one script by Markdown heading.',
     details: [
-      'Shared voice and generation settings',
+      'Review titles and languages before generating',
       'Progress and errors for each item',
       'Export finished audio and optional files as a ZIP'
     ]
@@ -41,10 +39,9 @@ const workspaces = [
     id: 'library',
     label: 'Library',
     title: 'Find your finished audio',
-    description:
-      'The audio library keeps your finished takes so you can listen again or export them the next time you open the app.',
+    description: 'Phonivra saves finished takes to the audio library.',
     details: [
-      'Search your saved takes',
+      'Search by title and play saved audio',
       'See the voice, model, and settings used for each take',
       'Export audio, subtitles, transcripts, and metadata'
     ]
@@ -53,8 +50,7 @@ const workspaces = [
     id: 'models',
     label: 'Models',
     title: 'Pick a speech model',
-    description:
-      'See which languages and speech controls each speech model supports. Download the models you want to use.',
+    description: 'Compare supported languages and speech controls before downloading a model.',
     details: [
       'Automatic model selection by language',
       'Pause and resume model downloads',
@@ -75,16 +71,12 @@ export function FeaturesSection(): React.JSX.Element {
           id="studio-title"
           className="text-3xl leading-tight font-medium tracking-tight text-balance sm:text-4xl"
         >
-          Inside the <span className="highlight">studio</span>
+          Explore the <span className="highlight">desktop app</span>
         </h2>
       </header>
       <Tabs defaultValue="narration" className="mt-10">
         <div className="flex overflow-x-auto px-1 py-2">
-          <TabsList
-            variant="line"
-            aria-label="Explore Phonivra workspaces"
-            className="mx-auto shrink-0"
-          >
+          <TabsList variant="line" aria-label="Phonivra features" className="mx-auto shrink-0">
             {workspaces.map((workspace) => (
               <TabsTrigger key={workspace.id} value={workspace.id}>
                 {workspace.label}

@@ -7,28 +7,25 @@ description: Find finished takes, choose an audio format, and save subtitles or 
 
 Set **Format** before generating. Choose **WAV** for editing or **MP3** for a smaller file to share. You can also export **FLAC**, **OGG**, and **M4A**.
 
-- **Sample rate** defaults to mono audio at 24 kHz. You can also select 44.1 or 48 kHz.
+- In **Advanced settings → Export details**, leave **Sample rate** at 24 kHz or choose 44.1 or 48 kHz. Phonivra generates mono audio.
 - **Speed** changes the pace while preserving pitch.
-- **Mastering** lets you trim silence, adjust loudness, and add fades.
-
-Try these settings on a short take before using them on a long script.
+- In **Advanced settings → Mastering**, trim silence, normalize loudness, or add fades.
 
 ## Find a finished take
 
-1. Open **Library** and search for the take by title.
+1. Open **Audio library** and search for the take by title.
 2. Select the take to listen, view its settings, or export it.
 
-You can also play a new take directly in **Text to speech**. Audio placed in the output folder appears in the library and may have limited details.
+You can also play a new take directly in **Text to speech**. To add an audio file from elsewhere, place it in the output folder and select **Refresh**. Generation settings are available for files with Phonivra metadata.
 
 ## Save audio and companion files
 
-Choose **Save audio** for a copy of the audio file. Open the take details to save available companion files individually or download a ZIP.
+Choose **Save audio** to export a copy. In **Details & exports** or **Audio library**, select the file extension to save subtitles, the transcript, or generation metadata. For a ZIP export, use [Batch studio](/docs/batch#save-completed-items).
 
 | File       | Contents                                                                                        |
 | ---------- | ----------------------------------------------------------------------------------------------- |
 | SRT or VTT | Approximate subtitle timing based on the generated parts. Review the timing before publishing.  |
 | TXT        | The script as prepared for speech, including cleanup and pronunciation changes.                 |
 | JSON       | Information about the take, including the model, voice, and generation settings when available. |
-| ZIP        | Audio and its available companion files.                                                        |
 
-A project JSON and an exported metadata JSON serve different purposes. Use **Save project** in the editor when you want to reopen the editable script and settings.
+To reopen an editable script and its settings, use **Project → Save project** in the editor.

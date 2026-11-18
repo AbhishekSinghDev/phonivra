@@ -18,7 +18,7 @@ export function ScreenFrame({
   children
 }: {
   title: string
-  description: ReactNode
+  description?: ReactNode
   actions?: ReactNode
   children: ReactNode
 }): React.JSX.Element {
@@ -27,7 +27,11 @@ export function ScreenFrame({
       <header className="flex flex-col items-center gap-5 text-center">
         <div className="flex flex-col items-center gap-3">
           <h1 className="text-2xl font-medium tracking-tight sm:text-3xl">{title}</h1>
-          <p className="max-w-2xl text-base leading-relaxed text-muted-foreground">{description}</p>
+          {description && (
+            <p className="max-w-2xl text-base leading-relaxed text-muted-foreground">
+              {description}
+            </p>
+          )}
         </div>
         {actions && <div className="flex flex-wrap items-center gap-2">{actions}</div>}
       </header>
@@ -52,7 +56,7 @@ export function ScreenLoading(): React.JSX.Element {
       </Empty>
     )
   return (
-    <section aria-label="Loading screen" className="flex flex-col gap-4">
+    <section aria-label="Loading studio" className="flex flex-col gap-4">
       <Skeleton className="h-8 w-48" />
       <Skeleton className="h-12 w-full" />
       <Skeleton className="h-80 w-full" />

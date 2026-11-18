@@ -137,8 +137,7 @@ export const NarrationEditor = memo(function NarrationEditor({
                   </DropdownMenuItem>
                   <DropdownMenuItem onSelect={() => replaceDocument('project.open')}>
                     <HugeiconsIcon icon={FolderOpenIcon} aria-hidden="true" />
-                    Open project JSON{' '}
-                    <span className="ml-auto text-muted-foreground">{modifier}+O</span>
+                    Open project <span className="ml-auto text-muted-foreground">{modifier}+O</span>
                   </DropdownMenuItem>
                 </DropdownMenuGroup>
                 <DropdownMenuSeparator />
@@ -175,7 +174,7 @@ export const NarrationEditor = memo(function NarrationEditor({
                   <DropdownMenuGroup>
                     <DropdownMenuItem onSelect={inspect}>
                       <HugeiconsIcon icon={TimerIcon} aria-hidden="true" />
-                      Inspect text and parts
+                      Preview prepared script
                     </DropdownMenuItem>
                   </DropdownMenuGroup>
                   <DropdownMenuSeparator />
@@ -185,13 +184,13 @@ export const NarrationEditor = memo(function NarrationEditor({
                       Default pause <span className="ml-auto text-muted-foreground">[pause]</span>
                     </DropdownMenuItem>
                     <DropdownMenuItem onSelect={() => insert('[pause=1.5]')}>
-                      1.5 second pause
+                      1.5-second pause
                     </DropdownMenuItem>
                   </DropdownMenuGroup>
                   <DropdownMenuSeparator />
                   <DropdownMenuGroup>
                     <DropdownMenuLabel>
-                      {reactions ? 'Reactions' : 'Reactions need Turbo'}
+                      {reactions ? 'Reactions' : 'Reactions require Turbo'}
                     </DropdownMenuLabel>
                     {reactionTags.map((tag) => (
                       <DropdownMenuItem
@@ -213,7 +212,7 @@ export const NarrationEditor = memo(function NarrationEditor({
             id="narrate-script"
             value={draft}
             className="h-72 min-h-64 resize-y px-6 py-5 xl:h-80"
-            placeholder="Write or paste the words you want to bring to life…"
+            placeholder="Write or paste your script"
             aria-describedby={
               tooLong ? 'narrate-script-help narrate-script-error' : 'narrate-script-help'
             }
@@ -248,7 +247,7 @@ export const NarrationEditor = memo(function NarrationEditor({
             </span>
           </div>
           <FieldDescription className="sr-only" id="narrate-script-help">
-            Cleanup applies to generation. Your original script stays here.
+            Cleanup rules apply to the text sent to the speech model.
           </FieldDescription>
         </Field>
       </FieldGroup>
@@ -270,8 +269,8 @@ export const NarrationEditor = memo(function NarrationEditor({
             </AlertDialogTitle>
             <AlertDialogDescription>
               {replacement === 'project.open'
-                ? 'Opening a project replaces your script, generation settings and dictionary. Save your current project first if you want to keep it.'
-                : 'Importing a script replaces the text currently in the editor. Save your project first if you want to keep it.'}
+                ? 'This replaces the current script, settings, and pronunciation dictionary. Save the current project first to keep a copy.'
+                : 'This replaces the script in the editor. Save the current project first to keep a copy.'}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>

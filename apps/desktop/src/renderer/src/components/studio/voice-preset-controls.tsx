@@ -28,12 +28,10 @@ export function VoicePresetControls({
           maxLength={60}
           onChange={(event) => setLabel(event.target.value)}
         />
-        <FieldDescription>
-          Saved references use mono 24 kHz WAV and are limited to 40 seconds.
-        </FieldDescription>
+        <FieldDescription>Phonivra saves up to 40 seconds of the recording.</FieldDescription>
       </Field>
       <Field>
-        <FieldLabel htmlFor={`${id}-transcript`}>Recording transcript (optional)</FieldLabel>
+        <FieldLabel htmlFor={`${id}-transcript`}>Recording transcript</FieldLabel>
         <Textarea
           id={`${id}-transcript`}
           aria-describedby={`${id}-transcript-description`}
@@ -42,7 +40,7 @@ export function VoicePresetControls({
           onChange={(event) => setTranscript(event.target.value)}
         />
         <FieldDescription id={`${id}-transcript-description`}>
-          IndicF5 requires 5–12 seconds of speech and the exact words spoken in the recording.
+          Required for IndicF5. Use 5–12 seconds of speech and enter the exact words spoken.
         </FieldDescription>
       </Field>
       <div className="flex flex-wrap gap-2">
@@ -70,7 +68,7 @@ export function VoicePresetControls({
         {showDelete && (
           <ConfirmDelete
             name={selected?.label ?? 'voice'}
-            description="Only custom presets saved in Phonivra can be deleted. Built-in presets and externally discovered recordings are protected."
+            description="Delete the saved voice preset and its copy of the recording."
             disabled={selected?.kind !== 'custom'}
             onConfirm={() =>
               act('Delete voice preset', {

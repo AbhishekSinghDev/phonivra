@@ -37,7 +37,7 @@ export function DictionaryEditor(): React.JSX.Element | null {
         <DialogHeader>
           <DialogTitle>Pronunciation dictionary</DialogTitle>
           <DialogDescription>
-            Replace words or phrases before narration. Rules are saved separately from your script.
+            Set how names, acronyms, and other words are read aloud.
           </DialogDescription>
         </DialogHeader>
         <FieldGroup>
@@ -64,8 +64,7 @@ export function DictionaryEditor(): React.JSX.Element | null {
             </FieldDescription>
           </Field>
           <p className="text-xs text-muted-foreground">
-            The dictionary makes one pass through the text. Each replacement is final for that pass.
-            Empty content clears the saved dictionary.
+            To clear the dictionary, erase the rules and select Save dictionary.
           </p>
           <Button
             className="self-start"

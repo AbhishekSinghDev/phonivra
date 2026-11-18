@@ -1,6 +1,3 @@
-import Link from 'next/link'
-import { Button } from '@phonivra/ui/components/button'
-
 export function HowItWorksSection(): React.JSX.Element {
   return (
     <section
@@ -15,9 +12,6 @@ export function HowItWorksSection(): React.JSX.Element {
         >
           How to make <br /> <span className="highlight">your first narration</span>
         </h2>
-        <Button variant="outline" asChild>
-          <Link href="#download">Get started</Link>
-        </Button>
       </header>
 
       <ol aria-label="Narration workflow" className="flex min-w-0 flex-col lg:col-span-3">
@@ -28,8 +22,7 @@ export function HowItWorksSection(): React.JSX.Element {
           <div className="col-span-11 flex min-w-0 flex-col gap-4">
             <h3 className="font-montserrat text-xl font-medium tracking-tight">Add your script</h3>
             <p className="text-sm leading-relaxed text-muted-foreground">
-              Write, paste, or import your script. Add a pause wherever you want a little space
-              between lines.
+              Write, paste, or import text. Use a pause tag to add silence between lines.
             </p>
             <blockquote className="mt-1 border-l border-card-edge pl-5 text-base leading-loose">
               The room went quiet.
@@ -48,8 +41,7 @@ export function HowItWorksSection(): React.JSX.Element {
           <div className="col-span-11 flex min-w-0 flex-col gap-4">
             <h3 className="font-montserrat text-xl font-medium tracking-tight">Choose a voice</h3>
             <p className="text-sm leading-relaxed text-muted-foreground">
-              Pick a voice and set the pace. Choose a speech model or let Phonivra pick one for the
-              language.
+              Select a voice and language. Auto picks a speech model for that language.
             </p>
             <dl className="mt-1 flex flex-wrap gap-x-8 gap-y-4 text-sm">
               {[
@@ -75,8 +67,7 @@ export function HowItWorksSection(): React.JSX.Element {
               Listen and export
             </h3>
             <p className="text-sm leading-relaxed text-muted-foreground">
-              Generate the narration and listen to the result. Save the audio on its own or include
-              subtitles, a transcript, and the settings used to create it.
+              Generate the narration, listen back, and export the audio with any files you need.
             </p>
             <dl className="mt-1 grid gap-3 text-sm sm:grid-cols-2">
               <div className="flex flex-col gap-2">

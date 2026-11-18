@@ -10,7 +10,7 @@ import { useStudioStore } from '@/stores/studio-store'
 import { languages, models } from '../../../../shared/data/catalog'
 import type { LanguageCode, ModelId, StudioSnapshot } from '../../../../shared/studio'
 
-const steps = ['Check device', 'Choose language', 'Prepare model', 'Test audio'] as const
+const steps = ['Check device', 'Choose language', 'Download model', 'Test audio'] as const
 const setupLanguages = models.find(({ id }) => id === 'multilingual')?.languages ?? []
 const languageOptions = languages
   .filter(({ code }) => setupLanguages.includes(code))
@@ -140,8 +140,8 @@ export function SetupPage(): React.JSX.Element {
             [
               'Set up Phonivra',
               'Choose your narration language',
-              'Prepare your speech model',
-              'Hear your first test clip'
+              'Download a speech model',
+              'Generate a test clip'
             ][step]
           }
         </h1>
@@ -155,7 +155,7 @@ export function SetupPage(): React.JSX.Element {
           {step === 0 && (
             <>
               <p className="text-sm leading-relaxed text-muted-foreground">
-                Set up local speech generation on this device. Your scripts and audio stay here.
+                Phonivra checks the speech engine, audio tools, and available devices.
               </p>
               {!snapshot && !connectionError && (
                 <p role="status" className="flex items-center gap-2 text-sm">
@@ -180,8 +180,9 @@ export function SetupPage(): React.JSX.Element {
               )}
               {snapshot && !snapshot.setup.mediaReady && (
                 <p className="text-sm text-muted-foreground">
-                  Phonivra needs FFmpeg and FFprobe. Reinstall Phonivra to restore the bundled audio
-                  tools, then reopen setup.
+                  FFmpeg and FFprobe are required. If you installed Phonivra, reinstall it to
+                  restore the bundled tools. If you run from source, install both tools and restart
+                  Phonivra.
                 </p>
               )}
               {snapshot?.setup.mediaReady && (
@@ -189,7 +190,7 @@ export function SetupPage(): React.JSX.Element {
                   <summary className="cursor-pointer">Advanced device options</summary>
                   <div className="mt-3">
                     <CatalogSelect
-                      label="Compute preference"
+                      label="Generation device"
                       value={snapshot.device.mode}
                       disabled={pending}
                       options={[
@@ -274,10 +275,11 @@ export function SetupPage(): React.JSX.Element {
                 disabled={pending}
               />
               <p className="text-sm text-muted-foreground">
-                You can set up more languages from Speech models after opening the studio.
+                Setup uses languages supported by Multilingual V3. Add IndicF5 from Speech models
+                for more Indian languages.
               </p>
               <p className="text-sm text-muted-foreground">
-                Recommended model <span className="font-medium text-foreground">{modelName}</span>
+                Setup model <span className="font-medium text-foreground">{modelName}</span>
                 {snapshot && isInstalled(snapshot, model) ? ' · Already installed' : ''}
               </p>
               <div className="flex justify-between gap-2">
@@ -308,14 +310,14 @@ export function SetupPage(): React.JSX.Element {
               </div>
               {!ready && size != null && free != null && free < size && (
                 <p className="text-sm text-muted-foreground">
-                  If the download runs out of space, free up disk space or choose another model
+                  This folder has too little space. Free up disk space or choose another model
                   folder.
                 </p>
               )}
               {!ready && !active && (
                 <p className="text-sm leading-relaxed text-muted-foreground">
-                  Connect to the internet to download the model. If you close Phonivra during the
-                  download, reopen it to resume here.
+                  You need an internet connection for the download. You can resume it here after
+                  reopening Phonivra.
                 </p>
               )}
               {job?.kind === 'download' && job.phase !== 'idle' && <JobStatus job={job} compact />}
@@ -395,8 +397,7 @@ export function SetupPage(): React.JSX.Element {
           {step === 3 && (
             <>
               <p className="text-sm leading-relaxed text-muted-foreground">
-                Generate a short sample with the default voice to check that speech generation
-                works.
+                Generate a short clip with the default voice to finish setup.
               </p>
               {previewRequested && job?.kind === 'preview' && !preview && (
                 <JobStatus job={job} compact />
@@ -451,7 +452,7 @@ export function SetupPage(): React.JSX.Element {
                         })
                       }
                     >
-                      Open Studio
+                      Open studio
                     </Button>
                   ) : (
                     <Button

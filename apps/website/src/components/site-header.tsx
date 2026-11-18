@@ -34,7 +34,7 @@ export function SiteHeader(): React.JSX.Element {
           className="hidden text-muted-foreground transition-colors hover:text-foreground sm:inline"
           href="#studio"
         >
-          The studio
+          Studio
         </Link>
         <Link
           className="hidden text-muted-foreground transition-colors hover:text-foreground sm:inline"
@@ -52,7 +52,7 @@ export function SiteHeader(): React.JSX.Element {
           className="hidden text-muted-foreground transition-colors hover:text-foreground lg:inline"
           href="#download"
         >
-          Get started
+          Install
         </Link>
         <div className="flex items-center">
           <Button variant="ghost" size="icon" asChild>

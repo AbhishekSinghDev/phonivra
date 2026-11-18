@@ -56,16 +56,11 @@ export default function ModelsPage(): React.JSX.Element {
   return (
     <ScreenFrame
       title="Speech models"
-      description={
-        <>
-          Find the <span className="highlight">Right fit for your voice.</span> Choose a model for
-          your language and device.
-        </>
-      }
+      description="Download models for the languages you narrate in."
     >
       {snapshot.dependencies.online === false && (
         <p role="status" className="text-sm text-muted-foreground">
-          The last check couldn’t reach the model host. You can try a download again or{' '}
+          The last check couldn’t reach Hugging Face. Retry the download or{' '}
           <Link className="underline" to="/settings?tab=diagnostics">
             refresh diagnostics
           </Link>
@@ -88,7 +83,7 @@ export default function ModelsPage(): React.JSX.Element {
             size="sm"
             onClick={() => updateSettings('model', 'auto')}
           >
-            Use Auto routing
+            Select model automatically
           </Button>
         </div>
       </div>
@@ -229,7 +224,7 @@ export default function ModelsPage(): React.JSX.Element {
                       </Button>
                       <ConfirmDelete
                         name={item.label}
-                        description="Remove this model’s local download. Existing narrations are kept; shared cache files may be retained."
+                        description="Delete this model’s downloaded files. You can download it again from this screen."
                         disabled={active}
                         onConfirm={() =>
                           act('Remove model', { type: 'model.remove', id, confirmed: true })
@@ -299,9 +294,8 @@ export default function ModelsPage(): React.JSX.Element {
           <DetailValue label="Languages">
             {model.languages.length === 1 ? 'English' : `${model.languages.length} supported`}
           </DetailValue>
-          <DetailValue label="Reference minimum">
-            {model.referenceStrict ? 'More than' : 'At least'} {model.referenceMinimum}s; 6+s
-            recommended
+          <DetailValue label="Minimum recording length">
+            {model.referenceStrict ? 'More than' : 'At least'} {model.referenceMinimum}s
           </DetailValue>
           {model.id !== 'indicf5' && (
             <DetailValue label="Speech per part">Up to {model.maxSpeechTokens} tokens</DetailValue>
@@ -309,10 +303,10 @@ export default function ModelsPage(): React.JSX.Element {
           <DetailValue label="CUDA precision">
             {model.cudaPrecision === 'half' ? 'Half precision T3' : 'Full precision'}
           </DetailValue>
-          <DetailValue label="Native reactions">
+          <DetailValue label="Reaction tags">
             {model.reactions ? 'Supported' : 'Not supported'}
           </DetailValue>
-          <DetailValue label="Speech conditioning">
+          <DetailValue label="Reference audio used">
             {model.id === 'indicf5'
               ? '5–12 seconds with an exact transcript'
               : `First ${model.conditioningSeconds}s`}

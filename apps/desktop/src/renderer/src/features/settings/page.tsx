@@ -52,15 +52,7 @@ export function SettingsPage(): React.JSX.Element {
     setToken('')
   }
   return (
-    <ScreenFrame
-      title="Settings"
-      description={
-        <>
-          Make this studio <span className="highlight">Feel like yours.</span> Set your defaults,
-          appearance and local resources.
-        </>
-      }
-    >
+    <ScreenFrame title="Settings">
       <Tabs
         value={tab}
         onValueChange={(value) => {
@@ -105,8 +97,7 @@ export function SettingsPage(): React.JSX.Element {
                     <ToggleGroupItem value="system">System</ToggleGroupItem>
                   </ToggleGroup>
                   <FieldDescription>
-                    System follows the device’s appearance. The desktop window and dialogs stay in
-                    sync.
+                    System follows your operating system’s light or dark theme.
                   </FieldDescription>
                 </Field>
               </FieldGroup>
@@ -177,20 +168,15 @@ export function SettingsPage(): React.JSX.Element {
                 </p>
               )}
               <p className="text-sm text-muted-foreground">
-                CPU generation is supported and may take longer for large scripts. Only one model
-                and one generation job run at a time.
-              </p>
-              <p className="text-xs text-muted-foreground">
-                GPU index, precision and quantization controls are not available.
+                CPU generation can take longer than GPU generation, especially for long scripts.
               </p>
             </section>
             <Separator />
             <section className="flex flex-col gap-3">
-              <h2 className="text-base font-semibold">Local by design</h2>
+              <h2 className="text-base font-semibold">Offline use</h2>
               <p className="text-sm leading-relaxed text-muted-foreground">
-                No account, cloud storage or telemetry. Model downloads need a network connection;
-                installed models can generate offline. Chatterbox audio includes the Resemble AI
-                PerTh watermark.
+                Scripts, recordings, and generated audio stay on this device. Downloaded models work
+                offline.
               </p>
             </section>
           </div>
@@ -201,11 +187,12 @@ export function SettingsPage(): React.JSX.Element {
               <div className="flex flex-col gap-1">
                 <h2 className="text-base font-semibold">Generation defaults</h2>
                 <p className="text-sm text-muted-foreground">
-                  These are also the current shared settings for Narrate and Batch.
+                  Text to speech and Batch studio use these settings. Save defaults to record the
+                  current values.
                 </p>
               </div>
               <Badge variant={dirty ? 'secondary' : 'outline'}>
-                {dirty ? 'Unsaved changes' : 'Saved values'}
+                {dirty ? 'Defaults not saved' : 'Defaults saved'}
               </Badge>
             </div>
             <EssentialSettings />
@@ -228,14 +215,8 @@ export function SettingsPage(): React.JSX.Element {
                 </Button>
               </RestoreDefaults>
             </div>
-            <p className="text-xs leading-relaxed text-muted-foreground">
-              Factory defaults reset all 28 generation settings, including title, voice, language
-              and output format. The script, dictionary and attached reference are kept. The
-              dictionary has its own Save action.
-            </p>
             <p className="text-xs text-muted-foreground">
-              Current values and saved values may differ. Generating or saving a project also saves
-              the generation settings.
+              Generating audio or saving a project also updates the saved defaults.
             </p>
           </div>
         </TabsContent>
@@ -257,7 +238,7 @@ export function SettingsPage(): React.JSX.Element {
                   <FieldLabel htmlFor="cache-path">Model cache folder</FieldLabel>
                   <Input id="cache-path" value={preferences.cachePath} readOnly />
                   <FieldDescription>
-                    Downloaded model files are kept here for offline use.
+                    Changing folders switches the cache. Existing downloads stay in the old folder.
                   </FieldDescription>
                 </Field>
               </FieldGroup>
@@ -299,7 +280,7 @@ export function SettingsPage(): React.JSX.Element {
                   Hugging Face access
                 </h2>
                 <Badge variant="outline">
-                  {preferences.tokenConfigured ? 'Configured' : 'Optional'}
+                  {preferences.tokenConfigured ? 'Token connected' : 'No token connected'}
                 </Badge>
               </div>
               <p className="text-sm text-muted-foreground">
@@ -317,7 +298,7 @@ export function SettingsPage(): React.JSX.Element {
                     maxLength={4096}
                     placeholder={
                       preferences.tokenConfigured
-                        ? 'Token configured; value hidden'
+                        ? 'Enter a replacement token'
                         : 'Enter a download token'
                     }
                     onChange={(event) => setToken(event.target.value)}
@@ -352,18 +333,16 @@ export function SettingsPage(): React.JSX.Element {
                 Temporary voice previews
               </h2>
               <p className="text-sm text-muted-foreground">
-                {(preferences.previewBytes / 1000000).toFixed(1)} MB of preview audio. Previews are
-                separate from saved narrations.
+                {(preferences.previewBytes / 1000000).toFixed(1)} MB used
               </p>
               <div>
                 <ConfirmDelete
                   name="temporary voice previews"
-                  description="Remove generated preview audio. Saved voice presets and Library narrations are kept."
+                  description="Delete generated previews from this device. Your saved voice presets and narrations are kept."
                   disabled={active || !preferences.previewBytes}
                   onConfirm={() => act('Clear temporary previews', { type: 'previews.clear' })}
                 />
               </div>
-              <p className="text-xs text-muted-foreground">Automatic retention is not enabled.</p>
             </section>
           </div>
         </TabsContent>
@@ -396,10 +375,10 @@ export function SettingsPage(): React.JSX.Element {
               <DetailValue label="FFmpeg">
                 {snapshot.dependencies.ffmpeg ? 'Available' : 'Unavailable'}
               </DetailValue>
-              <DetailValue label="Perth detector">
+              <DetailValue label="PerTh watermark detector">
                 {snapshot.dependencies.perth ? 'Available' : 'Unavailable'}
               </DetailValue>
-              <DetailValue label="Model host">
+              <DetailValue label="Hugging Face connection">
                 {snapshot.dependencies.online === null
                   ? 'Not checked'
                   : snapshot.dependencies.online
@@ -416,8 +395,8 @@ export function SettingsPage(): React.JSX.Element {
               <div role="alert" className="flex flex-col gap-1 text-sm text-destructive">
                 <p className="font-medium">FFmpeg unavailable</p>
                 <div className="leading-relaxed">
-                  ffmpeg is required for this output format or sample rate. Native 24 kHz WAV at 1×
-                  speed remains available.
+                  Use 24 kHz WAV at 1× speed, or restore FFmpeg to use other formats, sample rates,
+                  and speeds.
                 </div>
               </div>
             )}
@@ -439,12 +418,8 @@ export function SettingsPage(): React.JSX.Element {
               onClick={() => act('Open logs folder', { type: 'logs.open' })}
             >
               <HugeiconsIcon icon={FolderOpenIcon} data-icon="inline-start" aria-hidden="true" />
-              Open logs
+              Open logs folder
             </Button>
-            <p className="text-xs leading-relaxed text-muted-foreground">
-              Jobs are held in memory. Restarting loses unfinished work. No remote reporting or
-              dedicated health endpoint is enabled.
-            </p>
           </div>
         </TabsContent>
       </Tabs>

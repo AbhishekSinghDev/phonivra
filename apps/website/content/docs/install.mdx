@@ -5,9 +5,7 @@ description: Get the desktop app running and download your first speech model.
 
 ## Check for an installer
 
-Open [GitHub Releases](https://github.com/AbhishekSinghDev/phonivra/releases) to see whether an installer is available for your computer. The project targets Windows x64, Macs with Apple silicon, and Linux x64 with a Debian package.
-
-If you find an installer for your system, follow its release notes and open Phonivra. You download speech models separately inside the app.
+Check [GitHub Releases](https://github.com/AbhishekSinghDev/phonivra/releases) for a Windows x64 installer, an Apple silicon DMG, or a Debian package for Linux x64. If your platform has an installer, follow its release notes. Download the speech model during setup in the app.
 
 ## Run from source
 
@@ -28,13 +26,13 @@ pnpm engine:setup
 pnpm dev:desktop
 ```
 
-Setup installs the Python dependencies in the checkout. The desktop app starts the engine when it opens. If you only need CPU support, run `pnpm engine:setup --cpu` for the engine setup step.
+Engine setup installs Python dependencies in the checkout. For a CPU-only environment, use `pnpm engine:setup --cpu` in place of `pnpm engine:setup`. The desktop app starts the engine when it opens.
 
 ## Finish setup in the app
 
-1. Let Phonivra check the local engine, audio tools, and compute device.
-2. Choose the language you want to narrate in.
-3. Download the suggested speech model and wait for verification to finish.
-4. Generate a short test clip, then open the studio.
+1. Check that **Local engine** and **Audio tools** show **Ready**, then select **Continue**.
+2. Choose a language supported by Multilingual V3 and select **Continue**. You can add IndicF5 after setup.
+3. Select **Download model** and wait for verification, then select **Continue**.
+4. Select **Generate test clip**. When it finishes, select **Open studio**.
 
 You need an internet connection to download models. A verified model can be used offline afterward. Continue with [your first narration](/docs/first-narration).

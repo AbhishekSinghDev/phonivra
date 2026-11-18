@@ -68,9 +68,7 @@ export function NarrationResult(): React.JSX.Element | null {
       {job.kind === 'preview' && preview && !active && (
         <>
           <AudioTransport id={preview.id} title="Voice preview" duration={preview.duration} />
-          <p className="text-xs text-muted-foreground">
-            Voice previews do not include subtitles or transcripts and are not added to the Library.
-          </p>
+          <p className="text-xs text-muted-foreground">Voice previews are temporary.</p>
         </>
       )}
       {output ? (
@@ -102,7 +100,7 @@ export function NarrationResult(): React.JSX.Element | null {
                   <DialogHeader>
                     <DialogTitle>Take details</DialogTitle>
                     <DialogDescription>
-                      Export audio and companion files, or review the settings used.
+                      Review the settings used or export audio, subtitles, and the transcript.
                     </DialogDescription>
                   </DialogHeader>
                   <ScrollArea className="min-h-0 flex-1 pr-4">
@@ -123,23 +121,19 @@ export function NarrationResult(): React.JSX.Element | null {
             </div>
           </div>
         </>
-      ) : (
+      ) : !active && !(job.kind === 'preview' && preview) ? (
         <Empty>
           <EmptyHeader>
             <EmptyMedia variant="icon">
               <HugeiconsIcon icon={AudioLinesIcon} aria-hidden="true" />
             </EmptyMedia>
-            <EmptyTitle>
-              {active ? 'Your narration is taking shape' : 'Ready for your first take'}
-            </EmptyTitle>
+            <EmptyTitle>No narration generated</EmptyTitle>
             <EmptyDescription>
-              {active
-                ? 'The finished audio and companion files will appear here.'
-                : 'Write a script, choose a voice, and generate. Audio, subtitles and a transcript appear here.'}
+              Write or import a script, then generate a narration.
             </EmptyDescription>
           </EmptyHeader>
         </Empty>
-      )}
+      ) : null}
     </section>
   )
 }

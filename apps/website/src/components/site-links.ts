@@ -3,7 +3,6 @@ const source = `${repository}/blob/master`
 
 export const siteLinks = {
   repository,
-  setup: `${repository}#run-the-desktop-app`,
   releases: `${repository}/releases`,
   generatedAudio: `${source}/GENERATED_AUDIO.md`,
   chatterbox: 'https://github.com/resemble-ai/chatterbox',

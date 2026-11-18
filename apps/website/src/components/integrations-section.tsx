@@ -6,19 +6,15 @@ import { Button } from '@phonivra/ui/components/button'
 const foundations = [
   {
     name: 'Chatterbox and IndicF5',
-    role: 'The voice engine',
-    description: 'Chatterbox and AI4Bharat IndicF5 generate speech on your computer.'
+    description: 'These speech models run on your computer.'
   },
   {
     name: 'Hugging Face',
-    role: 'The model source',
-    description:
-      'The app downloads speech models from Hugging Face and keeps a local copy for offline use.'
+    description: 'Hosts the files Phonivra downloads for offline speech generation.'
   },
   {
     name: 'FFmpeg',
-    role: 'The audio toolkit',
-    description: 'FFmpeg records microphone audio and converts files to your chosen export format.'
+    description: 'Records microphone input and converts audio to the selected format.'
   }
 ] as const
 
@@ -34,14 +30,14 @@ export function IntegrationsSection(): React.JSX.Element {
           id="foundations-title"
           className="text-3xl leading-tight font-medium tracking-tight text-balance sm:text-4xl"
         >
-          What <span className="highlight">powers Phonivra</span>
+          The software <span className="highlight">behind Phonivra</span>
         </h2>
         <p className="max-w-xl text-base leading-relaxed text-muted-foreground">
           Phonivra was inspired by{' '}
           <Link href={siteLinks.chatterbox} className="underline underline-offset-4">
             Chatterbox by Resemble AI
           </Link>
-          . Thanks to the contributors who shared the code and models that made the studio possible.
+          .
         </p>
       </header>
 
@@ -80,11 +76,8 @@ export function IntegrationsSection(): React.JSX.Element {
             <dt className="font-montserrat text-xl font-medium tracking-tight lg:text-2xl">
               {foundation.name}
             </dt>
-            <dd className="flex flex-col gap-3">
-              <p className="text-sm text-highlight">{foundation.role}</p>
-              <p className="text-sm leading-relaxed text-muted-foreground">
-                {foundation.description}
-              </p>
+            <dd className="text-sm leading-relaxed text-muted-foreground">
+              {foundation.description}
             </dd>
           </div>
         ))}

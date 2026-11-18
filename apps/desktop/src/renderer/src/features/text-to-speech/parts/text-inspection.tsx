@@ -28,9 +28,9 @@ export default function TextInspection({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-h-5/6 sm:max-w-3xl">
         <DialogHeader>
-          <DialogTitle>Text and parts</DialogTitle>
+          <DialogTitle>Prepared script</DialogTitle>
           <DialogDescription>
-            Inspect what will be narrated. The original script stays unchanged.
+            See the text sent to the speech model and where it is split for generation.
           </DialogDescription>
         </DialogHeader>
         {!inspection ? (
@@ -78,7 +78,7 @@ export default function TextInspection({
                         {part.text}
                       </p>
                       <p className="text-xs text-muted-foreground">
-                        {part.text.length} characters · {part.pause}s pause after
+                        {part.text.length} characters · {part.pause}s pause after this part
                       </p>
                     </div>
                   </div>
@@ -100,7 +100,7 @@ export default function TextInspection({
             onClick={() => act('Refresh prepared text', { type: 'script.inspect' })}
           >
             <HugeiconsIcon icon={RefreshCwIcon} data-icon="inline-start" aria-hidden="true" />
-            Refresh inspection
+            Refresh prepared script
           </Button>
         </div>
       </DialogContent>

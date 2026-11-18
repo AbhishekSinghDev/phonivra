@@ -5,7 +5,6 @@ import {
   ArrowUpRightIcon,
   HeadphonesIcon,
   PlayIcon,
-  ShieldCheckIcon,
   SquareIcon
 } from '@hugeicons/core-free-icons'
 import { Link } from 'react-router'
@@ -31,7 +30,7 @@ export function TextToSpeechPage(): React.JSX.Element {
   const [inspectionOpen, setInspectionOpen] = useState(false)
   const inspect = useCallback(() => {
     setInspectionOpen(true)
-    void act('Inspect text and parts', { type: 'script.inspect' })
+    void act('Preview prepared script', { type: 'script.inspect' })
   }, [])
   const generate = useCallback(() => {
     const current = useStudioStore.getState().snapshot
@@ -54,16 +53,8 @@ export function TextToSpeechPage(): React.JSX.Element {
   const installation = snapshot.models.find((item) => item.id === model.id)
   return (
     <div className="studio-page mx-auto flex w-full max-w-6xl flex-col gap-7 pb-6">
-      <header className="flex flex-col items-center gap-4 text-center">
-        <div className="flex flex-col items-center gap-3">
-          <div className="flex flex-col items-center gap-3">
-            <h1 className="text-2xl font-medium tracking-tight sm:text-3xl">Text to speech</h1>
-          </div>
-          <p className="text-base leading-relaxed text-muted-foreground">
-            Your words, <span className="highlight">Brought to life.</span> Write a script and make
-            it sound like you.
-          </p>
-        </div>
+      <header className="text-center">
+        <h1 className="text-2xl font-medium tracking-tight sm:text-3xl">Text to speech</h1>
       </header>
       <div className="flex min-w-0 flex-col items-start gap-6 md:flex-row xl:gap-8">
         <div className="flex min-w-0 flex-1 flex-col gap-4 self-stretch">
@@ -76,11 +67,7 @@ export function TextToSpeechPage(): React.JSX.Element {
               inspect={inspect}
               onGenerate={generate}
             />
-            <div className="sticky bottom-0 z-10 mt-auto flex flex-wrap items-center justify-between gap-3 rounded-b-2xl border-t border-border bg-card px-6 py-4">
-              <span className="flex items-center gap-2 text-xs text-muted-foreground">
-                <HugeiconsIcon icon={ShieldCheckIcon} className="size-4" aria-hidden="true" />
-                Generated on your device
-              </span>
+            <div className="sticky bottom-0 z-10 mt-auto flex flex-wrap items-center justify-end gap-3 rounded-b-2xl border-t border-border bg-card px-6 py-4">
               {narrationActive ? (
                 <Button
                   size="lg"
@@ -98,7 +85,7 @@ export function TextToSpeechPage(): React.JSX.Element {
               ) : (
                 <Button className="studio-primary" size="lg" disabled={active} onClick={generate}>
                   {installation?.status === 'not-installed' || installation?.status === 'error'
-                    ? 'Download and generate'
+                    ? 'Download model and generate'
                     : 'Generate narration'}
                   <HugeiconsIcon
                     icon={ArrowUpRightIcon}
@@ -113,10 +100,10 @@ export function TextToSpeechPage(): React.JSX.Element {
           {active && (
             <p className="text-sm text-muted-foreground" role="status">
               {narrationActive ? (
-                `${job.message} Changes apply to your next take.`
+                'Changes apply to the next generation.'
               ) : (
                 <>
-                  Another job is running.{' '}
+                  Wait for the current job to finish or stop it.{' '}
                   <Link
                     to={
                       job.kind === 'batch'
@@ -127,8 +114,7 @@ export function TextToSpeechPage(): React.JSX.Element {
                     }
                   >
                     View current job
-                  </Link>{' '}
-                  to check progress or stop it.
+                  </Link>
                 </>
               )}
             </p>
@@ -160,8 +146,10 @@ export function TextToSpeechPage(): React.JSX.Element {
                 {snapshot.reference.status === 'ready'
                   ? 'Reference recording'
                   : selectedVoice?.kind === 'custom'
-                    ? 'Your saved voice'
-                    : 'Built-in voice'}
+                    ? 'Saved voice preset'
+                    : selectedVoice?.kind === 'external'
+                      ? 'External recording'
+                      : 'Built-in voice'}
               </p>
             </div>
             <Button
@@ -180,18 +168,12 @@ export function TextToSpeechPage(): React.JSX.Element {
           <SettingsInspector />
           {(installation?.status === 'not-installed' || installation?.status === 'error') && (
             <p className="text-xs leading-relaxed text-muted-foreground">
-              This model downloads before first use. Installed models work offline.
+              {model.label} needs to be downloaded before you can generate.
             </p>
           )}
         </aside>
       </div>
       <NarrationResult />
-      <p className="text-xs leading-relaxed text-muted-foreground">
-        Audio is generated on this device and includes the Resemble Perth watermark.{' '}
-        <Button variant="link" size="sm" asChild>
-          <Link to="/models">Model details</Link>
-        </Button>
-      </p>
       {inspectionOpen && (
         <Suspense fallback={null}>
           <TextInspection open={inspectionOpen} onOpenChange={setInspectionOpen} />

@@ -59,8 +59,8 @@ export function CatalogSelect({
         <PopoverContent className="w-80 p-0" align="start">
           <Command>
             <CommandInput
-              placeholder={`Find ${label.toLowerCase()}…`}
-              aria-label={`Find ${label.toLowerCase()}`}
+              placeholder={`Search ${label.toLowerCase()}…`}
+              aria-label={`Search ${label.toLowerCase()}`}
             />
             <CommandList>
               <CommandEmpty>No matching options.</CommandEmpty>

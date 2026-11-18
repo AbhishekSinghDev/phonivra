@@ -26,8 +26,7 @@ export function SettingsInspector(): React.JSX.Element {
         <SheetHeader>
           <SheetTitle>Advanced settings</SheetTitle>
           <SheetDescription>
-            Optional controls for text, voice expression and audio finishing. Changes apply to the
-            next narration or batch.
+            Set the speech model, script cleanup, and audio format for the next generation.
           </SheetDescription>
         </SheetHeader>
         <ScrollArea className="min-h-0 flex-1 px-6 pb-6">

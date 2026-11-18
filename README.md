@@ -1,6 +1,6 @@
 # Phonivra
 
-Phonivra is an open-source, local-first desktop text-to-speech studio for turning scripts into narration on your own hardware. Write or import a script, choose a voice, and export audio with subtitles and a transcript.
+Phonivra is an open-source desktop app that turns scripts into speech on your computer. Write or import a script, choose a voice, and export audio with subtitles and a transcript.
 
 ![Phonivra's narration workspace in dark mode](apps/website/public/images/studio-dark.png)
 
@@ -13,7 +13,7 @@ Phonivra is an open-source, local-first desktop text-to-speech studio for turnin
 - Generate several scripts as a batch or split a script into chapters.
 - Adjust pacing and mastering, export audio and companion files, and revisit completed work in the library.
 
-Synthesis runs locally. The app downloads model weights from Hugging Face and caches them for offline use. Scripts, reference recordings, and generated audio stay on your device. Model capabilities vary by checkpoint. See the [engine guide](apps/engine/README.md) for storage, device selection, and offline behavior.
+Synthesis runs locally. The app downloads model weights from Hugging Face and caches them for offline use. Scripts, reference recordings, and generated audio stay on your device. See the [engine guide](apps/engine/README.md) for storage, device selection, and offline behavior.
 
 ## Models and generated audio
 
@@ -37,7 +37,7 @@ pnpm dev:desktop
 
 Engine setup installs Python dependencies into a project-local virtual environment. Electron starts the engine when the app opens. For a CPU-only setup, use `pnpm engine:setup --cpu`. See the [engine setup guide](apps/engine/README.md#development-setup) for alternate runtimes and platform details.
 
-On first launch, Phonivra checks the local runtime and audio tools, then helps you choose a narration language and install a compatible model. Generate a short test clip to unlock the studio. In **Text to speech**, enter a script and generate a narration. Play the finished take or export it from the result panel.
+On first launch, Phonivra checks the local runtime and audio tools, then helps you choose a narration language and install a compatible model. Generate a short test clip to finish setup. In **Text to speech**, enter a script and generate a narration. Play the finished take or export it from the result panel.
 
 ### Run the website
 

@@ -12,7 +12,7 @@ const manrope = localFont({
 
 const title = 'Phonivra | Turn text into speech on your computer'
 const description =
-  'Turn text into speech with Phonivra. Make a voice from a recording, narrate several chapters at once, and export audio with subtitles.'
+  'A desktop text-to-speech studio with reusable voice presets, batch generation, and audio export with subtitles.'
 
 export const metadata: Metadata = {
   title,

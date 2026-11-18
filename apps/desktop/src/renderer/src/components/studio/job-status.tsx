@@ -83,17 +83,13 @@ export function JobStatus({
               {Math.round(job.progress)}%
               {job.elapsed > 0 && ` · ${formatTime(job.elapsed)} elapsed`}
             </span>
-            <span>
-              {job.remaining === null
-                ? 'Time estimate starts after loading'
-                : `${formatTime(job.remaining)} remaining`}
-            </span>
+            {job.remaining !== null && <span>{formatTime(job.remaining)} remaining</span>}
           </div>
         </>
       )}
       {job.streaming === 'ready' && !compact && (
         <p className="text-sm leading-relaxed text-muted-foreground">
-          Streaming preview available. Audio is provisional while mastering and export continue.
+          Listen while audio generates. The finished take includes your audio adjustments.
         </p>
       )}
       {active && (

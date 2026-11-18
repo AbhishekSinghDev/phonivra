@@ -25,14 +25,14 @@ Then someone knocked.
 
 ### Pronunciation dictionary
 
-Use the pronunciation dictionary for names, abbreviations, or words the voice keeps misreading. For example, map `API` to `A P I` to read the letters separately. The dictionary changes the text prepared for speech and leaves your script as written.
+Open **Advanced settings → Pronunciation dictionary** and turn on **Use dictionary**. Enter one rule per line, such as `API = A P I`, and save the dictionary. Rules apply to the text sent to the speech model.
 
 ### Preview the prepared text
 
-Choose **Inspect text and parts** to see the prepared text and where Phonivra plans to split it. Use this when cleanup changes something you wanted spoken or when a long passage needs a different break. Number conversion supports English numbers and Hindi counting numbers.
+Choose **Script tools → Preview prepared script** to check the text after cleanup and see where Phonivra splits the narration into parts. Number conversion supports English numbers and Hindi counting numbers.
 
 ## Save a project
 
-Open the editor menu and choose **Save project**. The JSON file contains your script, generation settings, pronunciation dictionary, and selected voice ID. Use **Open project JSON** to load it again. Opening a project replaces the current script, settings, and dictionary.
+Choose **Project → Save project**. The JSON file contains your script, generation settings, pronunciation dictionary, and selected voice ID. Use **Project → Open project** to load it again. Opening a project replaces the current script, settings, and dictionary.
 
 If you move a project to another computer, move any needed reference recording separately, add it as a [voice preset](/docs/voices), and select it before generating. Export the [finished audio](/docs/audio) separately.

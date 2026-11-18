@@ -1,8 +1,6 @@
 # Contributing to Phonivra
 
-You can help by reporting bugs, improving documentation, or contributing code to the desktop app, speech engine, website, or shared UI.
-
-## Find something to work on
+## Report a bug or propose a change
 
 Search [GitHub Issues](https://github.com/AbhishekSinghDev/phonivra/issues) for existing reports or proposals. If an issue matches what you want to work on, comment with what you plan to change. If there is no matching issue, open one to discuss the change before submitting a pull request.
 

@@ -417,7 +417,7 @@ class Studio:
         elif kind == "preferences.save":
             self.saved_settings = self.settings.model_copy()
             self.persist()
-            self.status = "Preferences saved."
+            self.status = "Generation defaults saved."
         elif kind == "device.set":
             self.jobs.require_idle()
             previous = self.models.mode
@@ -479,7 +479,7 @@ class Studio:
                 raise ValueError("Confirm model removal first.")
             self.models.remove(command.id)
             self.model_download_errors.pop(command.id, None)
-            self.status = "Model removed. Other installed models were preserved."
+            self.status = "Model download deleted."
         elif kind.startswith("batch."):
             self.batch_command(command)
         elif kind.startswith(("reference.", "voice")):
@@ -488,10 +488,10 @@ class Studio:
             self.output_command(command)
         elif kind == "credentials.set":
             self.models.token = command.token
-            self.status = "Download credential connected."
+            self.status = "Hugging Face token connected."
         elif kind == "credentials.remove":
             self.models.token = None
-            self.status = "Download credential removed."
+            self.status = "Hugging Face token removed."
         elif kind == "previews.clear":
             self.jobs.require_idle()
             for file in self.storage.previews.iterdir():
@@ -577,7 +577,7 @@ class Studio:
             if not self.batch["reviewed"]:
                 self.prepare_batch()
             if not self.units:
-                raise ValueError("Add scripts and prepare the batch first.")
+                raise ValueError("Add script files or paste text, then select Review items.")
             plan = [(copy.deepcopy(unit), self.unit_texts[unit["id"]]) for unit in self.units]
             for unit in self.units:
                 unit.update(status="pending")
@@ -626,9 +626,8 @@ class Studio:
                         if not recoverable:
                             raise
                 if failures:
-                    raise ValueError(
-                        f"Batch finished with {failures} failed item(s). Completed files are in the library."
-                    )
+                    label = "item" if failures == 1 else "items"
+                    raise ValueError(f"{failures} batch {label} failed. Check the batch results.")
         else:
             settings = (
                 settings if kind == "preview" else self.effective_settings(self.script, settings)
@@ -926,7 +925,7 @@ class Studio:
                         "score": score,
                         "message": (
                             f"Checked up to the first {watermark.WINDOW_SECONDS} seconds. "
-                            f"Score: {score:.3f}. Re-encoding may affect detection."
+                            f"Detection score: {score:.3f}."
                         ),
                     }
                     self.changed()
@@ -1003,7 +1002,7 @@ class Studio:
                 )
                 self.saved_settings = self.settings.model_copy()
                 self.persist()
-                self.status = "Project saved. Custom voice recordings stay in your voice folder."
+                self.status = "Project saved. Export audio and back up custom voice recordings separately."
             elif kind == "project.open":
                 path = selected_file(paths[0], {".json"})
                 data = read_json(path)

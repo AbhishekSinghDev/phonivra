@@ -33,25 +33,19 @@ export function VoiceTools(): React.JSX.Element | null {
         <SheetHeader>
           <SheetTitle>Voice reference</SheetTitle>
           <SheetDescription>
-            Clone a voice from a clean recording, or keep using your selected preset.
+            An attached recording takes priority over the selected voice preset.
           </SheetDescription>
         </SheetHeader>
         <ScrollArea className="min-h-0 flex-1 px-6 pb-6">
           <div className="flex flex-col gap-6">
             <ReferenceAttachment reference={snapshot.reference} />
-            <p className="text-xs leading-relaxed text-muted-foreground">
-              An attached reference overrides the selected voice until cleared. Use 6+ seconds;
-              saved presets keep up to 40 seconds. Later audio may be ignored by the model’s
-              conditioning window.
-            </p>
             <Separator />
             <VoicePresetControls />
             <Separator />
             <div className="flex flex-col gap-3">
-              <h3 className="text-sm font-medium">Try the voice</h3>
+              <h3 className="text-sm font-medium">Voice preview</h3>
               <p className="text-sm text-muted-foreground">
-                Generate a short sample in the selected language. Uses the current voice, model,
-                speed, seed and supported sampling controls.
+                Listen to a short sample with the current voice and model.
               </p>
               <Button
                 size="sm"

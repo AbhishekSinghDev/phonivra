@@ -15,7 +15,7 @@ export function BentoSection(): React.JSX.Element {
           id="details-title"
           className="text-3xl leading-tight font-medium tracking-tight text-balance sm:text-4xl"
         >
-          More tools for <span className="highlight">your narration</span>
+          Script and <span className="highlight">audio tools</span>
         </h2>
       </header>
 

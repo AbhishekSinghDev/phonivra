@@ -15,18 +15,15 @@ export function HeroSection(): React.JSX.Element {
             id="hero-title"
             className="max-w-2xl text-5xl leading-tight font-semibold tracking-tight text-balance sm:text-6xl"
           >
-            Turn your scripts
-            <br />
-            into <span className="highlight">spoken audio.</span>
+            Turn scripts into <span className="highlight">spoken audio</span>
           </h1>
           <p className="max-w-xl text-base leading-relaxed text-muted-foreground sm:text-lg">
-            Use the default voice or create one from a recording. Then export your narration with
-            subtitles and a transcript.
+            Create narration on your computer with a built-in voice or a voice from a recording.
           </p>
           <div className="flex flex-wrap items-center gap-3">
             <Button asChild size="lg" className="studio-primary">
               <Link href="#download">
-                Get started
+                Install Phonivra
                 <svg
                   viewBox="0 0 24 24"
                   fill="none"
@@ -40,15 +37,15 @@ export function HeroSection(): React.JSX.Element {
               </Link>
             </Button>
             <Button asChild variant="outline" size="lg">
-              <Link href="#studio">Explore the studio</Link>
+              <Link href="#studio">See studio features</Link>
             </Button>
           </div>
         </div>
         <div className="flex max-w-sm flex-col items-start gap-4 border-t border-card-edge pt-5 lg:mb-1">
           <Badge variant="outline">Open source</Badge>
           <p className="text-sm leading-relaxed text-muted-foreground">
-            Your scripts, recordings, and audio stay on your computer. Once you download a speech
-            model, you can make narration offline.
+            Scripts, recordings, and audio stay on your device. Download a speech model once to use
+            it offline.
           </p>
         </div>
       </div>

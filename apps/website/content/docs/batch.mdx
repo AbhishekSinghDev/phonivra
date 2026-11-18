@@ -5,7 +5,7 @@ description: Turn several scripts into separate audio files with shared settings
 
 ## Add scripts or split a long script
 
-Open **Batch** and import multiple script files or paste text. For a single script with several chapters, turn on splitting by Markdown headings. For example, paste this text and review the two chapters it creates.
+Open **Batch studio**. In **Script files**, choose **Add scripts**, or switch to **Pasted text**. Turn on **Split into chapters** for scripts with Markdown headings. The following example produces two audio files.
 
 ```markdown
 # Arrival
@@ -17,20 +17,21 @@ The first train reached the station before sunrise.
 By noon the platform was quiet again.
 ```
 
-- Text before the first heading becomes its own item.
-- Empty sections are skipped.
+- Use one to six `#` characters and a space at the start of a heading.
+- Text before the first heading becomes an item with the original script title.
+- Sections without text are skipped.
 - A script without headings stays together.
 
 ## Review and generate
 
-1. Choose the voice, model, language, cleanup rules, and output format. These settings apply to the whole batch. If language detection is on, Phonivra checks each item separately.
-2. Review the items and check their titles and languages. Change the input and review it again if the split looks wrong.
-3. Choose **Generate batch**. Watch each item for progress or errors.
+1. Choose shared narration settings. With automatic language detection on, Phonivra checks the language of each item separately. With the model set to **Auto**, it also picks a model for each detected language.
+2. Select **Review items** to check titles and languages. If you change the input, select **Review items** again.
+3. Choose **Generate batch**. The batch results show the status of each item.
 
 ## Save completed items
 
-- **Save the batch.** Choose **Save completed items** to export a ZIP with finished audio and available subtitle, transcript, and metadata files.
-- **Open one result.** Select **View output** next to the item.
+- **Save the batch.** Choose **Export completed items as ZIP** to export a ZIP with finished audio and available subtitle, transcript, and metadata files.
+- **Open one result.** Select **Open audio** next to the item.
 - **Retry failures.** Read the affected item’s message, fix the input or settings, and create a batch with just the scripts that still need audio.
 
 Stopping a batch keeps the audio that has already finished.

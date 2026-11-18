@@ -247,7 +247,7 @@ class Models:
                     ):
                         break
                 else:
-                    raise ValueError(f"Could not verify the downloaded asset {filename}.")
+                    raise ValueError(f"Could not verify {filename}. Retry the model download.")
             if {
                 asset.relative_to(destination).as_posix()
                 for asset in destination.rglob("*")
@@ -339,7 +339,7 @@ class Models:
                     self.verify_asset(vocoder / name, digest)
                     for name, digest in SPECS["indicf5-vocoder"].digests.items()
                 ):
-                    raise ValueError("IndicF5 vocoder verification failed. Reinstall IndicF5.")
+                    raise ValueError("Could not verify the IndicF5 audio decoder. Download IndicF5 again.")
                 model = IndicF5(directory, vocoder, device)
             elif model_id == "turbo":
                 from chatterbox.tts_turbo import ChatterboxTurboTTS

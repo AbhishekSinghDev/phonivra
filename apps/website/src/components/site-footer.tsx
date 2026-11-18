@@ -18,7 +18,7 @@ const linkGroups = [
       { label: 'Docs', href: '/docs' },
       { label: 'Technology', href: '#foundations' },
       { label: 'Common questions', href: '#faq' },
-      { label: 'Get started', href: '#download' },
+      { label: 'Install', href: '#download' },
       { label: 'GitHub repository', href: siteLinks.repository }
     ]
   }
@@ -32,7 +32,7 @@ export function SiteFooter(): React.JSX.Element {
           <div className="flex flex-col items-start gap-5">
             <SiteLogo size={40} />
             <p className="max-w-xs text-sm leading-relaxed text-muted-foreground">
-              An open source desktop app for making narration on your computer.
+              Open-source desktop text to speech.
             </p>
           </div>
 

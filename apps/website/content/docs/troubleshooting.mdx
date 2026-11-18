@@ -19,11 +19,11 @@ Some formats, sample rates, and speed changes require FFmpeg.
 2. Open **Models** and resume the download.
 3. Download the model again if verification keeps failing or you switched cache folders.
 
-Public downloads can work without an access token.
+If IndicF5 fails with an access error, check that your [Hugging Face token has access](/docs/models#download-a-model).
 
 ## Generation fails or takes a long time
 
-- **Test a short script.** Use the default voice and an installed model that supports the selected language.
+- **Test a short script.** Use the default voice with an installed Chatterbox model that supports the selected language. For IndicF5, use a saved voice preset with a transcript.
 - **Check the compute device.** If the error mentions the graphics device or memory, try **CPU** in **Settings → General**.
 - **Wait for a job to stop.** The current operation may need time to finish stopping. Completed batch items stay available. Unfinished jobs end when you close the app.
 
@@ -33,7 +33,7 @@ Check the selected system input and your microphone permissions. If you are runn
 
 ## Report a problem
 
-Open **Settings → Diagnostics** and choose **Refresh**. Use **Copy** for diagnostics or **Open logs folder** to inspect recent activity.
+Open **Settings → Diagnostics** and choose **Refresh**. Select **Copy** to copy diagnostics, or **Open logs folder** to inspect recent activity.
 
 Include the following in a [GitHub issue](https://github.com/AbhishekSinghDev/phonivra/issues):
 

@@ -1,8 +1,6 @@
 # Phonivra local engine
 
-This workspace contains the Python backend for the existing desktop studio. The sibling Chatterbox Narrator
-project was a behavior reference; its Gradio application and helpers are not imported or
-copied into this engine. Speech synthesis uses the pinned [Chatterbox library](https://github.com/resemble-ai/chatterbox) and [F5-TTS](https://github.com/SWivid/F5-TTS) for AI4Bharat IndicF5.
+The desktop app uses this Python engine for local speech synthesis with the pinned [Chatterbox library](https://github.com/resemble-ai/chatterbox) and [F5-TTS](https://github.com/SWivid/F5-TTS) for AI4Bharat IndicF5.
 See the [third-party notices](../../THIRD_PARTY_NOTICES.md) for checkpoint sources, licenses, and the upstream citation.
 
 ## Development setup
@@ -16,28 +14,18 @@ pnpm engine:setup
 pnpm dev:desktop
 ```
 
-Setup creates `apps/engine/.venv`; it does not install into system Python.
-The root command explicitly runs the engine's `setup` script with `pnpm run`, avoiding
-confusion with pnpm's own setup command. Setup pins uv's environment location to this
-directory and checks that its Python runtime exists before printing `Engine installed`.
-If setup exits with an error, resolve that error before opening the desktop app.
-Setup uses `uv sync --locked` with the committed `uv.lock`. This downloads Python
-dependencies, including PyTorch. Model downloads happen separately
-inside the app. CPU-only development setup is available with `pnpm engine:setup --cpu`.
+Setup uses `uv sync --locked` to install Python dependencies, including PyTorch, in
+`apps/engine/.venv`. Download speech models inside the desktop app. For a CPU-only environment,
+run `pnpm engine:setup --cpu`.
 On Linux, the CPU option replaces the locked PyTorch wheel with its matching CPU build after sync.
 The standard Linux PyTorch distribution includes NVIDIA runtime dependencies; a compatible
 host driver is still required. Auto prefers an available CUDA, ROCm or Apple Metal (MPS)
 device and otherwise uses CPU.
 
 `PHONIVRA_PYTHON=/absolute/path/to/python pnpm dev:desktop` selects another prepared
-environment. That environment must contain this engine's dependencies. The launcher sets
-the engine directory as its working directory, so importing a sibling narrator is unnecessary.
-
-Source files live directly in `apps/engine/src`. Setuptools explicitly maps `src` to
-the installed Python package `phonivra_engine`, preserving the desktop's module launch
-command. Run `pnpm engine:setup` after changing the layout to refresh the editable
-installation. An alternate `PHONIVRA_PYTHON` environment must also have this project
-installed, not just its dependencies.
+environment with `phonivra_engine` and its dependencies installed. Setuptools maps
+`apps/engine/src` to the `phonivra_engine` package. Run `pnpm engine:setup` after changing
+the source layout to refresh the editable installation.
 
 ### Radeon development runtime
 
@@ -55,8 +43,7 @@ matrix and needs a separate inference backend.
 
 ### Windows DirectML preview
 
-The Windows x64 runtime includes DirectML through ONNX Runtime. In **Settings → Generation
-device**, select **Windows DirectML (preview)** and generate with **Chatterbox Multilingual V3**.
+The Windows x64 runtime includes DirectML through ONNX Runtime. In **Settings → General → Preferred device**, select **Windows DirectML (preview)** and generate with **Chatterbox Multilingual V3**.
 This includes Hindi with the default voice or a reference voice. The engine exports the verified
 local transformer weights when loading the model. The first load can take longer and requires
 about 2 GB of free temporary disk space. Voice conditioning, audio decoding and watermarking
@@ -74,9 +61,6 @@ apps/engine/
   pyproject.toml   Python package and dependency configuration
   uv.lock          Locked Python dependencies
 ```
-
-The setup helper lives in `scripts/` so setuptools does not mistake it for a root
-package build script.
 
 Electron starts and stops the engine. Do not run a separate Uvicorn server. There is no
 fixed port, browser interface, or externally exposed API. The launch handshake uses stdin
@@ -180,8 +164,8 @@ pnpm format:check
 ```
 
 `engine:check` compiles Python syntax without importing the engine, loading models, launching
-the application, or running inference. Runtime and manual verification are intentionally left
-to the developer for this integration.
+the application, or running inference. For runtime verification, launch the desktop app
+and exercise the changed flow with its required model and audio tools.
 
 ## Upstream documentation
 

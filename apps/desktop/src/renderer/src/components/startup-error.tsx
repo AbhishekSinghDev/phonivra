@@ -18,14 +18,14 @@ export function StartupError({
         <div role="alert" className="flex flex-col gap-1 text-sm text-destructive">
           <HugeiconsIcon icon={AlertCircleIcon} aria-hidden="true" />
           <p className="font-medium">
-            {browser ? 'Open Phonivra in its desktop window' : 'Desktop connection unavailable'}
+            {browser ? 'Open Phonivra in its desktop window' : 'Phonivra could not load'}
           </p>
           <div className="leading-relaxed">{message}</div>
         </div>
         <p className="text-sm leading-relaxed text-muted-foreground">
           {browser
-            ? 'The development URL serves the interface. Device access and app settings are supplied by Electron when the desktop window opens.'
-            : 'Close and restart Phonivra. If this continues, check the terminal for an “Unable to load preload script” error.'}
+            ? 'Run pnpm dev:desktop from the project folder to open the desktop app.'
+            : 'Restart Phonivra. If the error returns, include the message above when reporting it.'}
         </p>
       </div>
     </main>

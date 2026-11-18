@@ -79,13 +79,12 @@ export function OutputDetails({
       <AudioTransport id={output.id} title={output.title} duration={output.duration} />
       <div className="flex flex-wrap items-center gap-2">
         <Badge variant="secondary">{output.format.toUpperCase()}</Badge>
-        <Badge variant="outline">{output.sampleRate / 1000} kHz · mono</Badge>
         <Badge variant="outline">
-          {output.external || !output.metadataAvailable
-            ? 'Watermark unverified'
-            : 'Perth watermarked'}
+          {output.sampleRate / 1000} kHz{!output.external && ' · mono'}
         </Badge>
-        {output.external && <Badge variant="outline">External recording</Badge>}
+        {!output.external && (output.model === 'turbo' || output.model === 'multilingual') && (
+          <Badge variant="outline">Chatterbox PerTh watermark</Badge>
+        )}
       </div>
       <div className="flex flex-wrap gap-2">
         <Button
@@ -115,8 +114,7 @@ export function OutputDetails({
       <Separator />
       {!output.metadataAvailable && (
         <p className="text-sm leading-relaxed text-muted-foreground">
-          Generation metadata is unavailable. The audio can still be played and exported; details
-          are not inferred from its filename.
+          Generation settings are unavailable for this file. You can still play or export the audio.
         </p>
       )}
       <Accordion type="multiple" value={sections} onValueChange={setSections}>
@@ -245,9 +243,8 @@ export function OutputDetails({
           <AccordionTrigger>About subtitles and transcripts</AccordionTrigger>
           <AccordionContent>
             <p className="text-sm text-muted-foreground">
-              SRT and VTT use approximate sentence timing, adjusted for speed and trimmed silence.
-              The transcript contains the prepared text. Subtitle editing, translation and word
-              alignment are not supported.
+              Review the approximate subtitle timings before publishing. The transcript contains the
+              text prepared for speech.
             </p>
           </AccordionContent>
         </AccordionItem>
@@ -268,11 +265,11 @@ export function OutputDetails({
             onClick={() => act('Open output folder', { type: 'folder.open' })}
           >
             <HugeiconsIcon icon={FolderOpenIcon} data-icon="inline-start" aria-hidden="true" />
-            Open folder
+            Open output folder
           </Button>
           <ConfirmDelete
             name={output.title}
-            description="The audio and its SRT, VTT, TXT and JSON companions will be removed. Other batch items are kept."
+            description="Delete this audio file and its associated subtitles, transcript, and generation metadata."
             onConfirm={() =>
               act('Delete narration', { type: 'output.delete', id: output.id, confirmed: true })
             }

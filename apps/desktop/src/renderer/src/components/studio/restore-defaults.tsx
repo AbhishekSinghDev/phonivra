@@ -20,8 +20,8 @@ export function RestoreDefaults({ children }: { children: ReactNode }): React.JS
         <AlertDialogHeader>
           <AlertDialogTitle>Restore factory defaults?</AlertDialogTitle>
           <AlertDialogDescription>
-            This resets your title, voice, language and all generation settings, including saved
-            defaults. Your script, dictionary and attached reference are kept.
+            Reset the current generation settings, including title, voice, and language. Choose Save
+            defaults in Settings to apply the reset to your saved defaults.
           </AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter>

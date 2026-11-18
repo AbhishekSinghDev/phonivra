@@ -71,8 +71,8 @@ function BatchText({
         />
         {tooLong && <FieldError id="batch-text-error">{draftLimitMessage}</FieldError>}
         <FieldDescription id="batch-text-help">
-          Use #, ## or ### headings for chapter titles. Text before the first heading becomes
-          Introduction.
+          With chapter splitting on, start headings with one to six # characters and a space. Text
+          before the first heading becomes a separate item.
         </FieldDescription>
       </Field>
     </FieldGroup>
@@ -93,12 +93,7 @@ export default function BatchPage(): React.JSX.Element {
   return (
     <ScreenFrame
       title="Batch studio"
-      description={
-        <>
-          <span className="highlight">One voice. Every chapter.</span> Turn your scripts into a
-          collection of audio files.
-        </>
-      }
+      description="Generate a separate audio file for each script or chapter."
     >
       <div className="flex min-w-0 flex-col gap-6 md:flex-row">
         <section
@@ -187,7 +182,7 @@ export default function BatchPage(): React.JSX.Element {
                     </EmptyMedia>
                     <EmptyTitle>Add scripts to start a batch</EmptyTitle>
                     <EmptyDescription>
-                      Supported script types: .txt, .md, .markdown, .srt, .vtt.
+                      Import plain text, Markdown, or SRT and VTT subtitles.
                     </EmptyDescription>
                   </EmptyHeader>
                 </Empty>
@@ -198,17 +193,13 @@ export default function BatchPage(): React.JSX.Element {
           )}
           <BooleanField
             label="Split into chapters"
-            description="Create an output for each Markdown heading. Empty sections are skipped; scripts without headings stay together."
+            description="Create one audio file per Markdown section with text. Scripts without headings stay together."
             checked={batch.splitChapters}
             disabled={active}
             onChange={(enabled) =>
               act('Change chapter splitting', { type: 'batch.split', enabled })
             }
           />
-          <p className="text-xs text-muted-foreground">
-            Only the selected source is used. Files and pasted text keep their own contents when
-            switching.
-          </p>
           <Button
             variant="outline"
             className="self-start"
@@ -224,15 +215,9 @@ export default function BatchPage(): React.JSX.Element {
           aria-label="Shared batch settings"
         >
           <h2 className="text-base font-semibold">Shared narration settings</h2>
-          <p className="text-sm text-muted-foreground">
-            Every item uses the same voice, model, cleanup and export settings.
-          </p>
           <EssentialSettings />
           <VoiceTools />
           <SettingsInspector />
-          <p className="text-xs text-muted-foreground">
-            No per-chapter overrides. Auto-detection applies separately to each item.
-          </p>
         </aside>
       </div>
       <Separator />
@@ -282,7 +267,7 @@ export default function BatchPage(): React.JSX.Element {
                       setInspectOutput(unit.outputId!)
                     }}
                   >
-                    View output
+                    Open audio
                   </Button>
                 )}
               </div>
@@ -291,9 +276,9 @@ export default function BatchPage(): React.JSX.Element {
         ) : (
           <Empty>
             <EmptyHeader>
-              <EmptyTitle>No items reviewed yet</EmptyTitle>
+              <EmptyTitle>No items to generate</EmptyTitle>
               <EmptyDescription>
-                Add scripts or paste text, then review the items before generating.
+                Add scripts or paste text, then select Review items.
               </EmptyDescription>
             </EmptyHeader>
           </Empty>
@@ -301,7 +286,7 @@ export default function BatchPage(): React.JSX.Element {
         {failed.length > 0 && (
           <div role="alert" className="flex flex-col gap-1 text-sm text-destructive">
             <p className="font-medium">
-              {completed.length ? 'Some items need attention' : 'No batch items finished.'}
+              {failed.length === 1 ? '1 item failed' : `${failed.length} items failed`}
             </p>
             <div className="leading-relaxed">
               {failed.slice(0, 3).map((unit) => (
@@ -320,8 +305,7 @@ export default function BatchPage(): React.JSX.Element {
         ) : null}
         <div className="flex flex-wrap items-center justify-between gap-4">
           <p className="max-w-lg text-xs text-muted-foreground">
-            Stopping keeps completed items available. A ZIP contains completed audio and companion
-            files.
+            Completed items stay in the library if you stop the batch.
           </p>
           <div className="flex flex-wrap gap-2">
             <Button
@@ -336,7 +320,7 @@ export default function BatchPage(): React.JSX.Element {
               }
             >
               <HugeiconsIcon icon={DownloadIcon} data-icon="inline-start" aria-hidden="true" />
-              Save completed items
+              Export completed items as ZIP
             </Button>
             {batchActive ? (
               <Button

@@ -29,11 +29,8 @@ export function LocalEngineCard(): React.JSX.Element {
       </figure>
       <div className="mx-2 mb-3 sm:mx-4">
         <CardBody>
-          <CardTitle>Use the hardware you have</CardTitle>
-          <CardText>
-            Phonivra uses a compatible graphics processor when available and can also generate audio
-            on the CPU.
-          </CardText>
+          <CardTitle>Generate on CPU or GPU</CardTitle>
+          <CardText>Auto uses a supported GPU when available and falls back to the CPU.</CardText>
         </CardBody>
       </div>
     </Card>

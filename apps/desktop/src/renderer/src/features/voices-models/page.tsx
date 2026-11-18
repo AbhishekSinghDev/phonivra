@@ -76,15 +76,7 @@ export function VoicesModelsPage(): React.JSX.Element {
   }
   return (
     <Sheet>
-      <ScreenFrame
-        title="Voice collection"
-        description={
-          <>
-            Find your <span className="highlight">Signature sound.</span> Explore voices and build
-            your own collection.
-          </>
-        }
-      >
+      <ScreenFrame title="Voice collection">
         <div className="flex min-w-0 flex-col gap-6 lg:flex-row">
           <section
             aria-label="Voice catalog"
@@ -161,7 +153,7 @@ export function VoicesModelsPage(): React.JSX.Element {
                           ? 'Built-in preset'
                           : item.kind === 'custom'
                             ? 'Saved preset'
-                            : 'Discovered recording'}
+                            : 'External recording'}
                       </span>
                     </span>
                     {snapshot.settings.voice === item.id && (
@@ -205,13 +197,13 @@ export function VoicesModelsPage(): React.JSX.Element {
                 </div>
                 <AudioTransport
                   id={`voice:${voice.id}`}
-                  title={voice.previewAvailable ? 'Voice audition' : 'Reference recording'}
+                  title={voice.previewAvailable ? 'Saved voice sample' : 'Reference recording'}
                   duration={voice.duration ?? 12}
                   state={voice.available && voice.duration !== null ? 'ready' : 'unavailable'}
                 />
                 <dl className="grid grid-cols-2 gap-4">
                   <DetailValue label="Reference duration">
-                    {voice.duration === null ? 'Model built-in voice' : `${voice.duration}s`}
+                    {voice.duration === null ? 'Built-in voice' : `${voice.duration}s`}
                   </DetailValue>
                   <DetailValue label="Language compatibility">
                     Any language supported by the model
@@ -228,7 +220,7 @@ export function VoicesModelsPage(): React.JSX.Element {
                   </Button>
                   <ConfirmDelete
                     name={voice.label}
-                    description="Delete this custom preset. Built-in voices and external recordings are protected."
+                    description="Delete the saved voice preset and its copy of the recording."
                     disabled={voice.kind !== 'custom'}
                     onConfirm={() =>
                       act('Delete voice preset', {
@@ -239,11 +231,6 @@ export function VoicesModelsPage(): React.JSX.Element {
                     }
                   />
                 </div>
-                {voice.kind !== 'custom' && (
-                  <p className="text-xs text-muted-foreground">
-                    Built-in voices and discovered recordings cannot be deleted here.
-                  </p>
-                )}
               </>
             )}
           </section>
@@ -252,7 +239,7 @@ export function VoicesModelsPage(): React.JSX.Element {
           <SheetHeader>
             <SheetTitle>Create & preview a voice</SheetTitle>
             <SheetDescription>
-              Start with a recording, save a preset, or try the current voice with custom settings.
+              Record or import a sample to save as a voice preset.
             </SheetDescription>
           </SheetHeader>
           <ScrollArea className="min-h-0 flex-1 px-6 pb-6">
@@ -260,11 +247,10 @@ export function VoicesModelsPage(): React.JSX.Element {
               <ReferenceAttachment reference={snapshot.reference} />
               <VoicePresetControls showDelete={false} />
               <p className="text-xs leading-relaxed text-muted-foreground">
-                Use a clean recording you have permission to clone. No training or reference
-                transcript is needed. Saving uses mono 24 kHz WAV, up to 40 seconds.
+                Use a recording of one speaker whose voice you have permission to clone.
               </p>
               <Separator />
-              <h2 className="text-base font-semibold">Preview with your settings</h2>
+              <h2 className="text-base font-semibold">Voice preview</h2>
               <FieldGroup>
                 <CatalogSelect
                   label="Preview model"
@@ -288,9 +274,8 @@ export function VoicesModelsPage(): React.JSX.Element {
                 />
               </FieldGroup>
               <p className="text-sm text-muted-foreground">
-                Previewing selects this voice for Narrate and Batch. Model and language changes also
-                apply there. Uses a fixed sample with your sampling, seed and speed. Script,
-                dictionary and publishing settings are not used.
+                The preview reads a sample in the selected language. It also selects this voice for
+                Text to speech and Batch studio. Model and language changes apply there too.
               </p>
               {snapshot.reference.status === 'ready' && (
                 <p className="text-sm leading-relaxed text-muted-foreground">
@@ -319,7 +304,7 @@ export function VoicesModelsPage(): React.JSX.Element {
               <p className="text-xs leading-relaxed text-muted-foreground">
                 {effective.id === 'indicf5'
                   ? 'IndicF5 needs a saved recording with 5 to 12 seconds of speech and an exact transcript.'
-                  : `${effective.label} uses up to ${effective.conditioningSeconds}s for speech conditioning and up to 10s for the decoder.`}{' '}
+                  : `${effective.label} uses the first ${effective.conditioningSeconds}s of the recording to guide the speech.`}{' '}
                 Previews are kept separately from the Library.
               </p>
             </div>

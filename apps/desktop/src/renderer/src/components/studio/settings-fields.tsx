@@ -200,8 +200,7 @@ export function EssentialSettings(): React.JSX.Element | null {
         <div role="alert" className="flex flex-col gap-1 text-sm text-destructive">
           <p className="font-medium">Choose a compatible model</p>
           <div className="leading-relaxed">
-            {effective.label} is English-only. Choose Multilingual V3 or Auto in Advanced settings
-            for {language?.label}.
+            {effective.label} does not support {language?.label}. Set Speech model to Auto.
           </div>
         </div>
       )}
@@ -282,7 +281,7 @@ export function AdvancedSettings(): React.JSX.Element | null {
             />
             <BooleanField
               label="Detect language automatically"
-              description="Detect one language per narration, or separately for each batch item. Review short or mixed-language scripts; detection is approximate."
+              description="Detect one language per script or batch item. Check the result for short or mixed-language text."
               checked={settings.auto_detect}
               onChange={(value) => updateSettings('auto_detect', value)}
             />
@@ -331,13 +330,13 @@ export function AdvancedSettings(): React.JSX.Element | null {
                 <>
                   <BooleanField
                     label="Trim edge silence"
-                    description="Trim below −45 dB, keeping 50ms padding."
+                    description="Trim quiet audio at the beginning and end, keeping 50 ms of padding."
                     checked={settings.trim_silence}
                     onChange={(value) => updateSettings('trim_silence', value)}
                   />
                   <BooleanField
                     label="Normalize loudness"
-                    description="Peak limited; gain clamped to ±24 dB."
+                    description="Adjust audio toward the target loudness, with peak limiting."
                     checked={settings.loudness}
                     onChange={(value) => updateSettings('loudness', value)}
                   />
@@ -403,7 +402,7 @@ export function AdvancedSettings(): React.JSX.Element | null {
             </Field>
             <p className="text-sm text-muted-foreground">
               WAV and FLAC use 16-bit samples. MP3 and M4A use 192 kbps; OGG uses quality 6.
-              Subtitles use approximate sentence timing.
+              Subtitles use approximate timing from the generated parts.
             </p>
           </FieldGroup>
         </AccordionContent>

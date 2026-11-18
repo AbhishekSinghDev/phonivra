@@ -45,13 +45,13 @@ const models = [
     name: 'Multilingual V3',
     size: '500M',
     language: '23 languages',
-    detail: 'Use a voice recording in another language'
+    detail: 'Can use a reference recording in a different language from the script'
   },
   {
     name: 'AI4Bharat IndicF5',
     size: '400M',
     language: '11 Indian languages',
-    detail: 'Use a short voice recording and its transcript'
+    detail: 'Requires a recording and its exact transcript'
   }
 ]
 
@@ -70,7 +70,7 @@ export function ModelsSection(): React.JSX.Element {
           Compare <span className="highlight">speech models</span>
         </h2>
         <p className="max-w-xl text-sm leading-relaxed text-muted-foreground lg:col-span-3">
-          Download the model you need from the app. Compare the languages and controls below.
+          Download models from Speech models in the desktop app.
         </p>
       </header>
 
@@ -130,10 +130,6 @@ export function ModelsSection(): React.JSX.Element {
           </ul>
         </div>
       </div>
-      <p className="mt-6 border-t border-card-edge pt-4 text-xs leading-relaxed text-muted-foreground">
-        Phonivra can write out numbers in English and counting numbers in Hindi before generating
-        speech. It does not add Hebrew vowel marks or Russian stress marks.
-      </p>
     </section>
   )
 }
