@@ -370,6 +370,7 @@ export function SettingsPage(): React.JSX.Element {
               </div>
             </div>
             <dl className="grid grid-cols-2 gap-6">
+              <DetailValue label="Phonivra version">{__PHONIVRA_VERSION__}</DetailValue>
               <DetailValue label="Device">{snapshot.device.label}</DetailValue>
               <DetailValue label="GPU memory">{snapshot.device.vram ?? 'Unavailable'}</DetailValue>
               <DetailValue label="FFmpeg">

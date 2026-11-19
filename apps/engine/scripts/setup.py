@@ -65,7 +65,7 @@ def main() -> None:
             check=True,
         )
         print(f"Launch with PHONIVRA_PYTHON={str(python)!r} pnpm dev:desktop")
-    elif arguments.cpu and sys.platform == "linux":
+    elif arguments.cpu and sys.platform == "linux" and os.uname().machine != "x86_64":
         lock = tomllib.loads((root / "uv.lock").read_text(encoding="utf-8"))
         version = next(
             package["version"] for package in lock["package"] if package["name"] == "torch"

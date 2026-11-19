@@ -3,6 +3,7 @@ const { join } = require('node:path')
 module.exports = {
   appId: 'com.phonivra.desktop',
   productName: 'Phonivra',
+  icon: 'public/logos/phonivra-icon.png',
   electronDist: join(__dirname, 'node_modules', 'electron', 'dist'),
   asar: true,
   // The staged app contains the compiled bundles and has no Node dependencies to collect.
@@ -40,6 +41,25 @@ module.exports = {
   linux: {
     target: 'deb',
     category: 'AudioVideo',
+    syncDesktopName: true,
     maintainer: 'Phonivra contributors'
+  },
+  deb: {
+    // Include Electron's graphics and audio libraries and the FFmpeg system dependencies.
+    depends: [
+      'libc6 (>= 2.35)',
+      'libgtk-3-0',
+      'libnotify4',
+      'libnss3',
+      'libxss1',
+      'libxtst6',
+      'xdg-utils',
+      'libatspi2.0-0',
+      'libuuid1',
+      'libsecret-1-0',
+      'libgbm1',
+      'libasound2t64 | libasound2',
+      'libpulse0'
+    ]
   }
 }

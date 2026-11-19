@@ -13,6 +13,9 @@ dependencies = [
   "pydantic>=2.10,<3",
   "huggingface-hub>=1.4,<2",
   "soundfile>=0.13,<1",
+  "torch>=2.13,<2.14",
+  "torchaudio==2.11.1",
+  "torchcodec==0.17.0",
   "num2words @ git+https://github.com/savoirfairelinux/num2words.git@07814cb114157f582c40a00119c2e9faba8dcee2",
   "langid==1.1.6",
   "httpx>=0.28,<1",
@@ -46,7 +49,10 @@ override-dependencies = [
   "safetensors>=0.8.0,<1",
   "torch>=2.13,<2.14",
   "torchaudio==2.11.1",
-  "transformers>=5.10,<5.11"
+  "transformers>=5.10,<5.11",
+  # cached-path 1.8.10 caps filelock below 4. Remove this override once its
+  # upstream constraint admits the security fixes in filelock 4.2.1.
+  "filelock>=4.2.1,<5"
 ]
 constraint-dependencies = [
   "pillow>=13",
@@ -54,3 +60,14 @@ constraint-dependencies = [
   "pyarrow<24; python_version < '3.13'",
   "pandas<3; python_version < '3.13'"
 ]
+
+[tool.uv.sources]
+# Keep the Linux x86-64 runtime within the GitHub release asset limit.
+torch = { index = "pytorch-cpu", marker = "sys_platform == 'linux' and platform_machine == 'x86_64'" }
+torchaudio = { index = "pytorch-cpu", marker = "sys_platform == 'linux' and platform_machine == 'x86_64'" }
+torchcodec = { index = "pytorch-cpu", marker = "sys_platform == 'linux' and platform_machine == 'x86_64'" }
+
+[[tool.uv.index]]
+name = "pytorch-cpu"
+url = "https://download.pytorch.org/whl/cpu"
+explicit = true

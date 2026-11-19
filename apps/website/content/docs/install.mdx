@@ -7,6 +7,14 @@ description: Get the desktop app running and download your first speech model.
 
 Check [GitHub Releases](https://github.com/AbhishekSinghDev/phonivra/releases) for a Windows x64 installer, an Apple silicon DMG, or a Debian package for Linux x64. If your platform has an installer, follow its release notes. Download the speech model during setup in the app.
 
+Release notes list the supported OS versions, download size, and required disk space. Compare the SHA-256 of your download with its entry in `SHA256SUMS.txt`. The Linux x64 installer uses CPU inference.
+
+On Linux, open a terminal in the download folder and run `sudo apt install ./Phonivra-<version>-linux-x64.deb`, substituting the file name you downloaded. APT installs the required system libraries along with Phonivra.
+
+To update manually, close Phonivra and install the newer build for the same platform. Back up important projects and custom recordings before an upgrade, and check the release notes for any version-specific steps.
+
+Find the installed version under **Settings → Diagnostics**.
+
 ## Run from source
 
 Use this option if an installer is unavailable or you want to work with the source code. Run the commands in a desktop session that can open graphical apps.
@@ -26,7 +34,7 @@ pnpm engine:setup
 pnpm dev:desktop
 ```
 
-Engine setup installs Python dependencies in the checkout. For a CPU-only environment, use `pnpm engine:setup --cpu` in place of `pnpm engine:setup`. The desktop app starts the engine when it opens.
+Engine setup installs Python dependencies in the checkout. Linux x64 uses CPU-only PyTorch by default. The desktop app starts the engine when it opens.
 
 ## Finish setup in the app
 

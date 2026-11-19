@@ -3,7 +3,6 @@
 import argparse
 import hashlib
 import json
-import os
 import platform
 import re
 import shutil
@@ -13,12 +12,12 @@ import tempfile
 import zipfile
 from pathlib import Path
 
+from smoke_runtime import PYTHON_EXECUTABLE, WINDOWS, verify_runtime
+
 DESKTOP = Path(__file__).resolve().parents[1]
 ENGINE = DESKTOP.parent / "engine"
 STAGE = DESKTOP / ".release"
 PYTHON_VERSION = "3.12.15"
-WINDOWS = sys.platform == "win32"
-PYTHON_EXECUTABLE = "python.exe" if WINDOWS else "bin/python3"
 MEDIA_FILES = tuple(
     f"{name}.exe" if WINDOWS else name for name in ("ffmpeg", "ffprobe")
 ) + ("THIRD-PARTY-NOTICES.txt",)
@@ -84,9 +83,20 @@ def stage_python(working: Path, destination: Path) -> None:
         raise SystemExit(
             "The standalone Python installation resolved outside its bundle."
         )
-    requirements = working / "requirements.txt"
+    lock = working / "pylock.toml"
     subprocess.run(
-        [uv, "export", "--locked", "--no-dev", "--no-emit-project", "-o", requirements],
+        [
+            uv,
+            "export",
+            "--locked",
+            "--no-dev",
+            "--no-emit-project",
+            "--format",
+            "pylock.toml",
+            "--quiet",
+            "-o",
+            lock,
+        ],
         cwd=ENGINE,
         check=True,
     )
@@ -101,7 +111,7 @@ def stage_python(working: Path, destination: Path) -> None:
             purelib,
             "--link-mode",
             "copy",
-            requirements,
+            lock,
         ],
         check=True,
     )
@@ -135,39 +145,12 @@ def main() -> None:
         stage_media(args.media, args.sha256, engine / "media")
         stage_python(working, engine / "python")
         shutil.move(engine, STAGE / "engine")
-    python = STAGE / "engine" / "python" / PYTHON_EXECUTABLE
-    subprocess.run(
-        [
-            python,
-            "-I",
-            "-B",
-            "-c",
-            (
-                "import torch; import phonivra_engine.server; "
-                "import chatterbox.mtl_tts; import chatterbox.tts_turbo; "
-                "from f5_tts.model import CFM, DiT; import vocos; "
-                + (
-                    "from phonivra_engine.directml import available; "
-                    "assert available(), 'The Windows runtime is missing DirectML'; "
-                    if WINDOWS
-                    else ""
-                )
-                + "print(torch.__version__)"
-            ),
-        ],
-        check=True,
-        timeout=120,
-    )
-    subprocess.run(
-        [python, "-I", "-B", "-m", "unittest", "discover", "-s", ENGINE / "tests"],
-        env={**os.environ, "PHONIVRA_MEDIA_DIR": str(STAGE / "engine" / "media")},
-        check=True,
-        timeout=120,
-    )
+    verify_runtime(STAGE / "engine")
     app = STAGE / "app"
     shutil.copytree(DESKTOP / "out", app / "out")
     metadata = {
-        key: desktop[key] for key in ("name", "version", "description", "main", "type")
+        key: desktop[key]
+        for key in ("name", "version", "description", "main", "type", "desktopName")
     }
     metadata["author"] = "Phonivra contributors"
     metadata["homepage"] = "https://github.com/AbhishekSinghDev/phonivra"
