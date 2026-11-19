@@ -73,6 +73,10 @@ build_library() (
   make install
 )
 build_library libogg-1.3.6
+if [[ "$target" == mac-arm64 ]]; then
+  # Vorbis 1.3.7 adds an obsolete Darwin linker option to its compiler flags.
+  sed -i.bak 's/ -force_cpusubtype_ALL//g' libvorbis-1.3.7/configure
+fi
 build_library libvorbis-1.3.7 --with-ogg="$prefix"
 build_library lame-4.0 --disable-frontend --disable-decoder
 
