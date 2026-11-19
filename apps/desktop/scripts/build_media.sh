@@ -87,7 +87,7 @@ build_library lame-4.0 --disable-frontend --disable-decoder
     --pkg-config-flags=--static --enable-libmp3lame --enable-libvorbis \
     --extra-cflags="-I$prefix/include" --extra-ldflags="-L$prefix/lib" \
     "${platform_flags[@]}" || { tail -n 40 ffbuild/config.log >&2; exit 1; }
-  make ffmpeg ffprobe
+  make "ffmpeg$suffix" "ffprobe$suffix"
 )
 cp "ffmpeg-9.0.2/ffmpeg$suffix" "ffmpeg-9.0.2/ffprobe$suffix" bundle/
 cp "$recipe" archives/
