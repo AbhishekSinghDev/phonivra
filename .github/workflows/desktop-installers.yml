@@ -100,7 +100,8 @@ jobs:
 
   installers:
     needs: [checks, preflight, preview-media]
-    if: ${{ !cancelled() && needs.checks.result == 'success' && needs.preflight.result == 'success' && (needs.preview-media.result == 'success' || (inputs.media_tag != '' && needs.preview-media.result == 'skipped')) }}
+    # Let healthy targets finish even when another preview media build fails.
+    if: ${{ !cancelled() && needs.checks.result == 'success' && needs.preflight.result == 'success' && (needs.preview-media.result == 'success' || needs.preview-media.result == 'failure' || (inputs.media_tag != '' && needs.preview-media.result == 'skipped')) }}
     environment: ${{ inputs.signed && matrix.target != 'linux-x64' && 'desktop-signing' || 'desktop-preview' }}
     strategy:
       fail-fast: false

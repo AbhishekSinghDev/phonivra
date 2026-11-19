@@ -41,7 +41,7 @@ case "$target:$(uname -s):$(uname -m)" in
     ;;
   mac-arm64:Darwin:arm64)
     export MACOSX_DEPLOYMENT_TARGET=14.0
-    platform_flags+=(--enable-indev=avfoundation)
+    platform_flags+=(--enable-avfoundation --enable-indev=avfoundation)
     ;;
   win-x64:MINGW64*:x86_64)
     host_flag=--host=x86_64-w64-mingw32
@@ -87,6 +87,11 @@ build_library lame-4.0 --disable-frontend --disable-decoder
     --pkg-config-flags=--static --enable-libmp3lame --enable-libvorbis \
     --extra-cflags="-I$prefix/include" --extra-ldflags="-L$prefix/lib" \
     "${platform_flags[@]}" || { tail -n 40 ffbuild/config.log >&2; exit 1; }
+  if [[ "$target" == mac-arm64 ]] && ! grep -qx 'CONFIG_AVFOUNDATION_INDEV=yes' ffbuild/config.mak; then
+    echo 'FFmpeg could not configure AVFoundation recording.' >&2
+    tail -n 40 ffbuild/config.log >&2
+    exit 1
+  fi
   make "ffmpeg$suffix" "ffprobe$suffix"
 )
 cp "ffmpeg-9.0.2/ffmpeg$suffix" "ffmpeg-9.0.2/ffprobe$suffix" bundle/
