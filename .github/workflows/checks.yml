@@ -46,7 +46,7 @@ jobs:
           python-version: '3.12'
       - run: npm install --global pnpm@12.15.0
       - run: python -m pip install uv==0.13.5
-      - run: bash .github/scripts/audit-js.sh
+      - run: pnpm audit --audit-level high
       - name: Audit Python on all release platforms
         if: ${{ !cancelled() }}
         working-directory: apps/engine

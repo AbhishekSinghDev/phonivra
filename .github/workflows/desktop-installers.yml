@@ -140,7 +140,7 @@ jobs:
       - run: npm install --global pnpm@12.15.0
       - run: python -m pip install uv==0.13.5
       - run: pnpm install --frozen-lockfile
-      - run: bash .github/scripts/audit-js.sh
+      - run: pnpm audit --audit-level high
       - run: uv audit --locked --no-dev --python-version 3.12
         working-directory: apps/engine
       - run: pnpm --filter phonivra build
