@@ -3,7 +3,7 @@ const { join } = require('node:path')
 module.exports = {
   appId: 'com.phonivra.desktop',
   productName: 'Phonivra',
-  icon: 'public/logos/phonivra-icon.png',
+  icon: 'build/icon.png',
   asar: true,
   // The staged app contains the compiled bundles and has no Node dependencies to collect.
   beforeBuild: () => false,
