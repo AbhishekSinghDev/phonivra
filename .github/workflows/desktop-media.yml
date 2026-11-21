@@ -1,0 +1,101 @@
+name: Desktop media tools
+
+on:
+  workflow_dispatch:
+    inputs:
+      all_platforms:
+        description: Include Windows x64 and macOS Apple silicon alongside Linux x64
+        type: boolean
+        default: false
+  workflow_call:
+    inputs:
+      all_platforms:
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+
+jobs:
+  media:
+    strategy:
+      fail-fast: false
+      matrix:
+        include: ${{ fromJSON(inputs.all_platforms && '[
+          {"runner":"ubuntu-22.04","target":"linux-x64"},
+          {"runner":"windows-2025","target":"win-x64"},
+          {"runner":"macos-15","target":"mac-arm64"}]'
+          || '[{"runner":"ubuntu-22.04","target":"linux-x64"}]') }}
+    runs-on: ${{ matrix.runner }}
+    timeout-minutes: 60
+    env:
+      TARGET: ${{ matrix.target }}
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6
+        with:
+          python-version: '3.12'
+      - name: Restore previously verified PR media
+        if: github.event_name == 'pull_request'
+        id: media-cache
+        uses: actions/cache@caa296126883cff596d87d8935842f9db880ef25 # v5
+        with:
+          path: media-assets
+          key: preview-media-${{ matrix.runner }}-${{ matrix.target }}-${{ hashFiles('apps/desktop/scripts/build_media.sh', '.github/workflows/desktop-media.yml') }}
+      - name: Install the PulseAudio development headers
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends libpulse-dev
+      - uses: msys2/setup-msys2@ec48f7c5447b3140e2b088413ae3a55687bccb6e # v2
+        if: runner.os == 'Windows' && steps.media-cache.outputs.cache-hit != 'true'
+        with:
+          msystem: MINGW64
+          update: true
+          install: >-
+            curl
+            diffutils
+            make
+            tar
+            xz
+            zip
+            mingw-w64-x86_64-gcc
+            mingw-w64-x86_64-pkgconf
+      - name: Build FFmpeg and FFprobe
+        if: runner.os != 'Windows' && steps.media-cache.outputs.cache-hit != 'true'
+        shell: bash
+        run: bash apps/desktop/scripts/build_media.sh "$TARGET" media-assets
+      - name: Build FFmpeg and FFprobe
+        if: runner.os == 'Windows' && steps.media-cache.outputs.cache-hit != 'true'
+        shell: msys2 {0}
+        run: bash apps/desktop/scripts/build_media.sh "$TARGET" media-assets
+      - name: Verify the media archive and audio support
+        shell: bash
+        run: |
+          python - <<'PY'
+          import os
+          import sys
+          from pathlib import Path
+          from tempfile import TemporaryDirectory
+
+          sys.path.insert(0, "apps/desktop/scripts")
+          from smoke_runtime import smoke_media
+          from stage_release import stage_media
+
+          output = Path("media-assets")
+          prefix = f"ffmpeg-{os.environ['TARGET']}"
+          digest = (output / f"{prefix}.sha256").read_text().split()[0]
+          with TemporaryDirectory() as directory:
+              scratch = Path(directory)
+              stage_media(output / f"{prefix}.zip", digest, scratch / "media")
+              smoke_media(scratch, scratch)
+          PY
+      - uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6
+        with:
+          name: ffmpeg-${{ matrix.target }}
+          path: media-assets/*
+          if-no-files-found: error
+          compression-level: 0
+          overwrite: true

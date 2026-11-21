@@ -2,7 +2,7 @@ import { app } from 'electron'
 import { spawn, type ChildProcessWithoutNullStreams } from 'node:child_process'
 import { randomBytes } from 'node:crypto'
 import { existsSync, mkdirSync, createWriteStream } from 'node:fs'
-import { dirname, isAbsolute, join, resolve } from 'node:path'
+import { delimiter, dirname, isAbsolute, join, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { loopbackHost, protocolVersion } from '../shared/contract'
 import type { StudioUpdate } from '../shared/studio'
@@ -86,9 +86,17 @@ export class EngineClient {
       for (const key of Object.keys(env)) {
         if (/^(?:HF_|HUGGINGFACE_|TORCH_FORCE_|PHONIVRA_MEDIA_DIR$)/i.test(key)) delete env[key]
       }
-      env.PHONIVRA_MEDIA_DIR = join(engine, 'media')
+      const media = join(engine, 'media')
+      const pathKey =
+        process.platform === 'win32'
+          ? (Object.keys(env).find((key) => key.toUpperCase() === 'PATH') ?? 'PATH')
+          : 'PATH'
+      env.PHONIVRA_MEDIA_DIR = media
+      // Python libraries that launch ffmpeg by name should use the bundled copy.
+      env[pathKey] = env[pathKey] ? `${media}${delimiter}${env[pathKey]}` : media
     }
-    const child = spawn(python, ['-I', '-u', '-m', 'phonivra_engine'], {
+    // Keep Python from writing bytecode into the signed application bundle.
+    const child = spawn(python, ['-I', '-B', '-u', '-m', 'phonivra_engine'], {
       cwd: engine,
       env,
       windowsHide: true,

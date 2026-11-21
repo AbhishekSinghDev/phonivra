@@ -32,3 +32,5 @@ For IndicF5, accept the conditions on the [IndicF5 model page](https://huggingfa
 ## Choose where generation runs
 
 In **Settings → General → Preferred device**, choose **Auto** to use a supported NVIDIA, AMD ROCm, or Apple Metal device when available, with CPU as the fallback. You can also choose a device manually. On Windows, choose **Windows DirectML (preview)** explicitly to accelerate Multilingual V3. If a graphics device fails to load a model, try CPU. Phonivra keeps one model loaded at a time.
+
+The Linux x64 installer bundles CPU-only PyTorch. GPU inference on Linux requires running Phonivra from source with a compatible engine and driver.

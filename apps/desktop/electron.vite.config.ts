@@ -4,6 +4,7 @@ import { randomBytes } from 'node:crypto'
 import { defineConfig } from 'electron-vite'
 import react from '@vitejs/plugin-react'
 import tailwindcss from '@tailwindcss/vite'
+import { version } from './package.json'
 
 export default defineConfig(({ command }) => {
   const nonce = command === 'serve' ? randomBytes(24).toString('base64') : undefined
@@ -14,6 +15,8 @@ export default defineConfig(({ command }) => {
       build: { rollupOptions: { output: { format: 'cjs', entryFileNames: '[name].cjs' } } }
     },
     renderer: {
+      define: { __PHONIVRA_VERSION__: JSON.stringify(version) },
+      build: { license: { fileName: 'THIRD_PARTY_JAVASCRIPT_LICENSES.md' } },
       html: { cspNonce: nonce },
       resolve: { alias: { '@': fileURLToPath(new URL('./src/renderer/src', import.meta.url)) } },
       plugins: [

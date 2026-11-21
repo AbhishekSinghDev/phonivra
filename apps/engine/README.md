@@ -15,12 +15,10 @@ pnpm dev:desktop
 ```
 
 Setup uses `uv sync --locked` to install Python dependencies, including PyTorch, in
-`apps/engine/.venv`. Download speech models inside the desktop app. For a CPU-only environment,
-run `pnpm engine:setup --cpu`.
-On Linux, the CPU option replaces the locked PyTorch wheel with its matching CPU build after sync.
-The standard Linux PyTorch distribution includes NVIDIA runtime dependencies; a compatible
-host driver is still required. Auto prefers an available CUDA, ROCm or Apple Metal (MPS)
-device and otherwise uses CPU.
+`apps/engine/.venv`. Download speech models inside the desktop app. The default Linux x64
+environment and installer use CPU-only PyTorch. On other Linux architectures, use
+`pnpm engine:setup --cpu` to replace the standard PyTorch wheel with its CPU build.
+Auto prefers an available CUDA, ROCm or Apple Metal (MPS) device and otherwise uses CPU.
 
 `PHONIVRA_PYTHON=/absolute/path/to/python pnpm dev:desktop` selects another prepared
 environment with `phonivra_engine` and its dependencies installed. Setuptools maps

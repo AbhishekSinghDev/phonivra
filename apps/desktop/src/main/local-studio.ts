@@ -1,4 +1,4 @@
-import { clipboard, dialog, shell, systemPreferences } from 'electron'
+import { app, clipboard, dialog, shell, systemPreferences } from 'electron'
 import { basename, extname } from 'node:path'
 import { EngineClient } from './engine-client'
 import { readCredential, saveCredential, removeCredential } from './credentials'
@@ -248,6 +248,7 @@ export class LocalStudio {
         clipboard.writeText(
           JSON.stringify(
             {
+              version: app.getVersion(),
               device: this.state?.device,
               dependencies: this.state?.dependencies,
               job: this.state?.job,

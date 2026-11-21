@@ -2,6 +2,7 @@
   "name": "phonivra",
   "version": "0.1.0",
   "description": "Phonivra desktop text-to-speech app",
+  "desktopName": "phonivra.desktop",
   "private": true,
   "main": "./out/main/index.js",
   "type": "module",

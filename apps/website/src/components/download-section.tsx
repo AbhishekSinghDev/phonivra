@@ -27,8 +27,8 @@ export function DownloadSection(): React.JSX.Element {
             Install <span className="highlight">Phonivra</span>
           </h2>
           <p className="max-w-lg text-base leading-relaxed text-muted-foreground">
-            Check GitHub Releases for an installer for your system, or run the desktop app from
-            source.
+            Check GitHub Releases for the Debian-based Linux x64 installer, or run the desktop app
+            from source.
           </p>
           <div className="flex flex-wrap justify-center gap-3">
             <Button asChild size="lg" className="studio-primary">
@@ -40,10 +40,6 @@ export function DownloadSection(): React.JSX.Element {
           </div>
         </div>
       </div>
-
-      <p className="mx-auto max-w-xl py-8 text-center text-sm leading-relaxed text-muted-foreground">
-        Builds target Windows x64, Apple silicon Macs, and Debian-based Linux on x64.
-      </p>
     </section>
   )
 }
