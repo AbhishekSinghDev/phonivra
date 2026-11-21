@@ -2,7 +2,16 @@ name: Desktop media tools
 
 on:
   workflow_dispatch:
+    inputs:
+      all_platforms:
+        description: Include Windows x64 and macOS Apple silicon alongside Linux x64
+        type: boolean
+        default: false
   workflow_call:
+    inputs:
+      all_platforms:
+        type: boolean
+        default: false
 
 permissions:
   contents: read
@@ -12,13 +21,11 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        include:
-          - runner: ubuntu-22.04
-            target: linux-x64
-          - runner: windows-2025
-            target: win-x64
-          - runner: macos-15
-            target: mac-arm64
+        include: ${{ fromJSON(inputs.all_platforms && '[
+          {"runner":"ubuntu-22.04","target":"linux-x64"},
+          {"runner":"windows-2025","target":"win-x64"},
+          {"runner":"macos-15","target":"mac-arm64"}]'
+          || '[{"runner":"ubuntu-22.04","target":"linux-x64"}]') }}
     runs-on: ${{ matrix.runner }}
     timeout-minutes: 60
     env:

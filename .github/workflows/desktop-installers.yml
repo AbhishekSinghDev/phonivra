@@ -18,6 +18,10 @@ on:
         description: Require Windows and macOS signing and macOS notarization
         type: boolean
         default: false
+      all_platforms:
+        description: Include Windows x64 and macOS Apple silicon alongside Linux x64
+        type: boolean
+        default: false
       prepare_draft:
         description: After review, attach the installers to a draft GitHub Release
         type: boolean
@@ -41,6 +45,7 @@ jobs:
     outputs:
       version: ${{ steps.inputs.outputs.version }}
       media_checksums: ${{ steps.inputs.outputs.media_checksums }}
+      release_mode: ${{ steps.inputs.outputs.release_mode }}
     steps:
       - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
         with:
@@ -52,19 +57,27 @@ jobs:
           MEDIA_TAG: ${{ inputs.media_tag }}
           MEDIA_RELEASES: ${{ vars.PHONIVRA_MEDIA_SHA256 }}
           SIGNED: ${{ inputs.signed }}
+          ALL_PLATFORMS: ${{ inputs.all_platforms }}
           PREPARE_DRAFT: ${{ inputs.prepare_draft }}
           REF_PROTECTED: ${{ github.ref_protected }}
         run: |
           test "$(git rev-parse HEAD)" = "$GITHUB_SHA"
-          if [[ "$SIGNED" == true ]]; then
-            test "$REF_PROTECTED" = true || { echo "Signed builds require a protected ref."; exit 1; }
-            test -n "$MEDIA_TAG" || { echo "Signed builds require an approved media tag."; exit 1; }
+          if [[ "$SIGNED" == true && "$ALL_PLATFORMS" != true ]]; then
+            echo "OS signing applies only to builds that include Windows and macOS."
+            exit 1
+          fi
+          if [[ "$SIGNED" == true || "$PREPARE_DRAFT" == true ]]; then
+            test "$REF_PROTECTED" = true || { echo "Release builds require a protected ref."; exit 1; }
+            test -n "$MEDIA_TAG" || { echo "Release builds require an approved media tag."; exit 1; }
             git merge-base --is-ancestor HEAD origin/master
             [[ "$GITHUB_REF" == refs/heads/master || "$GITHUB_REF" == refs/tags/v* ]] || exit 1
           fi
-          if [[ "$PREPARE_DRAFT" == true && ( "$SIGNED" != true || "$GITHUB_REF" != refs/tags/v* ) ]]; then
-            echo "A release draft requires a signed build from a desktop version tag."
-            exit 1
+          if [[ "$PREPARE_DRAFT" == true ]]; then
+            [[ "$GITHUB_REF" == refs/tags/v* ]] || { echo "Release drafts require a desktop version tag."; exit 1; }
+            if [[ "$ALL_PLATFORMS" == true && "$SIGNED" != true ]]; then
+              echo "Release drafts with Windows and macOS require OS signing."
+              exit 1
+            fi
           fi
           python3 - <<'PY'
           import json
@@ -81,22 +94,32 @@ jobs:
           if ref.startswith("refs/tags/") and ref != f"refs/tags/v{version}":
               sys.exit(f"Desktop version {version} requires the tag v{version}.")
           media_tag = os.environ["MEDIA_TAG"]
+          targets = tuple(TARGETS) if os.environ["ALL_PLATFORMS"] == "true" else ("linux-x64",)
+          mode = "preview"
+          if os.environ["SIGNED"] == "true":
+              mode = "signed"
+          elif os.environ["PREPARE_DRAFT"] == "true":
+              mode = "release"
           checksums = {}
           if media_tag:
-              checksums = json.loads(os.environ["MEDIA_RELEASES"] or "{}").get(media_tag, {})
-              if not re.fullmatch(r"media-[A-Za-z0-9._-]+", media_tag) or set(checksums) != set(TARGETS):
-                  sys.exit("Enter a media-* tag with a checksum for each target in PHONIVRA_MEDIA_SHA256.")
-              if any(not re.fullmatch(r"[a-f0-9]{64}", digest) for digest in checksums.values()):
+              approved = json.loads(os.environ["MEDIA_RELEASES"] or "{}").get(media_tag, {})
+              if not re.fullmatch(r"media-[A-Za-z0-9._-]+", media_tag) or not set(targets) <= approved.keys():
+                  sys.exit("Enter a media-* tag with a checksum for each selected target in PHONIVRA_MEDIA_SHA256.")
+              checksums = {target: approved[target] for target in targets}
+              if any(not isinstance(digest, str) or not re.fullmatch(r"[a-f0-9]{64}", digest) for digest in checksums.values()):
                   sys.exit("Each media checksum must be a lowercase SHA-256 digest.")
           with open(os.environ["GITHUB_OUTPUT"], "a", encoding="utf-8") as output:
               print(f"version={version}", file=output)
               print(f"media_checksums={json.dumps(checksums)}", file=output)
+              print(f"release_mode={mode}", file=output)
           PY
 
   preview-media:
     if: ${{ inputs.media_tag == '' }}
     needs: preflight
     uses: ./.github/workflows/desktop-media.yml
+    with:
+      all_platforms: ${{ inputs.all_platforms == true }}
 
   installers:
     needs: [checks, preflight, preview-media]
@@ -106,16 +129,11 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        include:
-          - runner: ubuntu-24.04
-            target: linux-x64
-            arch: x64
-          - runner: windows-2025
-            target: win-x64
-            arch: x64
-          - runner: macos-15
-            target: mac-arm64
-            arch: arm64
+        include: ${{ fromJSON(inputs.all_platforms && '[
+          {"runner":"ubuntu-24.04","target":"linux-x64","arch":"x64"},
+          {"runner":"windows-2025","target":"win-x64","arch":"x64"},
+          {"runner":"macos-15","target":"mac-arm64","arch":"arm64"}]'
+          || '[{"runner":"ubuntu-24.04","target":"linux-x64","arch":"x64"}]') }}
     runs-on: ${{ matrix.runner }}
     timeout-minutes: 60
     env:
@@ -125,7 +143,7 @@ jobs:
       MEDIA_FILE: ffmpeg-${{ matrix.target }}.zip
       APPROVED_MEDIA_SHA256: ${{ fromJSON(needs.preflight.outputs.media_checksums)[matrix.target] }}
       DESKTOP_VERSION: ${{ needs.preflight.outputs.version }}
-      RELEASE_SIGNING: ${{ inputs.signed && 'signed' || 'preview' }}
+      RELEASE_MODE: ${{ needs.preflight.outputs.release_mode }}
     steps:
       - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
         with:
@@ -205,7 +223,7 @@ jobs:
         run: |
           $packages = @(Get-ChildItem apps/desktop/.release/installers -File -Filter '*.exe')
           if ($packages.Count -ne 1) { throw 'Expected one Windows installer.' }
-          if ($env:RELEASE_SIGNING -eq 'signed') {
+          if ($env:RELEASE_MODE -eq 'signed') {
             $signature = Get-AuthenticodeSignature $packages[0].FullName
             if ($signature.Status -ne 'Valid' -or $null -eq $signature.TimeStamperCertificate) {
               throw 'The Windows installer must have a valid timestamped signature.'
@@ -215,7 +233,7 @@ jobs:
           # NSIS requires /D last and unquoted, including when its path contains spaces.
           $process = Start-Process $packages[0].FullName -ArgumentList "/S /D=$installDir" -Wait -PassThru
           if ($process.ExitCode -ne 0) { throw "NSIS exited with code $($process.ExitCode)." }
-          if ($env:RELEASE_SIGNING -eq 'signed') {
+          if ($env:RELEASE_MODE -eq 'signed') {
             $app = Get-AuthenticodeSignature (Join-Path $installDir 'Phonivra.exe')
             if ($app.Status -ne 'Valid' -or $app.SignerCertificate.Subject -ne $signature.SignerCertificate.Subject) {
               throw 'The installed Windows app must have a valid signature from the installer publisher.'
@@ -233,7 +251,7 @@ jobs:
           trap 'hdiutil detach "$mount" >/dev/null 2>&1 || true; rmdir "$mount"' EXIT
           hdiutil attach -readonly -nobrowse -mountpoint "$mount" "${images[0]}"
           app="$mount/Phonivra.app"
-          if [[ "$RELEASE_SIGNING" == signed ]]; then
+          if [[ "$RELEASE_MODE" == signed ]]; then
             codesign --verify --deep --strict "$app"
             xcrun stapler validate "$app"
           fi
@@ -270,6 +288,7 @@ jobs:
       DESKTOP_VERSION: ${{ needs.preflight.outputs.version }}
       MEDIA_TAG: ${{ inputs.media_tag }}
       MEDIA_CHECKSUMS: ${{ needs.preflight.outputs.media_checksums }}
+      RELEASE_MODE: ${{ needs.preflight.outputs.release_mode }}
     steps:
       - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
         with:
@@ -278,7 +297,7 @@ jobs:
         with:
           pattern: phonivra-*
           path: release-artifacts
-      - name: Verify the complete signed asset set
+      - name: Verify the release asset set
         run: python3 apps/desktop/scripts/release_assets.py release-artifacts release-assets "$DESKTOP_VERSION"
       - name: Create the GitHub Release draft
         shell: bash

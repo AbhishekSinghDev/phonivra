@@ -40,7 +40,7 @@ def collect(source: Path, output: Path, version: str, target: str) -> None:
     package = packages[0]
     digest = checksum(package)
     name = installer_name(version, target)
-    mode = os.environ["RELEASE_SIGNING"]
+    mode = os.environ["RELEASE_MODE"]
     metadata = {
         "target": target,
         "version": version,
@@ -64,7 +64,18 @@ def assemble(source: Path, output: Path, version: str) -> None:
     checksums = []
     artifacts = []
     media_checksums = json.loads(os.environ["MEDIA_CHECKSUMS"])
-    for target in TARGETS:
+    mode = os.environ["RELEASE_MODE"]
+    if mode == "release":
+        targets = ("linux-x64",)
+    elif mode == "signed":
+        targets = TARGETS
+    else:
+        raise ValueError(f"{mode!r} builds cannot be drafted.")
+    if {directory.name for directory in source.iterdir()} != {
+        f"phonivra-{target}" for target in targets
+    }:
+        raise ValueError("The downloaded artifacts must match the selected release targets.")
+    for target in targets:
         directory = source / f"phonivra-{target}"
         name = installer_name(version, target)
         path = directory / name
@@ -76,7 +87,7 @@ def assemble(source: Path, output: Path, version: str) -> None:
             "version": version,
             "commit": os.environ["GITHUB_SHA"],
             "workflowRun": os.environ["GITHUB_RUN_ID"],
-            "releaseMode": "signed",
+            "releaseMode": mode,
             "osSigned": target != "linux-x64",
             "mediaTag": os.environ["MEDIA_TAG"],
             "mediaSha256": media_checksums[target],
@@ -84,7 +95,7 @@ def assemble(source: Path, output: Path, version: str) -> None:
             "sha256": checksum(path),
         }
         if any(metadata.get(key) != value for key, value in expected.items()):
-            raise ValueError(f"{name} does not match the approved signed workflow run.")
+            raise ValueError(f"{name} does not match the approved release workflow run.")
         checksums.append(f"{expected['sha256']}  {name}")
         artifacts.append((path, metadata))
     output.mkdir(parents=True, exist_ok=False)
